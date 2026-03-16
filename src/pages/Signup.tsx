@@ -62,7 +62,7 @@ const Signup = () => {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Account created!", description: "Check your email to verify your account." });
-      navigate("/dashboard");
+      navigate("/onboarding");
     }
   };
 

@@ -271,36 +271,45 @@ export type Database = {
       }
       products: {
         Row: {
+          category: string | null
           created_at: string
           creator_id: string
           description: string | null
           file_url: string | null
           id: string
+          image_url: string | null
           is_published: boolean | null
           name: string
           price: number
+          product_type: string
           updated_at: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           creator_id: string
           description?: string | null
           file_url?: string | null
           id?: string
+          image_url?: string | null
           is_published?: boolean | null
           name: string
           price?: number
+          product_type?: string
           updated_at?: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           creator_id?: string
           description?: string | null
           file_url?: string | null
           id?: string
+          image_url?: string | null
           is_published?: boolean | null
           name?: string
           price?: number
+          product_type?: string
           updated_at?: string
         }
         Relationships: [
@@ -321,8 +330,10 @@ export type Database = {
           display_name: string | null
           id: string
           is_pro: boolean | null
+          onboarding_completed: boolean | null
           paypal_email: string | null
           social_links: Json | null
+          theme_color: string | null
           updated_at: string
           username: string
           website: string | null
@@ -334,8 +345,10 @@ export type Database = {
           display_name?: string | null
           id: string
           is_pro?: boolean | null
+          onboarding_completed?: boolean | null
           paypal_email?: string | null
           social_links?: Json | null
+          theme_color?: string | null
           updated_at?: string
           username: string
           website?: string | null
@@ -347,8 +360,10 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_pro?: boolean | null
+          onboarding_completed?: boolean | null
           paypal_email?: string | null
           social_links?: Json | null
+          theme_color?: string | null
           updated_at?: string
           username?: string
           website?: string | null
@@ -440,6 +455,7 @@ export type Database = {
           created_at: string
           creator_id: string
           description: string | null
+          features: string[] | null
           id: string
           is_active: boolean | null
           name: string
@@ -450,6 +466,7 @@ export type Database = {
           created_at?: string
           creator_id: string
           description?: string | null
+          features?: string[] | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -460,6 +477,7 @@ export type Database = {
           created_at?: string
           creator_id?: string
           description?: string | null
+          features?: string[] | null
           id?: string
           is_active?: boolean | null
           name?: string

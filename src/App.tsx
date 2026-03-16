@@ -18,6 +18,7 @@ import CreatorProfile from "./pages/CreatorProfile";
 import Marketplace from "./pages/Marketplace";
 import Analytics from "./pages/Analytics";
 import ManageLinks from "./pages/ManageLinks";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
