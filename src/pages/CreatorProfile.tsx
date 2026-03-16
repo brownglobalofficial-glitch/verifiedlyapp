@@ -43,6 +43,9 @@ const CreatorProfile = () => {
       }
       setProfile(prof);
 
+      // Track page view
+      supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
+
       const [{ data: prods }, { data: subs }] = await Promise.all([
         supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
         supabase.from("subscriptions").select("*").eq("creator_id", prof.id).eq("is_active", true),
@@ -65,6 +68,20 @@ const CreatorProfile = () => {
       return;
     }
     window.open(`https://www.paypal.com/paypalme/${profile.paypal_email}/${amount}`, "_blank");
+  };
+
+  const handleSocialClick = (platform: string, link: string) => {
+    // Track social link click
+    if (profile) {
+      supabase.from("social_analytics")
+        .upsert(
+          { creator_id: profile.id, platform, clicks: 1 },
+          { onConflict: "creator_id,platform" }
+        )
+        .then(() => {});
+    }
+    const url = String(link).startsWith("http") ? String(link) : `https://${platform}.com/${String(link).replace("@", "")}`;
+    window.open(url, "_blank");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -105,11 +122,15 @@ const CreatorProfile = () => {
         {Object.entries(socialLinks).filter(([, v]) => v).length > 0 && (
           <div className="flex justify-center gap-3 mb-8 flex-wrap">
             {Object.entries(socialLinks).filter(([, v]) => v).map(([platform, link]) => (
-              <a key={platform} href={String(link).startsWith("http") ? String(link) : `https://${platform}.com/${String(link).replace("@", "")}`} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="gap-1">
-                  {socialIcons[platform] || "🔗"} {platform}
-                </Button>
-              </a>
+              <Button
+                key={platform}
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => handleSocialClick(platform, String(link))}
+              >
+                {socialIcons[platform] || "🔗"} {platform}
+              </Button>
             ))}
           </div>
         )}
