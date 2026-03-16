@@ -5,10 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Trash2, GripVertical, MousePointerClick, Check } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const THEMES = [
+  { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
+  { id: "midnight", label: "Midnight", bg: "bg-[hsl(230,25%,12%)]", accent: "bg-[hsl(230,60%,60%)]" },
+  { id: "sunset", label: "Sunset", bg: "bg-[hsl(20,30%,97%)]", accent: "bg-[hsl(20,90%,55%)]" },
+  { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]" },
+  { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]" },
+  { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
+];
+
+interface BioLink {
+  id: string;
+  title: string;
+  url: string;
+  icon: string | null;
+  is_active: boolean;
+  sort_order: number;
+  clicks: number;
+}
 
 const ProfileSettings = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -29,11 +51,20 @@ const ProfileSettings = () => {
   const [facebook, setFacebook] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [themeColor, setThemeColor] = useState("default");
+
+  // Bio Links
+  const [links, setLinks] = useState<BioLink[]>([]);
+  const [newTitle, setNewTitle] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [newIcon, setNewIcon] = useState("");
+  const [addingLink, setAddingLink] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       fetchProfile(session.user.id);
+      fetchLinks(session.user.id);
     });
   }, [navigate]);
 
@@ -45,48 +76,40 @@ const ProfileSettings = () => {
       setBio(data.bio || "");
       setWebsite(data.website || "");
       setAvatarUrl(data.avatar_url || "");
-      const links = (data.social_links || {}) as Record<string, string>;
-      setInstagram(links.instagram || "");
-      setTwitter(links.twitter || "");
-      setYoutube(links.youtube || "");
-      setTiktok(links.tiktok || "");
-      setFacebook(links.facebook || "");
+      setThemeColor(data.theme_color || "default");
+      const sl = (data.social_links || {}) as Record<string, string>;
+      setInstagram(sl.instagram || "");
+      setTwitter(sl.twitter || "");
+      setYoutube(sl.youtube || "");
+      setTiktok(sl.tiktok || "");
+      setFacebook(sl.facebook || "");
       setPaypalEmail(data.paypal_email || "");
     }
     setLoading(false);
   };
 
+  const fetchLinks = async (uid: string) => {
+    const { data } = await supabase.from("bio_links").select("*").eq("creator_id", uid).order("sort_order", { ascending: true });
+    setLinks((data as BioLink[]) || []);
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
-
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 2MB allowed.", variant: "destructive" });
+      toast({ title: "File too large", description: "Max 2MB.", variant: "destructive" });
       return;
     }
-
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${profile.id}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (uploadError) {
-      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-      setUploading(false);
-      return;
-    }
-
+    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
     const url = `${publicUrl}?t=${Date.now()}`;
-
-    const { error: updateError } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", profile.id);
+    await supabase.from("profiles").update({ avatar_url: url }).eq("id", profile.id);
+    setAvatarUrl(url);
     setUploading(false);
-    if (updateError) {
-      toast({ title: "Error", description: updateError.message, variant: "destructive" });
-    } else {
-      setAvatarUrl(url);
-      toast({ title: "Avatar updated!" });
-    }
+    toast({ title: "Avatar updated!" });
   };
 
   const handleSave = async () => {
@@ -98,6 +121,7 @@ const ProfileSettings = () => {
       website,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       paypal_email: paypalEmail,
+      theme_color: themeColor,
     }).eq("id", profile.id);
     setSaving(false);
     if (error) {
@@ -107,7 +131,55 @@ const ProfileSettings = () => {
     }
   };
 
+  // Link management
+  const handleAddLink = async () => {
+    if (!profile || !newTitle.trim() || !newUrl.trim()) return;
+    setAddingLink(true);
+    let url = newUrl.trim();
+    if (!url.startsWith("http")) url = `https://${url}`;
+    const { error } = await supabase.from("bio_links").insert({
+      creator_id: profile.id,
+      title: newTitle.trim(),
+      url,
+      icon: newIcon.trim() || null,
+      sort_order: links.length,
+    });
+    setAddingLink(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setNewTitle(""); setNewUrl(""); setNewIcon("");
+      fetchLinks(profile.id);
+      toast({ title: "Link added!" });
+    }
+  };
+
+  const handleToggleLink = async (id: string, active: boolean) => {
+    await supabase.from("bio_links").update({ is_active: active }).eq("id", id);
+    setLinks(links.map(l => l.id === id ? { ...l, is_active: active } : l));
+  };
+
+  const handleDeleteLink = async (id: string) => {
+    await supabase.from("bio_links").delete().eq("id", id);
+    setLinks(links.filter(l => l.id !== id));
+    toast({ title: "Link deleted" });
+  };
+
+  const handleMoveLink = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= links.length) return;
+    const updated = [...links];
+    [updated[index], updated[target]] = [updated[target], updated[index]];
+    updated.forEach((l, i) => l.sort_order = i);
+    setLinks(updated);
+    await Promise.all(updated.map(l =>
+      supabase.from("bio_links").update({ sort_order: l.sort_order }).eq("id", l.id)
+    ));
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+
+  const totalClicks = links.reduce((s, l) => s + l.clicks, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,72 +187,141 @@ const ProfileSettings = () => {
         <div className="container mx-auto flex items-center gap-4">
           <Link to="/dashboard"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4" /></Button></Link>
           <img src={logo} alt="Verifiedly" className="h-7" />
-          <span className="font-display font-semibold">Profile Settings</span>
+          <span className="font-display font-semibold">Settings</span>
         </div>
       </nav>
 
-      <div className="container mx-auto py-8 px-4 max-w-2xl space-y-6">
-        {/* Avatar Upload */}
-        <div className="flex items-center gap-4">
-          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <Avatar className="w-20 h-20">
-              {avatarUrl ? (
-                <AvatarImage src={avatarUrl} alt={displayName} />
-              ) : null}
-              <AvatarFallback className="text-2xl font-display font-bold">
-                {(displayName || profile?.username)?.[0]?.toUpperCase() || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="w-5 h-5 text-background" />
+      <div className="container mx-auto py-8 px-4 max-w-2xl">
+        <Tabs defaultValue="profile">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="links">Links</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile" className="space-y-6">
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <Avatar className="w-20 h-20">
+                  {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+                  <AvatarFallback className="text-2xl font-display font-bold">
+                    {(displayName || profile?.username)?.[0]?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-5 h-5 text-background" />
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              </div>
+              <div>
+                <p className="font-display font-semibold">{displayName || profile?.username}</p>
+                <p className="text-sm text-muted-foreground">{uploading ? "Uploading..." : "Click to change photo"}</p>
+              </div>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
-          </div>
-          <div>
-            <p className="font-display font-semibold">{displayName || profile?.username}</p>
-            <p className="text-sm text-muted-foreground">
-              {uploading ? "Uploading..." : "Click avatar to change photo"}
-            </p>
-          </div>
-        </div>
 
-        <div>
-          <Label>Display Name</Label>
-          <Input value={displayName} onChange={e => setDisplayName(e.target.value)} />
-        </div>
-        <div>
-          <Label>Bio</Label>
-          <Textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Tell your fans about yourself..." />
-        </div>
-        <div>
-          <Label>Website</Label>
-          <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" />
-        </div>
-        <div>
-          <Label>PayPal Email (for receiving tips)</Label>
-          <Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" />
-        </div>
+            <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
+            <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Tell your fans about yourself..." /></div>
+            <div><Label>Website</Label><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" /></div>
+            <div><Label>PayPal Email (for receiving payments)</Label><Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" /></div>
 
-        <div className="border-t border-border pt-6">
-          <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>Instagram</Label><Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" /></div>
-            <div><Label>Twitter / X</Label><Input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" /></div>
-            <div><Label>YouTube</Label><Input value={youtube} onChange={e => setYoutube(e.target.value)} placeholder="Channel URL" /></div>
-            <div><Label>TikTok</Label><Input value={tiktok} onChange={e => setTiktok(e.target.value)} placeholder="@username" /></div>
-            <div><Label>Facebook</Label><Input value={facebook} onChange={e => setFacebook(e.target.value)} placeholder="Page URL" /></div>
-          </div>
-        </div>
+            <div className="border-t border-border pt-6">
+              <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><Label>Instagram</Label><Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" /></div>
+                <div><Label>Twitter / X</Label><Input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" /></div>
+                <div><Label>YouTube</Label><Input value={youtube} onChange={e => setYoutube(e.target.value)} placeholder="Channel URL" /></div>
+                <div><Label>TikTok</Label><Input value={tiktok} onChange={e => setTiktok(e.target.value)} placeholder="@username" /></div>
+                <div><Label>Facebook</Label><Input value={facebook} onChange={e => setFacebook(e.target.value)} placeholder="Page URL" /></div>
+              </div>
+            </div>
 
-        <Button onClick={handleSave} disabled={saving} className="w-full">
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
+            <Button onClick={handleSave} disabled={saving} className="w-full">
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="links" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-display font-bold">Link in Bio</h2>
+                <p className="text-sm text-muted-foreground">Manage your link-in-bio cards</p>
+              </div>
+              <Card className="px-3 py-1.5 flex items-center gap-2">
+                <MousePointerClick className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs font-medium">{totalClicks} clicks</span>
+              </Card>
+            </div>
+
+            <Card className="p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div><Label>Title</Label><Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="My Website" /></div>
+                <div><Label>URL</Label><Input value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://..." /></div>
+              </div>
+              <div className="flex gap-3 items-end">
+                <div><Label>Icon (emoji)</Label><Input value={newIcon} onChange={e => setNewIcon(e.target.value)} placeholder="🔗" className="w-20" /></div>
+                <Button onClick={handleAddLink} disabled={addingLink || !newTitle.trim() || !newUrl.trim()} className="gap-1">
+                  <Plus className="w-4 h-4" /> Add
+                </Button>
+              </div>
+            </Card>
+
+            <div className="space-y-2">
+              {links.map((link, i) => (
+                <Card key={link.id} className={`p-3 transition-opacity ${!link.is_active ? "opacity-50" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <button onClick={() => handleMoveLink(i, -1)} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
+                      <button onClick={() => handleMoveLink(i, 1)} disabled={i === links.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {link.icon && <span>{link.icon}</span>}
+                        <p className="font-semibold text-sm truncate">{link.title}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <MousePointerClick className="w-3 h-3" />{link.clicks}
+                    </div>
+                    <Switch checked={link.is_active} onCheckedChange={(c) => handleToggleLink(link.id, c)} />
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteLink(link.id)} className="text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+              {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. Add your first link above!</p>}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="theme" className="space-y-6">
+            <div>
+              <h2 className="text-xl font-display font-bold">Profile Theme</h2>
+              <p className="text-sm text-muted-foreground">Choose how your public profile looks</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {THEMES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setThemeColor(t.id)}
+                  className={`rounded-xl border-2 p-4 text-center transition-all ${themeColor === t.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
+                >
+                  <div className={`${t.bg} rounded-lg h-20 mb-2 flex items-end justify-center p-2`}>
+                    <div className={`${t.accent} rounded-full h-3 w-12`} />
+                  </div>
+                  <p className="text-sm font-medium">{t.label}</p>
+                  {themeColor === t.id && <Check className="w-4 h-4 mx-auto mt-1 text-primary" />}
+                </button>
+              ))}
+            </div>
+
+            <Button onClick={handleSave} disabled={saving} className="w-full">
+              {saving ? "Saving..." : "Save Theme"}
+            </Button>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
