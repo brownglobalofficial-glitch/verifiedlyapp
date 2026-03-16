@@ -20,6 +20,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
