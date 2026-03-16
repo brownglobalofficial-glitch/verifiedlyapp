@@ -3,53 +3,44 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { BadgeCheck, ExternalLink, ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
+import { BadgeCheck, ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const socialPlatforms = ["instagram", "twitter", "youtube", "tiktok", "facebook"];
-
 const THEME_STYLES: Record<string, { 
-  bg: string; gradient: string; card: string; text: string; accent: string; 
+  bg: string; gradient: string; text: string; accent: string; 
   accentText: string; muted: string; linkBg: string; linkHover: string;
 }> = {
   default: { 
     bg: "bg-[hsl(0,0%,98%)]", gradient: "from-[hsl(0,0%,95%)] to-[hsl(0,0%,98%)]",
-    card: "bg-white border-[hsl(0,0%,92%)]", text: "text-[hsl(0,0%,8%)]", 
-    accent: "bg-[hsl(0,0%,8%)]", accentText: "text-white",
+    text: "text-[hsl(0,0%,8%)]", accent: "bg-[hsl(0,0%,8%)]", accentText: "text-white",
     muted: "text-[hsl(0,0%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(0,0%,96%)] hover:scale-[1.02]"
   },
   midnight: { 
     bg: "bg-[hsl(230,25%,8%)]", gradient: "from-[hsl(230,40%,18%)] to-[hsl(230,25%,8%)]",
-    card: "bg-[hsl(230,25%,14%)] border-[hsl(230,20%,20%)]", text: "text-[hsl(230,20%,92%)]", 
-    accent: "bg-[hsl(230,60%,60%)]", accentText: "text-white",
+    text: "text-[hsl(230,20%,92%)]", accent: "bg-[hsl(230,60%,60%)]", accentText: "text-white",
     muted: "text-[hsl(230,15%,55%)]", linkBg: "bg-[hsl(230,25%,14%)]", linkHover: "hover:bg-[hsl(230,25%,18%)] hover:scale-[1.02]"
   },
   sunset: { 
     bg: "bg-[hsl(20,40%,97%)]", gradient: "from-[hsl(20,60%,85%)] to-[hsl(20,40%,97%)]",
-    card: "bg-white border-[hsl(20,30%,88%)]", text: "text-[hsl(20,30%,12%)]", 
-    accent: "bg-[hsl(20,90%,55%)]", accentText: "text-white",
+    text: "text-[hsl(20,30%,12%)]", accent: "bg-[hsl(20,90%,55%)]", accentText: "text-white",
     muted: "text-[hsl(20,15%,50%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(20,30%,95%)] hover:scale-[1.02]"
   },
   forest: { 
     bg: "bg-[hsl(150,25%,96%)]", gradient: "from-[hsl(150,35%,82%)] to-[hsl(150,25%,96%)]",
-    card: "bg-white border-[hsl(150,15%,85%)]", text: "text-[hsl(150,30%,12%)]", 
-    accent: "bg-[hsl(150,60%,35%)]", accentText: "text-white",
+    text: "text-[hsl(150,30%,12%)]", accent: "bg-[hsl(150,60%,35%)]", accentText: "text-white",
     muted: "text-[hsl(150,10%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(150,20%,94%)] hover:scale-[1.02]"
   },
   ocean: { 
     bg: "bg-[hsl(200,35%,96%)]", gradient: "from-[hsl(200,50%,82%)] to-[hsl(200,35%,96%)]",
-    card: "bg-white border-[hsl(200,20%,85%)]", text: "text-[hsl(200,30%,12%)]", 
-    accent: "bg-[hsl(200,80%,45%)]", accentText: "text-white",
+    text: "text-[hsl(200,30%,12%)]", accent: "bg-[hsl(200,80%,45%)]", accentText: "text-white",
     muted: "text-[hsl(200,15%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(200,25%,94%)] hover:scale-[1.02]"
   },
   lavender: { 
     bg: "bg-[hsl(270,35%,96%)]", gradient: "from-[hsl(270,40%,85%)] to-[hsl(270,35%,96%)]",
-    card: "bg-white border-[hsl(270,20%,87%)]", text: "text-[hsl(270,25%,12%)]", 
-    accent: "bg-[hsl(270,60%,55%)]", accentText: "text-white",
+    text: "text-[hsl(270,25%,12%)]", accent: "bg-[hsl(270,60%,55%)]", accentText: "text-white",
     muted: "text-[hsl(270,10%,48%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(270,25%,94%)] hover:scale-[1.02]"
   },
 };
@@ -87,24 +78,6 @@ const CreatorProfile = () => {
     fetchData();
   }, [username]);
 
-  const handlePayPal = (amount: number, description: string) => {
-    if (!profile?.paypal_email) {
-      toast({ title: "Payments unavailable", description: "This creator hasn't set up payments yet.", variant: "destructive" });
-      return;
-    }
-    window.open(`https://www.paypal.com/paypalme/${profile.paypal_email}/${amount}`, "_blank");
-    supabase.from("earnings").insert({ creator_id: profile.id, amount, source: "product", description }).then(() => {});
-  };
-
-  const handleTip = () => {
-    const amount = parseFloat(tipAmount);
-    if (isNaN(amount) || amount < 1) {
-      toast({ title: "Invalid amount", description: "Minimum tip is $1.", variant: "destructive" });
-      return;
-    }
-    handlePayPal(amount, "Tip");
-  };
-
   const handleSocialClick = (platform: string, link: string) => {
     if (profile) {
       supabase.from("social_analytics")
@@ -139,7 +112,6 @@ const CreatorProfile = () => {
 
   return (
     <div className={`min-h-screen ${theme.bg}`}>
-      {/* Gradient header area */}
       <div className={`bg-gradient-to-b ${theme.gradient} pt-12 pb-8`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -147,7 +119,6 @@ const CreatorProfile = () => {
           transition={{ duration: 0.5 }}
           className="max-w-md mx-auto px-4 text-center"
         >
-          {/* Avatar */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -161,7 +132,6 @@ const CreatorProfile = () => {
             </Avatar>
           </motion.div>
 
-          {/* Name & handle */}
           <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-2 ${theme.text}`}>
             {profile?.display_name || username}
             {profile?.is_pro && <BadgeCheck className="w-5 h-5 text-pro" />}
@@ -171,22 +141,21 @@ const CreatorProfile = () => {
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
           )}
 
-          {/* Social icons row */}
-          {activeSocials.length > 0 && (
+          {(activeSocials.length > 0 || profile?.website) && (
             <div className="flex justify-center gap-2 mt-4">
               {activeSocials.map(([platform, link]) => (
                 <button
                   key={platform}
                   onClick={() => handleSocialClick(platform, String(link))}
-                  className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-sm transition-all ${theme.linkBg} ${socialIcons[platform]?.color || "hover:bg-muted"}`}
+                  className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted/80 hover:scale-110`}
                   title={platform}
                 >
-                  {socialIcons[platform]?.emoji || "🔗"}
+                  <SocialIcon platform={platform} className="w-4 h-4" />
                 </button>
               ))}
               {profile?.website && (
                 <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                  <button className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted`} title="Website">
+                  <button className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted/80 hover:scale-110`} title="Website">
                     <Globe className="w-4 h-4" />
                   </button>
                 </a>
@@ -196,9 +165,7 @@ const CreatorProfile = () => {
         </motion.div>
       </div>
 
-      {/* Content */}
       <div className="max-w-md mx-auto px-4 pb-12 -mt-2">
-        {/* Bio Links */}
         {bioLinks.length > 0 && (
           <div className="space-y-3 mb-6">
             {bioLinks.map((link, i) => (
@@ -225,33 +192,12 @@ const CreatorProfile = () => {
           </div>
         )}
 
-        {/* Tip Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className={`${theme.linkBg} rounded-2xl border border-border/50 p-5 mb-6 shadow-sm`}
-        >
-          <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
-            <Heart className="w-4 h-4 text-[hsl(0,70%,55%)]" /> Send a Tip
-          </h3>
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm ${theme.muted}`}>$</span>
-              <Input value={tipAmount} onChange={e => setTipAmount(e.target.value)} type="number" min="1" className="pl-7 rounded-xl" />
-            </div>
-            <Button onClick={handleTip} className={`gap-1 rounded-xl ${theme.accent} ${theme.accentText}`}>
-              <Heart className="w-4 h-4" /> Tip
-            </Button>
-          </div>
-        </motion.div>
-
         {/* Subscriptions */}
         {subscriptions.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.3 }}
             className="mb-6"
           >
             <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text}`}>Memberships</h3>
@@ -289,7 +235,7 @@ const CreatorProfile = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.35 }}
           >
             <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
               <ShoppingBag className="w-4 h-4" /> Shop
@@ -321,7 +267,7 @@ const CreatorProfile = () => {
           </motion.div>
         )}
 
-        {/* Product purchase dialog */}
+        {/* Product detail dialog */}
         <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
@@ -341,34 +287,26 @@ const CreatorProfile = () => {
                   </a>
                 )}
                 <Button
-                  onClick={() => {
-                    handlePayPal(buyingProduct.price, `Purchase: ${buyingProduct.name}`);
-                    if (buyingProduct?.file_url) {
-                      setTimeout(() => { window.open(buyingProduct.file_url, "_blank"); }, 1000);
-                    }
-                    setBuyingProduct(null);
-                  }}
+                  disabled
+                  variant="outline"
                   className="gap-2 rounded-xl"
                 >
-                  {buyingProduct?.price === 0 ? "Get Free" : "Buy with PayPal"}
+                  Payments coming soon
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Subscription purchase dialog */}
+        {/* Subscription detail dialog */}
         <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
           <DialogContent className="rounded-2xl">
-            <DialogHeader><DialogTitle>Subscribe to {buyingSub?.name}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{buyingSub?.name}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
-              <Button
-                onClick={() => { handlePayPal(buyingSub.price, `Subscription: ${buyingSub.name}`); setBuyingSub(null); }}
-                className="gap-2 rounded-xl"
-              >
-                Subscribe via PayPal
+              <Button disabled variant="outline" className="gap-2 rounded-xl">
+                Payments coming soon
               </Button>
             </div>
           </DialogContent>
