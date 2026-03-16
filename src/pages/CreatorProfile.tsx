@@ -61,7 +61,7 @@ const CreatorProfile = () => {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tipAmount, setTipAmount] = useState("5");
+  const [notFound, setNotFound] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
   const [buyingSub, setBuyingSub] = useState<any>(null);
