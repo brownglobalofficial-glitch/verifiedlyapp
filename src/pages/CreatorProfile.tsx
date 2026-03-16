@@ -47,12 +47,14 @@ const CreatorProfile = () => {
       // Track page view
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
 
-      const [{ data: prods }, { data: subs }] = await Promise.all([
+      const [{ data: prods }, { data: subs }, { data: blinks }] = await Promise.all([
         supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
         supabase.from("subscriptions").select("*").eq("creator_id", prof.id).eq("is_active", true),
+        supabase.from("bio_links").select("*").eq("creator_id", prof.id).eq("is_active", true).order("sort_order", { ascending: true }),
       ]);
       setProducts(prods || []);
       setSubscriptions(subs || []);
+      setBioLinks(blinks || []);
       setLoading(false);
     };
     fetchData();
