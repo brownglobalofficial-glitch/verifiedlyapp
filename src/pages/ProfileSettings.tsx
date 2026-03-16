@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const ProfileSettings = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -25,6 +28,7 @@ const ProfileSettings = () => {
   const [tiktok, setTiktok] = useState("");
   const [facebook, setFacebook] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,6 +44,7 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
       setWebsite(data.website || "");
+      setAvatarUrl(data.avatar_url || "");
       const links = (data.social_links || {}) as Record<string, string>;
       setInstagram(links.instagram || "");
       setTwitter(links.twitter || "");
@@ -49,6 +54,39 @@ const ProfileSettings = () => {
       setPaypalEmail(data.paypal_email || "");
     }
     setLoading(false);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 2MB allowed.", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${profile.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const url = `${publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", profile.id);
+    setUploading(false);
+    if (updateError) {
+      toast({ title: "Error", description: updateError.message, variant: "destructive" });
+    } else {
+      setAvatarUrl(url);
+      toast({ title: "Avatar updated!" });
+    }
   };
 
   const handleSave = async () => {
@@ -82,6 +120,36 @@ const ProfileSettings = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-2xl space-y-6">
+        {/* Avatar Upload */}
+        <div className="flex items-center gap-4">
+          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <Avatar className="w-20 h-20">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={displayName} />
+              ) : null}
+              <AvatarFallback className="text-2xl font-display font-bold">
+                {(displayName || profile?.username)?.[0]?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="w-5 h-5 text-background" />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+          </div>
+          <div>
+            <p className="font-display font-semibold">{displayName || profile?.username}</p>
+            <p className="text-sm text-muted-foreground">
+              {uploading ? "Uploading..." : "Click avatar to change photo"}
+            </p>
+          </div>
+        </div>
+
         <div>
           <Label>Display Name</Label>
           <Input value={displayName} onChange={e => setDisplayName(e.target.value)} />

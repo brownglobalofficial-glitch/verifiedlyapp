@@ -5,19 +5,25 @@ import { Link } from "react-router-dom";
 
 const Pricing = () => {
   return (
-    <section id="pricing" className="py-20 px-4">
+    <section id="pricing" className="py-24 px-4">
       <div className="container mx-auto max-w-5xl">
-        <div className="text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simple pricing</h2>
           <p className="text-lg text-muted-foreground">Start free. Upgrade when you're ready.</p>
-        </div>
+        </motion.div>
         <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {/* Free */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="rounded-xl border border-border p-8"
+            transition={{ duration: 0.6 }}
+            className="rounded-xl border border-border p-8 hover:shadow-lg transition-shadow duration-300"
           >
             <h3 className="text-xl font-display font-semibold mb-2">Free</h3>
             <p className="text-4xl font-display font-bold mb-1">$0<span className="text-lg text-muted-foreground font-normal">/mo</span></p>
@@ -35,13 +41,12 @@ const Pricing = () => {
             </Link>
           </motion.div>
 
-          {/* Pro */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="rounded-xl border-2 border-foreground p-8 relative"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300"
           >
             <div className="absolute -top-3 left-6 badge-pro px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
               <BadgeCheck className="w-3 h-3" /> PRO
