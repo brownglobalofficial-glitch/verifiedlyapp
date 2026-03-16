@@ -10,13 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const socialIcons: Record<string, { emoji: string; color: string }> = {
-  instagram: { emoji: "📸", color: "hover:bg-[hsl(330,60%,95%)]" },
-  twitter: { emoji: "𝕏", color: "hover:bg-[hsl(200,60%,95%)]" },
-  youtube: { emoji: "▶️", color: "hover:bg-[hsl(0,60%,95%)]" },
-  tiktok: { emoji: "🎵", color: "hover:bg-[hsl(340,60%,95%)]" },
-  facebook: { emoji: "f", color: "hover:bg-[hsl(220,60%,95%)]" },
-};
+const socialPlatforms = ["instagram", "twitter", "youtube", "tiktok", "facebook"];
 
 const THEME_STYLES: Record<string, { 
   bg: string; gradient: string; card: string; text: string; accent: string; 
