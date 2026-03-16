@@ -72,13 +72,13 @@ const ManageProducts = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${userId}/covers/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-files").upload(path, file);
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
     if (error) {
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       setUploading(false);
       return;
     }
-    const { data: { publicUrl } } = supabase.storage.from("product-files").getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
     setImageUrl(publicUrl);
     setUploading(false);
     toast({ title: "Cover uploaded!" });

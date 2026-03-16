@@ -65,7 +65,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Built for creators in Belize 🇧🇿 and worldwide 🌍
+            Free to start. No credit card required.
           </motion.p>
         </motion.div>
 
