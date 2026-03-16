@@ -13,6 +13,7 @@ import ManageProducts from "./pages/ManageProducts";
 import ManageSubscriptions from "./pages/ManageSubscriptions";
 import Explore from "./pages/Explore";
 import CreatorProfile from "./pages/CreatorProfile";
+import Marketplace from "./pages/Marketplace";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/dashboard/products" element={<ManageProducts />} />
           <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

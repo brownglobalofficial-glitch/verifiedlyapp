@@ -3,9 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { BadgeCheck, ExternalLink, Heart, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 const socialIcons: Record<string, string> = {
   instagram: "📸",
@@ -62,10 +64,7 @@ const CreatorProfile = () => {
       toast({ title: "Invalid amount", description: "Minimum tip is $1.", variant: "destructive" });
       return;
     }
-    window.open(
-      `https://www.paypal.com/paypalme/${profile.paypal_email}/${amount}`,
-      "_blank"
-    );
+    window.open(`https://www.paypal.com/paypalme/${profile.paypal_email}/${amount}`, "_blank");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -80,12 +79,21 @@ const CreatorProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-lg mx-auto py-12 px-4">
-        {/* Avatar & Name */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-lg mx-auto py-12 px-4"
+      >
         <div className="text-center mb-8">
-          <div className="w-24 h-24 rounded-full bg-secondary border-2 border-border mx-auto mb-4 flex items-center justify-center text-3xl font-display font-bold">
-            {(profile?.display_name || username)?.[0]?.toUpperCase()}
-          </div>
+          <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-border">
+            {profile?.avatar_url ? (
+              <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+            ) : null}
+            <AvatarFallback className="text-3xl font-display font-bold">
+              {(profile?.display_name || username)?.[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <h1 className="text-2xl font-display font-bold flex items-center justify-center gap-2">
             {profile?.display_name || username}
             {profile?.is_pro && <BadgeCheck className="w-5 h-5 text-pro" />}
@@ -94,7 +102,6 @@ const CreatorProfile = () => {
           {profile?.bio && <p className="mt-3 text-sm text-muted-foreground max-w-sm mx-auto">{profile.bio}</p>}
         </div>
 
-        {/* Social Links */}
         {Object.entries(socialLinks).filter(([, v]) => v).length > 0 && (
           <div className="flex justify-center gap-3 mb-8 flex-wrap">
             {Object.entries(socialLinks).filter(([, v]) => v).map(([platform, link]) => (
@@ -115,7 +122,6 @@ const CreatorProfile = () => {
           </a>
         )}
 
-        {/* Tip */}
         <Card className="p-6 mb-6">
           <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Heart className="w-4 h-4" /> Send a Tip</h3>
           <div className="flex gap-2">
@@ -123,13 +129,10 @@ const CreatorProfile = () => {
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
               <Input value={tipAmount} onChange={e => setTipAmount(e.target.value)} type="number" min="1" className="pl-7" />
             </div>
-            <Button onClick={handleTip} className="gap-1">
-              <Heart className="w-4 h-4" /> Tip
-            </Button>
+            <Button onClick={handleTip} className="gap-1"><Heart className="w-4 h-4" /> Tip</Button>
           </div>
         </Card>
 
-        {/* Subscriptions */}
         {subscriptions.length > 0 && (
           <div className="mb-6">
             <h3 className="font-display font-semibold mb-3">Subscriptions</h3>
@@ -147,7 +150,6 @@ const CreatorProfile = () => {
           </div>
         )}
 
-        {/* Products */}
         {products.length > 0 && (
           <div>
             <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><ShoppingBag className="w-4 h-4" /> Digital Products</h3>
@@ -168,7 +170,7 @@ const CreatorProfile = () => {
             Powered by Verifiedly
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
