@@ -70,11 +70,17 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border h-16 flex items-center px-4">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/"><img src={logo} alt="Verifiedly" className="h-7" /></Link>
+          <div className="flex items-center gap-6">
+            <Link to="/dashboard"><img src={logo} alt="Verifiedly" className="h-7" /></Link>
+            <div className="hidden md:flex items-center gap-4 text-sm">
+              <Link to="/explore" className="text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
+              <Link to={`/${username}`} className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <Link to={`/${username}`} target="_blank">
               <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="w-3 h-3" /> My Profile
+                <ExternalLink className="w-3 h-3" /> Preview
               </Button>
             </Link>
             <Link to="/dashboard/settings">
