@@ -31,25 +31,30 @@ const Signup = () => {
     }
   };
 
+  // Check username availability with debounce
+  useEffect(() => {
+    if (username.length < 3) { setUsernameAvailable(null); return; }
+    setCheckingUsername(true);
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles").select("id").eq("username", username.toLowerCase()).maybeSingle();
+      setUsernameAvailable(!data);
+      setCheckingUsername(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [username]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username.length < 3) {
       toast({ title: "Username too short", description: "Must be at least 3 characters.", variant: "destructive" });
       return;
     }
-    setLoading(true);
-
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username.toLowerCase())
-      .maybeSingle();
-
-    if (existing) {
-      setLoading(false);
+    if (usernameAvailable === false) {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
       return;
     }
+    setLoading(true);
 
     const { error } = await supabase.auth.signUp({
       email,
