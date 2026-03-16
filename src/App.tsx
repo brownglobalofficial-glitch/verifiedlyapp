@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import ManageProducts from "./pages/ManageProducts";
@@ -14,6 +16,7 @@ import ManageSubscriptions from "./pages/ManageSubscriptions";
 import Explore from "./pages/Explore";
 import CreatorProfile from "./pages/CreatorProfile";
 import Marketplace from "./pages/Marketplace";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -27,12 +30,15 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/settings" element={<ProfileSettings />} />
           <Route path="/dashboard/products" element={<ManageProducts />} />
           <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
+          <Route path="/dashboard/analytics" element={<Analytics />} />
+          <Route path="/dashboard/marketplace" element={<Marketplace />} />
           <Route path="/explore" element={<Explore />} />
-          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
