@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings } from "lucide-react";
+import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
 
@@ -94,23 +94,37 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link to="/dashboard/products">
-            <Card className="p-6 card-hover cursor-pointer">
+            <Card className="p-6 card-hover cursor-pointer h-full">
               <ShoppingBag className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Digital Products</h3>
               <p className="text-sm text-muted-foreground">Create and manage your digital products</p>
             </Card>
           </Link>
           <Link to="/dashboard/subscriptions">
-            <Card className="p-6 card-hover cursor-pointer">
+            <Card className="p-6 card-hover cursor-pointer h-full">
               <Users className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Subscriptions</h3>
               <p className="text-sm text-muted-foreground">Manage your subscription tiers</p>
             </Card>
           </Link>
+          <Link to="/dashboard/analytics">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <BarChart3 className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Analytics</h3>
+              <p className="text-sm text-muted-foreground">View earnings, views & growth charts</p>
+            </Card>
+          </Link>
+          <Link to="/dashboard/marketplace">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <Megaphone className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Marketplace</h3>
+              <p className="text-sm text-muted-foreground">Find sponsorships & affiliate deals</p>
+            </Card>
+          </Link>
           <Link to="/dashboard/settings">
-            <Card className="p-6 card-hover cursor-pointer">
+            <Card className="p-6 card-hover cursor-pointer h-full">
               <Settings className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Profile Settings</h3>
               <p className="text-sm text-muted-foreground">Edit your bio, links, and profile</p>
@@ -118,7 +132,7 @@ const Dashboard = () => {
           </Link>
           {!profile?.is_pro && (
             <Link to="/dashboard/pro">
-              <Card className="p-6 card-hover cursor-pointer border-2 border-foreground">
+              <Card className="p-6 card-hover cursor-pointer border-2 border-foreground h-full">
                 <BadgeCheck className="w-8 h-8 mb-3" />
                 <h3 className="font-display font-semibold text-lg flex items-center gap-2">
                   Upgrade to Pro <span className="badge-pro px-2 py-0.5 rounded-full text-xs">PRO</span>
