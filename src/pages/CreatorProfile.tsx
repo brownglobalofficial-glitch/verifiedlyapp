@@ -138,6 +138,36 @@ const CreatorProfile = () => {
           </div>
         )}
 
+        {/* Bio Links */}
+        {bioLinks.length > 0 && (
+          <div className="space-y-3 mb-8">
+            {bioLinks.map((link, i) => (
+              <motion.a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                onClick={() => {
+                  supabase.from("link_clicks").insert({
+                    link_id: link.id,
+                    creator_id: profile.id,
+                  }).then(() => {});
+                }}
+                className="block"
+              >
+                <Card className="p-4 card-hover flex items-center gap-3 cursor-pointer">
+                  {link.icon && <span className="text-xl">{link.icon}</span>}
+                  <span className="font-semibold text-sm flex-1">{link.title}</span>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                </Card>
+              </motion.a>
+            ))}
+          </div>
+        )}
+
         {profile?.website && (
           <a href={profile.website} target="_blank" rel="noopener noreferrer" className="block mb-8">
             <Button variant="outline" className="w-full gap-2">
