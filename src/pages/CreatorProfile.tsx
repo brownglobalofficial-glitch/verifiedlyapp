@@ -62,7 +62,6 @@ const CreatorProfile = () => {
   const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [notFound, setNotFound] = useState(false);
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
   const [buyingSub, setBuyingSub] = useState<any>(null);
   const { toast } = useToast();
