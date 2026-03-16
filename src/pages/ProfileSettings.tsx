@@ -12,6 +12,23 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Plus, Trash2, GripVertical, MousePointerClick, Check } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
@@ -31,6 +48,53 @@ interface BioLink {
   sort_order: number;
   clicks: number;
 }
+
+// Sortable link item component
+const SortableLinkItem = ({
+  link,
+  onToggle,
+  onDelete,
+}: {
+  link: BioLink;
+  onToggle: (id: string, active: boolean) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    opacity: isDragging ? 0.8 : undefined,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 transition-opacity ${!link.is_active ? "opacity-50" : ""} ${isDragging ? "shadow-lg" : ""}`}
+    >
+      <div className="flex items-center gap-3">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground">
+          <GripVertical className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {link.icon && <span>{link.icon}</span>}
+            <p className="font-semibold text-sm truncate">{link.title}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MousePointerClick className="w-3 h-3" />{link.clicks}
+        </div>
+        <Switch checked={link.is_active} onCheckedChange={(c) => onToggle(link.id, c)} />
+        <Button variant="ghost" size="sm" onClick={() => onDelete(link.id)} className="text-destructive hover:text-destructive">
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
 
 const ProfileSettings = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -59,6 +123,11 @@ const ProfileSettings = () => {
   const [newUrl, setNewUrl] = useState("");
   const [newIcon, setNewIcon] = useState("");
   const [addingLink, setAddingLink] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -165,13 +234,16 @@ const ProfileSettings = () => {
     toast({ title: "Link deleted" });
   };
 
-  const handleMoveLink = async (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= links.length) return;
-    const updated = [...links];
-    [updated[index], updated[target]] = [updated[target], updated[index]];
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = links.findIndex(l => l.id === active.id);
+    const newIndex = links.findIndex(l => l.id === over.id);
+    const updated = arrayMove(links, oldIndex, newIndex);
     updated.forEach((l, i) => l.sort_order = i);
     setLinks(updated);
+
     await Promise.all(updated.map(l =>
       supabase.from("bio_links").update({ sort_order: l.sort_order }).eq("id", l.id)
     ));
@@ -200,7 +272,6 @@ const ProfileSettings = () => {
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
-            {/* Avatar */}
             <div className="flex items-center gap-4">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <Avatar className="w-20 h-20">
@@ -245,7 +316,7 @@ const ProfileSettings = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-display font-bold">Link in Bio</h2>
-                <p className="text-sm text-muted-foreground">Manage your link-in-bio cards</p>
+                <p className="text-sm text-muted-foreground">Drag to reorder your link cards</p>
               </div>
               <Card className="px-3 py-1.5 flex items-center gap-2">
                 <MousePointerClick className="w-3 h-3 text-muted-foreground" />
@@ -266,33 +337,21 @@ const ProfileSettings = () => {
               </div>
             </Card>
 
-            <div className="space-y-2">
-              {links.map((link, i) => (
-                <Card key={link.id} className={`p-3 transition-opacity ${!link.is_active ? "opacity-50" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col gap-0.5">
-                      <button onClick={() => handleMoveLink(i, -1)} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
-                      <button onClick={() => handleMoveLink(i, 1)} disabled={i === links.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {link.icon && <span>{link.icon}</span>}
-                        <p className="font-semibold text-sm truncate">{link.title}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MousePointerClick className="w-3 h-3" />{link.clicks}
-                    </div>
-                    <Switch checked={link.is_active} onCheckedChange={(c) => handleToggleLink(link.id, c)} />
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteLink(link.id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-              {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. Add your first link above!</p>}
-            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={links.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {links.map(link => (
+                    <SortableLinkItem
+                      key={link.id}
+                      link={link}
+                      onToggle={handleToggleLink}
+                      onDelete={handleDeleteLink}
+                    />
+                  ))}
+                  {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. Add your first link above!</p>}
+                </div>
+              </SortableContext>
+            </DndContext>
           </TabsContent>
 
           <TabsContent value="theme" className="space-y-6">
