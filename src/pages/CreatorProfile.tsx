@@ -22,6 +22,7 @@ const CreatorProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tipAmount, setTipAmount] = useState("5");
   const [notFound, setNotFound] = useState(false);
