@@ -17,6 +17,7 @@ import Explore from "./pages/Explore";
 import CreatorProfile from "./pages/CreatorProfile";
 import Marketplace from "./pages/Marketplace";
 import Analytics from "./pages/Analytics";
+import ManageLinks from "./pages/ManageLinks";
 
 const queryClient = new QueryClient();
 
