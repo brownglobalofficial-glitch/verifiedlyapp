@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_campaigns: {
+        Row: {
+          brand_logo_url: string | null
+          brand_name: string
+          budget_max: number | null
+          budget_min: number | null
+          campaign_type: string
+          category: string | null
+          commission_rate: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          requirements: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          brand_logo_url?: string | null
+          brand_name: string
+          budget_max?: number | null
+          budget_min?: number | null
+          campaign_type?: string
+          category?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          requirements?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          brand_logo_url?: string | null
+          brand_name?: string
+          budget_max?: number | null
+          budget_min?: number | null
+          campaign_type?: string
+          category?: string | null
+          commission_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          requirements?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaign_applications: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          creator_id: string
+          id: string
+          message: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_applications_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "brand_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_applications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
