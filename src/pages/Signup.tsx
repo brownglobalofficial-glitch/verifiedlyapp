@@ -112,6 +112,11 @@ const Signup = () => {
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
               <Input id="username" value={username} onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} required className="pl-[110px]" placeholder="username" />
             </div>
+            {username.length >= 3 && (
+              <p className={`text-xs mt-1 ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-[hsl(var(--success))]" : "text-destructive"}`}>
+                {checkingUsername ? "Checking..." : usernameAvailable ? "✓ Available" : "✗ Username taken"}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
