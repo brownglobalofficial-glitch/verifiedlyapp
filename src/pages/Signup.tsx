@@ -56,6 +56,10 @@ const Signup = () => {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
       return;
     }
+    if (!agreedTerms) {
+      toast({ title: "Terms required", description: "You must agree to the Terms of Service and Privacy Policy.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
