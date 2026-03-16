@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Search, Megaphone, DollarSign, Handshake, Plus } from "lucide-react";
-import Navbar from "@/components/landing/Navbar";
+import { Search, Megaphone, DollarSign, Handshake, Plus, ArrowLeft } from "lucide-react";
+import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
 
 const Marketplace = () => {
@@ -23,6 +23,7 @@ const Marketplace = () => {
   const [applicationMessage, setApplicationMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [newCampaign, setNewCampaign] = useState({
@@ -39,13 +40,14 @@ const Marketplace = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
+      if (!session) { navigate("/login"); return; }
+      setUser(session.user);
     });
     fetchCampaigns();
-  }, []);
+  }, [navigate]);
 
   const fetchCampaigns = async () => {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("brand_campaigns")
       .select("*")
       .eq("is_active", true)
@@ -54,12 +56,9 @@ const Marketplace = () => {
   };
 
   const handleApply = async (campaignId: string) => {
-    if (!user) {
-      toast({ title: "Sign in required", description: "Please log in to apply.", variant: "destructive" });
-      return;
-    }
+    if (!user) return;
     setSubmitting(true);
-    const { error } = await (supabase as any).from("campaign_applications").insert({
+    const { error } = await supabase.from("campaign_applications").insert({
       campaign_id: campaignId,
       creator_id: user.id,
       message: applicationMessage,
@@ -81,7 +80,7 @@ const Marketplace = () => {
   const handleCreateCampaign = async () => {
     if (!user) return;
     setSubmitting(true);
-    const { error } = await (supabase as any).from("brand_campaigns").insert({
+    const { error } = await supabase.from("brand_campaigns").insert({
       ...newCampaign,
       budget_min: parseFloat(newCampaign.budget_min) || 0,
       budget_max: parseFloat(newCampaign.budget_max) || 0,
@@ -107,53 +106,58 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="container mx-auto pt-24 pb-12 px-4 max-w-5xl">
+      <nav className="border-b border-border h-16 flex items-center px-4">
+        <div className="container mx-auto flex items-center gap-4">
+          <Link to="/dashboard"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4" /></Button></Link>
+          <img src={logo} alt="Verifiedly" className="h-7" />
+          <span className="font-display font-semibold">Marketplace</span>
+        </div>
+      </nav>
+
+      <div className="container mx-auto pt-8 pb-12 px-4 max-w-5xl">
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-3xl md:text-4xl font-display font-bold">Marketplace</h1>
             <p className="text-muted-foreground mt-1">Sponsorships & affiliate opportunities for creators</p>
           </div>
-          {user && (
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="w-4 h-4" /> Post Campaign</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create Campaign</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-2">
-                  <div><Label>Brand Name</Label><Input value={newCampaign.brand_name} onChange={e => setNewCampaign({ ...newCampaign, brand_name: e.target.value })} required /></div>
-                  <div><Label>Campaign Title</Label><Input value={newCampaign.title} onChange={e => setNewCampaign({ ...newCampaign, title: e.target.value })} required /></div>
-                  <div><Label>Description</Label><Textarea value={newCampaign.description} onChange={e => setNewCampaign({ ...newCampaign, description: e.target.value })} /></div>
-                  <div>
-                    <Label>Type</Label>
-                    <div className="flex gap-2 mt-1">
-                      {(["sponsorship", "affiliate"] as const).map(t => (
-                        <button key={t} onClick={() => setNewCampaign({ ...newCampaign, campaign_type: t })} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${newCampaign.campaign_type === t ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
-                          {t === "sponsorship" ? "Sponsorship" : "Affiliate"}
-                        </button>
-                      ))}
-                    </div>
+          <Dialog open={showCreate} onOpenChange={setShowCreate}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="w-4 h-4" /> Post Campaign</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create Campaign</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-2">
+                <div><Label>Brand Name</Label><Input value={newCampaign.brand_name} onChange={e => setNewCampaign({ ...newCampaign, brand_name: e.target.value })} required /></div>
+                <div><Label>Campaign Title</Label><Input value={newCampaign.title} onChange={e => setNewCampaign({ ...newCampaign, title: e.target.value })} required /></div>
+                <div><Label>Description</Label><Textarea value={newCampaign.description} onChange={e => setNewCampaign({ ...newCampaign, description: e.target.value })} /></div>
+                <div>
+                  <Label>Type</Label>
+                  <div className="flex gap-2 mt-1">
+                    {(["sponsorship", "affiliate"] as const).map(t => (
+                      <button key={t} onClick={() => setNewCampaign({ ...newCampaign, campaign_type: t })} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${newCampaign.campaign_type === t ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
+                        {t === "sponsorship" ? "Sponsorship" : "Affiliate"}
+                      </button>
+                    ))}
                   </div>
-                  {newCampaign.campaign_type === "sponsorship" ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><Label>Budget Min ($)</Label><Input type="number" value={newCampaign.budget_min} onChange={e => setNewCampaign({ ...newCampaign, budget_min: e.target.value })} /></div>
-                      <div><Label>Budget Max ($)</Label><Input type="number" value={newCampaign.budget_max} onChange={e => setNewCampaign({ ...newCampaign, budget_max: e.target.value })} /></div>
-                    </div>
-                  ) : (
-                    <div><Label>Commission Rate (%)</Label><Input type="number" value={newCampaign.commission_rate} onChange={e => setNewCampaign({ ...newCampaign, commission_rate: e.target.value })} /></div>
-                  )}
-                  <div><Label>Category</Label><Input value={newCampaign.category} onChange={e => setNewCampaign({ ...newCampaign, category: e.target.value })} placeholder="e.g. Fashion, Tech, Fitness" /></div>
-                  <div><Label>Requirements</Label><Textarea value={newCampaign.requirements} onChange={e => setNewCampaign({ ...newCampaign, requirements: e.target.value })} placeholder="Min followers, content type, etc." /></div>
-                  <Button onClick={handleCreateCampaign} disabled={submitting || !newCampaign.brand_name || !newCampaign.title} className="w-full">
-                    {submitting ? "Creating..." : "Create Campaign"}
-                  </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          )}
+                {newCampaign.campaign_type === "sponsorship" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><Label>Budget Min ($)</Label><Input type="number" value={newCampaign.budget_min} onChange={e => setNewCampaign({ ...newCampaign, budget_min: e.target.value })} /></div>
+                    <div><Label>Budget Max ($)</Label><Input type="number" value={newCampaign.budget_max} onChange={e => setNewCampaign({ ...newCampaign, budget_max: e.target.value })} /></div>
+                  </div>
+                ) : (
+                  <div><Label>Commission Rate (%)</Label><Input type="number" value={newCampaign.commission_rate} onChange={e => setNewCampaign({ ...newCampaign, commission_rate: e.target.value })} /></div>
+                )}
+                <div><Label>Category</Label><Input value={newCampaign.category} onChange={e => setNewCampaign({ ...newCampaign, category: e.target.value })} placeholder="e.g. Fashion, Tech, Fitness" /></div>
+                <div><Label>Requirements</Label><Textarea value={newCampaign.requirements} onChange={e => setNewCampaign({ ...newCampaign, requirements: e.target.value })} placeholder="Min followers, content type, etc." /></div>
+                <Button onClick={handleCreateCampaign} disabled={submitting || !newCampaign.brand_name || !newCampaign.title} className="w-full">
+                  {submitting ? "Creating..." : "Create Campaign"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-6 mb-6">
@@ -199,31 +203,25 @@ const Marketplace = () => {
                   )}
                   {campaign.category && <Badge variant="outline" className="text-xs">{campaign.category}</Badge>}
                 </div>
-                {user ? (
-                  applyingId === campaign.id ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        placeholder="Why you're a great fit..."
-                        value={applicationMessage}
-                        onChange={e => setApplicationMessage(e.target.value)}
-                        rows={2}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleApply(campaign.id)} disabled={submitting} className="flex-1">
-                          {submitting ? "Submitting..." : "Submit"}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setApplyingId(null)}>Cancel</Button>
-                      </div>
+                {applyingId === campaign.id ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Why you're a great fit..."
+                      value={applicationMessage}
+                      onChange={e => setApplicationMessage(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleApply(campaign.id)} disabled={submitting} className="flex-1">
+                        {submitting ? "Submitting..." : "Submit"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setApplyingId(null)}>Cancel</Button>
                     </div>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => setApplyingId(campaign.id)} className="w-full gap-1">
-                      <Megaphone className="w-3 h-3" /> Apply
-                    </Button>
-                  )
+                  </div>
                 ) : (
-                  <Link to="/login">
-                    <Button size="sm" variant="outline" className="w-full">Sign in to apply</Button>
-                  </Link>
+                  <Button size="sm" variant="outline" onClick={() => setApplyingId(campaign.id)} className="w-full gap-1">
+                    <Megaphone className="w-3 h-3" /> Apply
+                  </Button>
                 )}
               </Card>
             </motion.div>
