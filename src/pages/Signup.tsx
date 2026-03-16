@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,6 +54,10 @@ const Signup = () => {
     }
     if (usernameAvailable === false) {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
+      return;
+    }
+    if (!agreedTerms) {
+      toast({ title: "Terms required", description: "You must agree to the Terms of Service and Privacy Policy.", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -131,7 +137,13 @@ const Signup = () => {
               </button>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <div className="flex items-start gap-2">
+            <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
+            <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
+              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>
+            </label>
+          </div>
+          <Button type="submit" className="w-full" disabled={loading || !agreedTerms}>
             {loading ? "Creating account..." : "Sign up"}
           </Button>
         </form>
