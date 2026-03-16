@@ -22,6 +22,7 @@ const CreatorProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tipAmount, setTipAmount] = useState("5");
   const [notFound, setNotFound] = useState(false);
@@ -46,12 +47,14 @@ const CreatorProfile = () => {
       // Track page view
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
 
-      const [{ data: prods }, { data: subs }] = await Promise.all([
+      const [{ data: prods }, { data: subs }, { data: blinks }] = await Promise.all([
         supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
         supabase.from("subscriptions").select("*").eq("creator_id", prof.id).eq("is_active", true),
+        supabase.from("bio_links").select("*").eq("creator_id", prof.id).eq("is_active", true).order("sort_order", { ascending: true }),
       ]);
       setProducts(prods || []);
       setSubscriptions(subs || []);
+      setBioLinks(blinks || []);
       setLoading(false);
     };
     fetchData();
@@ -131,6 +134,36 @@ const CreatorProfile = () => {
               >
                 {socialIcons[platform] || "🔗"} {platform}
               </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Bio Links */}
+        {bioLinks.length > 0 && (
+          <div className="space-y-3 mb-8">
+            {bioLinks.map((link, i) => (
+              <motion.a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                onClick={() => {
+                  supabase.from("link_clicks").insert({
+                    link_id: link.id,
+                    creator_id: profile.id,
+                  }).then(() => {});
+                }}
+                className="block"
+              >
+                <Card className="p-4 card-hover flex items-center gap-3 cursor-pointer">
+                  {link.icon && <span className="text-xl">{link.icon}</span>}
+                  <span className="font-semibold text-sm flex-1">{link.title}</span>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                </Card>
+              </motion.a>
             ))}
           </div>
         )}

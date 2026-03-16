@@ -17,6 +17,7 @@ import Explore from "./pages/Explore";
 import CreatorProfile from "./pages/CreatorProfile";
 import Marketplace from "./pages/Marketplace";
 import Analytics from "./pages/Analytics";
+import ManageLinks from "./pages/ManageLinks";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
           <Route path="/dashboard/analytics" element={<Analytics />} />
           <Route path="/dashboard/marketplace" element={<Marketplace />} />
+          <Route path="/dashboard/links" element={<ManageLinks />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="*" element={<NotFound />} />

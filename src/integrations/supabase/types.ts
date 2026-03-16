@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      bio_links: {
+        Row: {
+          clicks: number
+          created_at: string
+          creator_id: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          clicks?: number
+          created_at?: string
+          creator_id: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          clicks?: number
+          created_at?: string
+          creator_id?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_links_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_campaigns: {
         Row: {
           brand_logo_url: string | null
@@ -144,6 +194,45 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      link_clicks: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          link_id: string
+          referrer: string | null
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          link_id: string
+          referrer?: string | null
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          link_id?: string
+          referrer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_clicks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "link_clicks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "bio_links"
             referencedColumns: ["id"]
           },
         ]

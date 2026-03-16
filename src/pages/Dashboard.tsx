@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone } from "lucide-react";
+import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
 
@@ -144,6 +144,13 @@ const Dashboard = () => {
               <Megaphone className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Marketplace</h3>
               <p className="text-sm text-muted-foreground">Find sponsorships & affiliate deals</p>
+            </Card>
+          </Link>
+          <Link to="/dashboard/links">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <LinkIcon className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Link in Bio</h3>
+              <p className="text-sm text-muted-foreground">Manage your link-in-bio cards</p>
             </Card>
           </Link>
           <Link to="/dashboard/settings">
