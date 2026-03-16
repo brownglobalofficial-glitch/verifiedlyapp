@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, Edit2, Image, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit2, Image, ShoppingBag, Upload, FileIcon, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import logo from "@/assets/verifiedly-logo.webp";
 
@@ -35,7 +35,12 @@ const ManageProducts = () => {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -54,7 +59,52 @@ const ManageProducts = () => {
   };
 
   const resetForm = () => {
-    setName(""); setDescription(""); setPrice(""); setCategory(""); setImageUrl(""); setEditingId(null);
+    setName(""); setDescription(""); setPrice(""); setCategory(""); setImageUrl(""); setFileUrl(""); setFileName(""); setEditingId(null);
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 5MB for cover images.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${userId}/covers/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("product-files").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("product-files").getPublicUrl(path);
+    setImageUrl(publicUrl);
+    setUploading(false);
+    toast({ title: "Cover uploaded!" });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB for product files.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${userId}/files/${Date.now()}_${safeName}`;
+    const { error } = await supabase.storage.from("product-files").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("product-files").getPublicUrl(path);
+    setFileUrl(publicUrl);
+    setFileName(file.name);
+    setUploading(false);
+    toast({ title: "File uploaded!" });
   };
 
   const handleSave = async () => {
@@ -66,6 +116,7 @@ const ManageProducts = () => {
       price: parseFloat(price),
       category: category || null,
       image_url: imageUrl || null,
+      file_url: fileUrl || null,
       is_published: true,
     };
 
@@ -93,6 +144,8 @@ const ManageProducts = () => {
     setPrice(String(product.price));
     setCategory(product.category || "");
     setImageUrl(product.image_url || "");
+    setFileUrl(product.file_url || "");
+    setFileName(product.file_url ? product.file_url.split("/").pop() || "Attached file" : "");
     setOpen(true);
   };
 
@@ -126,7 +179,7 @@ const ManageProducts = () => {
             <DialogTrigger asChild>
               <Button className="gap-2"><Plus className="w-4 h-4" /> New Product</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editingId ? "Edit Product" : "Create Product"}</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <div><Label>Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Photography Preset Pack" /></div>
@@ -144,14 +197,62 @@ const ManageProducts = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Cover Image Upload */}
                 <div>
-                  <Label>Cover Image URL</Label>
-                  <Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://..." />
-                  {imageUrl && (
-                    <img src={imageUrl} alt="Preview" className="mt-2 rounded-lg h-32 w-full object-cover border border-border" />
+                  <Label>Cover Image</Label>
+                  {imageUrl ? (
+                    <div className="relative mt-1">
+                      <img src={imageUrl} alt="Cover" className="rounded-lg h-32 w-full object-cover border border-border" />
+                      <button
+                        onClick={() => setImageUrl("")}
+                        className="absolute top-2 right-2 bg-background/80 rounded-full p-1 hover:bg-background"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => coverInputRef.current?.click()}
+                      className="mt-1 w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 hover:border-muted-foreground/50 transition-colors"
+                    >
+                      <Image className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Click to upload cover image</span>
+                      <span className="text-xs text-muted-foreground">Max 5MB</span>
+                    </button>
                   )}
+                  <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
                 </div>
-                <Button onClick={handleSave} disabled={saving || !name || !price} className="w-full">
+
+                {/* Product File Upload */}
+                <div>
+                  <Label>Product File (deliverable)</Label>
+                  {fileUrl ? (
+                    <div className="mt-1 flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/50">
+                      <FileIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm truncate flex-1">{fileName}</span>
+                      <button onClick={() => { setFileUrl(""); setFileName(""); }}>
+                        <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-1 w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 hover:border-muted-foreground/50 transition-colors"
+                    >
+                      <Upload className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Upload downloadable file</span>
+                      <span className="text-xs text-muted-foreground">PDF, ZIP, MP3, etc. — Max 20MB</span>
+                    </button>
+                  )}
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
+                </div>
+
+                {uploading && (
+                  <p className="text-sm text-muted-foreground text-center">Uploading...</p>
+                )}
+
+                <Button onClick={handleSave} disabled={saving || uploading || !name || !price} className="w-full">
                   {saving ? "Saving..." : editingId ? "Update Product" : "Create Product"}
                 </Button>
               </div>
@@ -182,6 +283,11 @@ const ManageProducts = () => {
                       ${product.price}
                       {product.category && <> · <span className="capitalize">{product.category}</span></>}
                     </p>
+                    {product.file_url && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <FileIcon className="w-3 h-3" /> File attached
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch

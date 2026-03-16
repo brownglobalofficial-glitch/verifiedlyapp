@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { BadgeCheck, ExternalLink, Heart, ShoppingBag, Image } from "lucide-react";
+import { BadgeCheck, ExternalLink, Heart, ShoppingBag, Image, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -250,15 +250,30 @@ const CreatorProfile = () => {
             {buyingProduct?.category && <p className="text-xs text-muted-foreground capitalize">Category: {buyingProduct.category}</p>}
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingProduct?.price}</span>
-              <Button
-                onClick={() => {
-                  handlePayPal(buyingProduct.price, `Purchase: ${buyingProduct.name}`);
-                  setBuyingProduct(null);
-                }}
-                className="gap-2"
-              >
-                Buy with PayPal
-              </Button>
+              <div className="flex gap-2">
+                {buyingProduct?.file_url && buyingProduct?.price === 0 && (
+                  <a href={buyingProduct.file_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="gap-2">
+                      <Download className="w-4 h-4" /> Download Free
+                    </Button>
+                  </a>
+                )}
+                <Button
+                  onClick={() => {
+                    handlePayPal(buyingProduct.price, `Purchase: ${buyingProduct.name}`);
+                    if (buyingProduct?.file_url) {
+                      // Open file download after a short delay for PayPal redirect
+                      setTimeout(() => {
+                        window.open(buyingProduct.file_url, "_blank");
+                      }, 1000);
+                    }
+                    setBuyingProduct(null);
+                  }}
+                  className="gap-2"
+                >
+                  {buyingProduct?.price === 0 ? "Get Free" : "Buy with PayPal"}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
