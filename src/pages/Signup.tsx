@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ const Signup = () => {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,25 +31,30 @@ const Signup = () => {
     }
   };
 
+  // Check username availability with debounce
+  useEffect(() => {
+    if (username.length < 3) { setUsernameAvailable(null); return; }
+    setCheckingUsername(true);
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles").select("id").eq("username", username.toLowerCase()).maybeSingle();
+      setUsernameAvailable(!data);
+      setCheckingUsername(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [username]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username.length < 3) {
       toast({ title: "Username too short", description: "Must be at least 3 characters.", variant: "destructive" });
       return;
     }
-    setLoading(true);
-
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username.toLowerCase())
-      .maybeSingle();
-
-    if (existing) {
-      setLoading(false);
+    if (usernameAvailable === false) {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
       return;
     }
+    setLoading(true);
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -105,6 +112,11 @@ const Signup = () => {
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
               <Input id="username" value={username} onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} required className="pl-[110px]" placeholder="username" />
             </div>
+            {username.length >= 3 && (
+              <p className={`text-xs mt-1 ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-[hsl(var(--success))]" : "text-destructive"}`}>
+                {checkingUsername ? "Checking..." : usernameAvailable ? "✓ Available" : "✗ Username taken"}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="email">Email</Label>

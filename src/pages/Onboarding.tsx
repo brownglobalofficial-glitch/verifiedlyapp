@@ -230,7 +230,7 @@ const Onboarding = () => {
 
                 <Card className="p-4 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div><Label>Title</Label><Input value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="My Website" /></div>
+                    <div><Label>Title</Label><Input value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="My Latest Video" /></div>
                     <div><Label>URL</Label><Input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} placeholder="https://..." /></div>
                   </div>
                   <div className="flex gap-3 items-end">
