@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ earnings: 0, views: 0, subs: 0, products: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +30,7 @@ const Dashboard = () => {
       }
       setUser(session.user);
       fetchProfile(session.user.id);
+      fetchStats(session.user.id);
     });
 
     return () => subscription.unsubscribe();
@@ -38,6 +40,21 @@ const Dashboard = () => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
     setProfile(data);
     setLoading(false);
+  };
+
+  const fetchStats = async (userId: string) => {
+    const [{ data: earnings }, { count: views }, { count: subs }, { count: products }] = await Promise.all([
+      supabase.from("earnings").select("amount").eq("creator_id", userId),
+      supabase.from("page_views").select("*", { count: "exact", head: true }).eq("creator_id", userId),
+      supabase.from("subscriber_events").select("*", { count: "exact", head: true }).eq("creator_id", userId).eq("event_type", "subscribe"),
+      supabase.from("products").select("*", { count: "exact", head: true }).eq("creator_id", userId),
+    ]);
+    setStats({
+      earnings: (earnings || []).reduce((s, e) => s + Number(e.amount), 0),
+      views: views || 0,
+      subs: subs || 0,
+      products: products || 0,
+    });
   };
 
   const handleLogout = async () => {
@@ -79,10 +96,10 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Total Earnings", value: "$0.00", icon: DollarSign },
-            { label: "Subscribers", value: "0", icon: Users },
-            { label: "Products Sold", value: "0", icon: ShoppingBag },
-            { label: "Profile Views", value: "0", icon: ExternalLink },
+            { label: "Total Earnings", value: `$${stats.earnings.toLocaleString()}`, icon: DollarSign },
+            { label: "Subscribers", value: stats.subs.toLocaleString(), icon: Users },
+            { label: "Products", value: stats.products.toLocaleString(), icon: ShoppingBag },
+            { label: "Profile Views", value: stats.views.toLocaleString(), icon: ExternalLink },
           ].map(stat => (
             <Card key={stat.label} className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">

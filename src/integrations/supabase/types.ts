@@ -113,6 +113,73 @@ export type Database = {
           },
         ]
       }
+      earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          source: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          source?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_views: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          referrer: string | null
+          viewer_ip_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          referrer?: string | null
+          viewer_ip_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          referrer?: string | null
+          viewer_ip_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
@@ -198,6 +265,86 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      social_analytics: {
+        Row: {
+          clicks: number | null
+          created_at: string
+          creator_id: string
+          followers: number | null
+          id: string
+          last_synced_at: string | null
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          clicks?: number | null
+          created_at?: string
+          creator_id: string
+          followers?: number | null
+          id?: string
+          last_synced_at?: string | null
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          clicks?: number | null
+          created_at?: string
+          creator_id?: string
+          followers?: number | null
+          id?: string
+          last_synced_at?: string | null
+          platform?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_analytics_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriber_events: {
+        Row: {
+          created_at: string
+          creator_id: string
+          event_type: string
+          id: string
+          subscriber_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          event_type?: string
+          id?: string
+          subscriber_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          event_type?: string
+          id?: string
+          subscriber_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriber_events_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriber_events_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {

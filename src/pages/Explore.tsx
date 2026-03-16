@@ -12,7 +12,7 @@ const Explore = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [creators, setCreators] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"creators" | "products">("creators");
+  const [tab, setTab] = useState<"creators" | "products">("products");
 
   useEffect(() => {
     const fetchData = async () => {
