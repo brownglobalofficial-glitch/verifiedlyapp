@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon } from "lucide-react";
+import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
 
