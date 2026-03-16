@@ -25,7 +25,6 @@ const Marketplace = () => {
   const [showCreate, setShowCreate] = useState(false);
   const { toast } = useToast();
 
-  // Create campaign state
   const [newCampaign, setNewCampaign] = useState({
     brand_name: "",
     title: "",
@@ -46,7 +45,7 @@ const Marketplace = () => {
   }, []);
 
   const fetchCampaigns = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("brand_campaigns")
       .select("*")
       .eq("is_active", true)
@@ -60,7 +59,7 @@ const Marketplace = () => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("campaign_applications").insert({
+    const { error } = await (supabase as any).from("campaign_applications").insert({
       campaign_id: campaignId,
       creator_id: user.id,
       message: applicationMessage,
@@ -82,7 +81,7 @@ const Marketplace = () => {
   const handleCreateCampaign = async () => {
     if (!user) return;
     setSubmitting(true);
-    const { error } = await supabase.from("brand_campaigns").insert({
+    const { error } = await (supabase as any).from("brand_campaigns").insert({
       ...newCampaign,
       budget_min: parseFloat(newCampaign.budget_min) || 0,
       budget_max: parseFloat(newCampaign.budget_max) || 0,
