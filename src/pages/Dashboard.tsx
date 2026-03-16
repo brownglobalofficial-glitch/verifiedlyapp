@@ -146,13 +146,6 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Find sponsorships & affiliate deals</p>
             </Card>
           </Link>
-          <Link to="/dashboard/links">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <LinkIcon className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Link in Bio</h3>
-              <p className="text-sm text-muted-foreground">Manage your link-in-bio cards</p>
-            </Card>
-          </Link>
           <Link to="/dashboard/settings">
             <Card className="p-6 card-hover cursor-pointer h-full">
               <Settings className="w-8 h-8 mb-3" />
