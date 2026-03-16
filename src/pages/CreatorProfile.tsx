@@ -2,25 +2,61 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { BadgeCheck, ExternalLink, Heart, ShoppingBag, Image, Download } from "lucide-react";
+import { BadgeCheck, ExternalLink, Heart, ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const socialIcons: Record<string, string> = {
-  instagram: "📸", twitter: "🐦", youtube: "🎬", tiktok: "🎵", facebook: "👤",
+const socialIcons: Record<string, { emoji: string; color: string }> = {
+  instagram: { emoji: "📸", color: "hover:bg-[hsl(330,60%,95%)]" },
+  twitter: { emoji: "𝕏", color: "hover:bg-[hsl(200,60%,95%)]" },
+  youtube: { emoji: "▶️", color: "hover:bg-[hsl(0,60%,95%)]" },
+  tiktok: { emoji: "🎵", color: "hover:bg-[hsl(340,60%,95%)]" },
+  facebook: { emoji: "f", color: "hover:bg-[hsl(220,60%,95%)]" },
 };
 
-const THEME_STYLES: Record<string, { bg: string; card: string; text: string; accent: string; muted: string }> = {
-  default: { bg: "bg-background", card: "bg-card border-border", text: "text-foreground", accent: "bg-primary text-primary-foreground", muted: "text-muted-foreground" },
-  midnight: { bg: "bg-[hsl(230,25%,10%)]", card: "bg-[hsl(230,25%,16%)] border-[hsl(230,20%,22%)]", text: "text-[hsl(230,20%,90%)]", accent: "bg-[hsl(230,60%,60%)] text-white", muted: "text-[hsl(230,15%,55%)]" },
-  sunset: { bg: "bg-[hsl(20,40%,97%)]", card: "bg-white border-[hsl(20,30%,88%)]", text: "text-[hsl(20,30%,15%)]", accent: "bg-[hsl(20,90%,55%)] text-white", muted: "text-[hsl(20,15%,50%)]" },
-  forest: { bg: "bg-[hsl(150,25%,96%)]", card: "bg-white border-[hsl(150,15%,85%)]", text: "text-[hsl(150,30%,15%)]", accent: "bg-[hsl(150,60%,35%)] text-white", muted: "text-[hsl(150,10%,45%)]" },
-  ocean: { bg: "bg-[hsl(200,35%,96%)]", card: "bg-white border-[hsl(200,20%,85%)]", text: "text-[hsl(200,30%,15%)]", accent: "bg-[hsl(200,80%,45%)] text-white", muted: "text-[hsl(200,15%,45%)]" },
-  lavender: { bg: "bg-[hsl(270,35%,96%)]", card: "bg-white border-[hsl(270,20%,87%)]", text: "text-[hsl(270,25%,15%)]", accent: "bg-[hsl(270,60%,55%)] text-white", muted: "text-[hsl(270,10%,48%)]" },
+const THEME_STYLES: Record<string, { 
+  bg: string; gradient: string; card: string; text: string; accent: string; 
+  accentText: string; muted: string; linkBg: string; linkHover: string;
+}> = {
+  default: { 
+    bg: "bg-[hsl(0,0%,98%)]", gradient: "from-[hsl(0,0%,95%)] to-[hsl(0,0%,98%)]",
+    card: "bg-white border-[hsl(0,0%,92%)]", text: "text-[hsl(0,0%,8%)]", 
+    accent: "bg-[hsl(0,0%,8%)]", accentText: "text-white",
+    muted: "text-[hsl(0,0%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(0,0%,96%)] hover:scale-[1.02]"
+  },
+  midnight: { 
+    bg: "bg-[hsl(230,25%,8%)]", gradient: "from-[hsl(230,40%,18%)] to-[hsl(230,25%,8%)]",
+    card: "bg-[hsl(230,25%,14%)] border-[hsl(230,20%,20%)]", text: "text-[hsl(230,20%,92%)]", 
+    accent: "bg-[hsl(230,60%,60%)]", accentText: "text-white",
+    muted: "text-[hsl(230,15%,55%)]", linkBg: "bg-[hsl(230,25%,14%)]", linkHover: "hover:bg-[hsl(230,25%,18%)] hover:scale-[1.02]"
+  },
+  sunset: { 
+    bg: "bg-[hsl(20,40%,97%)]", gradient: "from-[hsl(20,60%,85%)] to-[hsl(20,40%,97%)]",
+    card: "bg-white border-[hsl(20,30%,88%)]", text: "text-[hsl(20,30%,12%)]", 
+    accent: "bg-[hsl(20,90%,55%)]", accentText: "text-white",
+    muted: "text-[hsl(20,15%,50%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(20,30%,95%)] hover:scale-[1.02]"
+  },
+  forest: { 
+    bg: "bg-[hsl(150,25%,96%)]", gradient: "from-[hsl(150,35%,82%)] to-[hsl(150,25%,96%)]",
+    card: "bg-white border-[hsl(150,15%,85%)]", text: "text-[hsl(150,30%,12%)]", 
+    accent: "bg-[hsl(150,60%,35%)]", accentText: "text-white",
+    muted: "text-[hsl(150,10%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(150,20%,94%)] hover:scale-[1.02]"
+  },
+  ocean: { 
+    bg: "bg-[hsl(200,35%,96%)]", gradient: "from-[hsl(200,50%,82%)] to-[hsl(200,35%,96%)]",
+    card: "bg-white border-[hsl(200,20%,85%)]", text: "text-[hsl(200,30%,12%)]", 
+    accent: "bg-[hsl(200,80%,45%)]", accentText: "text-white",
+    muted: "text-[hsl(200,15%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(200,25%,94%)] hover:scale-[1.02]"
+  },
+  lavender: { 
+    bg: "bg-[hsl(270,35%,96%)]", gradient: "from-[hsl(270,40%,85%)] to-[hsl(270,35%,96%)]",
+    card: "bg-white border-[hsl(270,20%,87%)]", text: "text-[hsl(270,25%,12%)]", 
+    accent: "bg-[hsl(270,60%,55%)]", accentText: "text-white",
+    muted: "text-[hsl(270,10%,48%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(270,25%,94%)] hover:scale-[1.02]"
+  },
 };
 
 const CreatorProfile = () => {
@@ -63,13 +99,7 @@ const CreatorProfile = () => {
       return;
     }
     window.open(`https://www.paypal.com/paypalme/${profile.paypal_email}/${amount}`, "_blank");
-    // Record earning
-    supabase.from("earnings").insert({
-      creator_id: profile.id,
-      amount,
-      source: "product",
-      description,
-    }).then(() => {});
+    supabase.from("earnings").insert({ creator_id: profile.id, amount, source: "product", description }).then(() => {});
   };
 
   const handleTip = () => {
@@ -91,59 +121,92 @@ const CreatorProfile = () => {
     window.open(url, "_blank");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="w-20 h-20 rounded-full bg-muted" />
+        <div className="w-32 h-4 rounded bg-muted" />
+        <div className="w-48 h-3 rounded bg-muted" />
+      </div>
+    </div>
+  );
+
   if (notFound) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
       <h1 className="text-2xl font-display font-bold">Creator not found</h1>
+      <p className="text-muted-foreground">This profile doesn't exist yet.</p>
       <Link to="/"><Button variant="outline">Go home</Button></Link>
     </div>
   );
 
   const theme = THEME_STYLES[profile?.theme_color || "default"] || THEME_STYLES.default;
   const socialLinks = profile?.social_links || {};
+  const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
 
   return (
     <div className={`min-h-screen ${theme.bg}`}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-lg mx-auto py-12 px-4"
-      >
-        <div className="text-center mb-8">
-          <Avatar className="w-24 h-24 mx-auto mb-4 border-2 border-border">
-            {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.display_name} /> : null}
-            <AvatarFallback className="text-3xl font-display font-bold">
-              {(profile?.display_name || username)?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+      {/* Gradient header area */}
+      <div className={`bg-gradient-to-b ${theme.gradient} pt-12 pb-8`}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md mx-auto px-4 text-center"
+        >
+          {/* Avatar */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-white/80 shadow-lg">
+              {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.display_name} /> : null}
+              <AvatarFallback className="text-3xl font-display font-bold bg-muted">
+                {(profile?.display_name || username)?.[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
+
+          {/* Name & handle */}
           <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-2 ${theme.text}`}>
             {profile?.display_name || username}
             {profile?.is_pro && <BadgeCheck className="w-5 h-5 text-pro" />}
           </h1>
-          <p className={`text-sm ${theme.muted}`}>@{profile?.username}</p>
-          {profile?.bio && <p className={`mt-3 text-sm ${theme.muted} max-w-sm mx-auto`}>{profile.bio}</p>}
-        </div>
+          <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
+          {profile?.bio && (
+            <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
+          )}
 
-        {Object.entries(socialLinks).filter(([, v]) => v).length > 0 && (
-          <div className="flex justify-center gap-2 mb-8 flex-wrap">
-            {Object.entries(socialLinks).filter(([, v]) => v).map(([platform, link]) => (
-              <Button
-                key={platform}
-                variant="outline"
-                size="sm"
-                className="gap-1"
-                onClick={() => handleSocialClick(platform, String(link))}
-              >
-                {socialIcons[platform] || "🔗"} {platform}
-              </Button>
-            ))}
-          </div>
-        )}
+          {/* Social icons row */}
+          {activeSocials.length > 0 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {activeSocials.map(([platform, link]) => (
+                <button
+                  key={platform}
+                  onClick={() => handleSocialClick(platform, String(link))}
+                  className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-sm transition-all ${theme.linkBg} ${socialIcons[platform]?.color || "hover:bg-muted"}`}
+                  title={platform}
+                >
+                  {socialIcons[platform]?.emoji || "🔗"}
+                </button>
+              ))}
+              {profile?.website && (
+                <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                  <button className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted`} title="Website">
+                    <Globe className="w-4 h-4" />
+                  </button>
+                </a>
+              )}
+            </div>
+          )}
+        </motion.div>
+      </div>
 
+      {/* Content */}
+      <div className="max-w-md mx-auto px-4 pb-12 -mt-2">
         {/* Bio Links */}
         {bioLinks.length > 0 && (
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3 mb-6">
             {bioLinks.map((link, i) => (
               <motion.a
                 key={link.id}
@@ -152,109 +215,134 @@ const CreatorProfile = () => {
                 rel="noopener noreferrer"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
+                transition={{ delay: 0.15 + i * 0.05 }}
                 onClick={() => {
                   supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id }).then(() => {});
                 }}
                 className="block"
               >
-                <Card className={`p-4 card-hover flex items-center gap-3 cursor-pointer border ${theme.card}`}>
-                  {link.icon && <span className="text-xl">{link.icon}</span>}
+                <div className={`${theme.linkBg} rounded-2xl border border-border/50 p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 shadow-sm ${theme.linkHover}`}>
+                  {link.icon && <span className="text-xl w-8 text-center">{link.icon}</span>}
                   <span className={`font-semibold text-sm flex-1 ${theme.text}`}>{link.title}</span>
-                  <ExternalLink className={`w-4 h-4 ${theme.muted}`} />
-                </Card>
+                  <ChevronRight className={`w-4 h-4 ${theme.muted}`} />
+                </div>
               </motion.a>
             ))}
           </div>
         )}
 
-        {profile?.website && (
-          <a href={profile.website} target="_blank" rel="noopener noreferrer" className="block mb-8">
-            <Button variant="outline" className="w-full gap-2">
-              <ExternalLink className="w-4 h-4" /> {profile.website.replace(/^https?:\/\//, "")}
-            </Button>
-          </a>
-        )}
-
-        {/* Tip */}
-        <Card className={`p-6 mb-6 border ${theme.card}`}>
-          <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 ${theme.text}`}><Heart className="w-4 h-4" /> Send a Tip</h3>
+        {/* Tip Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={`${theme.linkBg} rounded-2xl border border-border/50 p-5 mb-6 shadow-sm`}
+        >
+          <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
+            <Heart className="w-4 h-4 text-[hsl(0,70%,55%)]" /> Send a Tip
+          </h3>
           <div className="flex gap-2">
             <div className="flex-1 relative">
-              <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme.muted}`}>$</span>
-              <Input value={tipAmount} onChange={e => setTipAmount(e.target.value)} type="number" min="1" className="pl-7" />
+              <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm ${theme.muted}`}>$</span>
+              <Input value={tipAmount} onChange={e => setTipAmount(e.target.value)} type="number" min="1" className="pl-7 rounded-xl" />
             </div>
-            <Button onClick={handleTip} className="gap-1"><Heart className="w-4 h-4" /> Tip</Button>
+            <Button onClick={handleTip} className={`gap-1 rounded-xl ${theme.accent} ${theme.accentText}`}>
+              <Heart className="w-4 h-4" /> Tip
+            </Button>
           </div>
-        </Card>
+        </motion.div>
 
         {/* Subscriptions */}
         {subscriptions.length > 0 && (
-          <div className="mb-6">
-            <h3 className={`font-display font-semibold mb-3 ${theme.text}`}>Subscriptions</h3>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-6"
+          >
+            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text}`}>Memberships</h3>
             <div className="space-y-3">
               {subscriptions.map(sub => (
-                <Card key={sub.id} className={`p-4 border ${theme.card}`}>
+                <div
+                  key={sub.id}
+                  className={`${theme.linkBg} rounded-2xl border border-border/50 p-5 shadow-sm cursor-pointer transition-all ${theme.linkHover}`}
+                  onClick={() => setBuyingSub(sub)}
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className={`font-semibold ${theme.text}`}>{sub.name}</p>
-                      <p className={`text-sm ${theme.muted}`}>{sub.description}</p>
+                      {sub.description && <p className={`text-sm mt-0.5 ${theme.muted}`}>{sub.description}</p>}
                     </div>
-                    <Button size="sm" onClick={() => setBuyingSub(sub)}>${sub.price}/mo</Button>
+                    <span className={`font-display font-bold text-lg ${theme.text}`}>${sub.price}<span className={`text-xs ${theme.muted} font-normal`}>/mo</span></span>
                   </div>
-                </Card>
+                  {sub.features && sub.features.length > 0 && (
+                    <ul className="mt-3 space-y-1">
+                      {sub.features.map((f: string, i: number) => (
+                        <li key={i} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
+                          <span className="w-1 h-1 rounded-full bg-current" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Products */}
         {products.length > 0 && (
-          <div>
-            <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 ${theme.text}`}>
-              <ShoppingBag className="w-4 h-4" /> Digital Products
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
+              <ShoppingBag className="w-4 h-4" /> Shop
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {products.map(product => (
-                <Card
+                <div
                   key={product.id}
-                  className={`card-hover cursor-pointer border overflow-hidden ${theme.card}`}
+                  className={`${theme.linkBg} rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all shadow-sm ${theme.linkHover}`}
                   onClick={() => setBuyingProduct(product)}
                 >
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-28 object-cover" />
+                    <img src={product.image_url} alt={product.name} className="w-full h-32 object-cover" />
                   ) : (
-                    <div className="w-full h-28 bg-muted flex items-center justify-center">
-                      <Image className="w-8 h-8 text-muted-foreground" />
+                    <div className="w-full h-32 bg-muted/50 flex items-center justify-center">
+                      <Image className="w-8 h-8 text-muted-foreground/40" />
                     </div>
                   )}
                   <div className="p-3">
-                    <p className={`font-semibold text-sm ${theme.text}`}>{product.name}</p>
-                    {product.category && <p className={`text-xs ${theme.muted} capitalize`}>{product.category}</p>}
-                    <p className={`font-display font-bold mt-1 ${theme.text}`}>${product.price}</p>
+                    <p className={`font-semibold text-sm leading-tight ${theme.text}`}>{product.name}</p>
+                    {product.category && <p className={`text-xs ${theme.muted} capitalize mt-0.5`}>{product.category}</p>}
+                    <p className={`font-display font-bold mt-1.5 ${theme.text}`}>
+                      {product.price === 0 ? "Free" : `$${product.price}`}
+                    </p>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Product purchase dialog */}
         <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
-          <DialogContent>
+          <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
             {buyingProduct?.image_url && (
-              <img src={buyingProduct.image_url} alt={buyingProduct.name} className="w-full h-48 object-cover rounded-lg" />
+              <img src={buyingProduct.image_url} alt={buyingProduct.name} className="w-full h-48 object-cover rounded-xl" />
             )}
             <p className="text-sm text-muted-foreground">{buyingProduct?.description || "No description"}</p>
             {buyingProduct?.category && <p className="text-xs text-muted-foreground capitalize">Category: {buyingProduct.category}</p>}
             <div className="flex items-center justify-between mt-4">
-              <span className="text-2xl font-display font-bold">${buyingProduct?.price}</span>
+              <span className="text-2xl font-display font-bold">{buyingProduct?.price === 0 ? "Free" : `$${buyingProduct?.price}`}</span>
               <div className="flex gap-2">
                 {buyingProduct?.file_url && buyingProduct?.price === 0 && (
                   <a href={buyingProduct.file_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="gap-2">
-                      <Download className="w-4 h-4" /> Download Free
+                    <Button variant="outline" className="gap-2 rounded-xl">
+                      <Download className="w-4 h-4" /> Download
                     </Button>
                   </a>
                 )}
@@ -262,14 +350,11 @@ const CreatorProfile = () => {
                   onClick={() => {
                     handlePayPal(buyingProduct.price, `Purchase: ${buyingProduct.name}`);
                     if (buyingProduct?.file_url) {
-                      // Open file download after a short delay for PayPal redirect
-                      setTimeout(() => {
-                        window.open(buyingProduct.file_url, "_blank");
-                      }, 1000);
+                      setTimeout(() => { window.open(buyingProduct.file_url, "_blank"); }, 1000);
                     }
                     setBuyingProduct(null);
                   }}
-                  className="gap-2"
+                  className="gap-2 rounded-xl"
                 >
                   {buyingProduct?.price === 0 ? "Get Free" : "Buy with PayPal"}
                 </Button>
@@ -280,17 +365,14 @@ const CreatorProfile = () => {
 
         {/* Subscription purchase dialog */}
         <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
-          <DialogContent>
+          <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>Subscribe to {buyingSub?.name}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
               <Button
-                onClick={() => {
-                  handlePayPal(buyingSub.price, `Subscription: ${buyingSub.name}`);
-                  setBuyingSub(null);
-                }}
-                className="gap-2"
+                onClick={() => { handlePayPal(buyingSub.price, `Subscription: ${buyingSub.name}`); setBuyingSub(null); }}
+                className="gap-2 rounded-xl"
               >
                 Subscribe via PayPal
               </Button>
@@ -303,7 +385,7 @@ const CreatorProfile = () => {
             Powered by Verifiedly
           </Link>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
