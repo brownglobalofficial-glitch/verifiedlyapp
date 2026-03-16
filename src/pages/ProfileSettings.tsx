@@ -40,11 +40,12 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
       setWebsite(data.website || "");
-      setInstagram(data.social_links?.instagram || "");
-      setTwitter(data.social_links?.twitter || "");
-      setYoutube(data.social_links?.youtube || "");
-      setTiktok(data.social_links?.tiktok || "");
-      setFacebook(data.social_links?.facebook || "");
+      const links = (data.social_links || {}) as Record<string, string>;
+      setInstagram(links.instagram || "");
+      setTwitter(links.twitter || "");
+      setYoutube(links.youtube || "");
+      setTiktok(links.tiktok || "");
+      setFacebook(links.facebook || "");
       setPaypalEmail(data.paypal_email || "");
     }
     setLoading(false);
