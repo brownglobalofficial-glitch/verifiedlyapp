@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2, LinkIcon } from "lucide-react";
+import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,6 +21,16 @@ const THEMES = [
   { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
 ];
 
+const CREATOR_CATEGORIES = [
+  "Player", "Musician", "Artist", "Influencer",
+  "Coach", "Trainer", "Content Creator",
+  "Podcaster", "Streamer", "Photographer",
+];
+
+const BUSINESS_CATEGORIES = [
+  "Brand", "Agency", "Team", "Organization",
+];
+
 const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [userId, setUserId] = useState("");
@@ -28,6 +38,10 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Step 0: Account type & category
+  const [accountType, setAccountType] = useState("creator");
+  const [category, setCategory] = useState("");
 
   // Step 1: Profile basics
   const [displayName, setDisplayName] = useState("");
@@ -38,7 +52,6 @@ const Onboarding = () => {
   const [twitter, setTwitter] = useState("");
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
-  const [paypalEmail, setPaypalEmail] = useState("");
 
   // Step 2: Links
   const [links, setLinks] = useState<{ title: string; url: string; icon: string }[]>([]);
@@ -49,20 +62,15 @@ const Onboarding = () => {
   // Step 3: Theme
   const [theme, setTheme] = useState("default");
 
-  // Step 4: First product (optional)
-  const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
-  const [productPrice, setProductPrice] = useState("");
-  const [productCategory, setProductCategory] = useState("");
-
-  const steps = ["Profile", "Links", "Theme", "Product"];
+  const steps = ["Type", "Profile", "Links", "Theme"];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUserId(session.user.id);
-      // Pre-fill from metadata
       setDisplayName(session.user.user_metadata?.display_name || "");
+      setAccountType(session.user.user_metadata?.account_type || "creator");
+      setCategory(session.user.user_metadata?.category || "");
     });
   }, [navigate]);
 
@@ -89,60 +97,43 @@ const Onboarding = () => {
     let url = newLinkUrl.trim();
     if (!url.startsWith("http")) url = `https://${url}`;
     setLinks([...links, { title: newLinkTitle.trim(), url, icon: newLinkIcon.trim() || "🔗" }]);
-    setNewLinkTitle("");
-    setNewLinkUrl("");
-    setNewLinkIcon("");
+    setNewLinkTitle(""); setNewLinkUrl(""); setNewLinkIcon("");
   };
 
   const removeLink = (i: number) => setLinks(links.filter((_, idx) => idx !== i));
 
   const handleFinish = async () => {
     setSaving(true);
-
-    // Save profile
     await supabase.from("profiles").update({
       display_name: displayName,
       bio,
+      account_type: accountType,
+      category: category || null,
       social_links: { instagram, twitter, youtube, tiktok },
-      paypal_email: paypalEmail,
       theme_color: theme,
       onboarding_completed: true,
     }).eq("id", userId);
 
-    // Save links
     if (links.length > 0) {
       await supabase.from("bio_links").insert(
         links.map((l, i) => ({
-          creator_id: userId,
-          title: l.title,
-          url: l.url,
-          icon: l.icon || null,
-          sort_order: i,
+          creator_id: userId, title: l.title, url: l.url,
+          icon: l.icon || null, sort_order: i,
         }))
       );
     }
 
-    // Save product if filled
-    if (productName && productPrice) {
-      await supabase.from("products").insert({
-        creator_id: userId,
-        name: productName,
-        description: productDescription,
-        price: parseFloat(productPrice) || 0,
-        category: productCategory || null,
-        is_published: true,
-      });
-    }
-
     setSaving(false);
-    toast({ title: "You're all set! 🎉", description: "Your creator profile is live." });
+    toast({ title: "You're all set! 🎉", description: "Your profile is live." });
     navigate("/dashboard");
   };
 
   const canProceed = () => {
-    if (step === 0) return displayName.trim().length > 0;
+    if (step === 1) return displayName.trim().length > 0;
     return true;
   };
+
+  const categories = accountType === "business" ? BUSINESS_CATEGORIES : CREATOR_CATEGORIES;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -152,12 +143,11 @@ const Onboarding = () => {
         </div>
       </nav>
 
-      {/* Progress bar */}
       <div className="container mx-auto max-w-2xl px-4 pt-8">
         <div className="flex items-center gap-2 mb-2">
-          {steps.map((s, i) => (
-            <div key={s} className="flex items-center gap-2 flex-1">
-              <div className={`h-2 rounded-full flex-1 transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
+          {steps.map((_, i) => (
+            <div key={i} className="flex-1">
+              <div className={`h-2 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
             </div>
           ))}
         </div>
@@ -180,6 +170,43 @@ const Onboarding = () => {
             {step === 0 && (
               <div className="space-y-6">
                 <div>
+                  <h1 className="text-2xl font-display font-bold">What type of account?</h1>
+                  <p className="text-muted-foreground mt-1">This helps us personalize your experience</p>
+                </div>
+
+                <div className="flex gap-3">
+                  {[{ value: "creator", label: "Creator", desc: "Sell products, build an audience" }, { value: "business", label: "Business", desc: "Post campaigns, find creators" }].map(t => (
+                    <button
+                      key={t.value}
+                      onClick={() => { setAccountType(t.value); setCategory(""); }}
+                      className={`flex-1 rounded-xl border-2 p-5 text-left transition-all ${accountType === t.value ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
+                    >
+                      <p className="font-display font-semibold">{t.label}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{t.desc}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <div>
+                  <Label>Category</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {categories.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setCategory(c.toLowerCase())}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${category === c.toLowerCase() ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
                   <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
                   <p className="text-muted-foreground mt-1">Tell your audience who you are</p>
                 </div>
@@ -200,18 +227,8 @@ const Onboarding = () => {
                   <p className="text-sm text-muted-foreground">{uploading ? "Uploading..." : "Upload a profile photo"}</p>
                 </div>
 
-                <div>
-                  <Label>Display Name *</Label>
-                  <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your Name" />
-                </div>
-                <div>
-                  <Label>Bio</Label>
-                  <Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell your fans about yourself..." />
-                </div>
-                <div>
-                  <Label>PayPal Email (for receiving payments)</Label>
-                  <Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" />
-                </div>
+                <div><Label>Display Name *</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your Name" /></div>
+                <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell your fans about yourself..." /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Instagram</Label><Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" /></div>
                   <div><Label>Twitter / X</Label><Input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" /></div>
@@ -221,7 +238,7 @@ const Onboarding = () => {
               </div>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-display font-bold">Add your links</h1>
@@ -234,13 +251,8 @@ const Onboarding = () => {
                     <div><Label>URL</Label><Input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} placeholder="https://..." /></div>
                   </div>
                   <div className="flex gap-3 items-end">
-                    <div>
-                      <Label>Icon (emoji)</Label>
-                      <Input value={newLinkIcon} onChange={e => setNewLinkIcon(e.target.value)} placeholder="🔗" className="w-20" />
-                    </div>
-                    <Button onClick={addLink} disabled={!newLinkTitle.trim() || !newLinkUrl.trim()} className="gap-1">
-                      <Plus className="w-4 h-4" /> Add
-                    </Button>
+                    <div><Label>Icon (emoji)</Label><Input value={newLinkIcon} onChange={e => setNewLinkIcon(e.target.value)} placeholder="🔗" className="w-20" /></div>
+                    <Button onClick={addLink} disabled={!newLinkTitle.trim() || !newLinkUrl.trim()} className="gap-1"><Plus className="w-4 h-4" /> Add</Button>
                   </div>
                 </Card>
 
@@ -252,19 +264,15 @@ const Onboarding = () => {
                         <p className="font-semibold text-sm truncate">{link.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{link.url}</p>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeLink(i)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeLink(i)}><Trash2 className="w-4 h-4" /></Button>
                     </Card>
                   ))}
-                  {links.length === 0 && (
-                    <p className="text-center text-muted-foreground py-6 text-sm">No links yet. You can always add them later.</p>
-                  )}
+                  {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. You can always add them later.</p>}
                 </div>
               </div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-display font-bold">Choose your theme</h1>
@@ -288,63 +296,17 @@ const Onboarding = () => {
                 </div>
               </div>
             )}
-
-            {step === 3 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">Create your first product</h1>
-                  <p className="text-muted-foreground mt-1">Optional — you can skip this and add products later</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div><Label>Product Name</Label><Input value={productName} onChange={e => setProductName(e.target.value)} placeholder="e.g. Photography Preset Pack" /></div>
-                  <div><Label>Description</Label><Textarea value={productDescription} onChange={e => setProductDescription(e.target.value)} placeholder="What's included..." rows={3} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Price (USD)</Label><Input type="number" value={productPrice} onChange={e => setProductPrice(e.target.value)} min="0" step="0.01" placeholder="9.99" /></div>
-                    <div>
-                      <Label>Category</Label>
-                      <select
-                        value={productCategory}
-                        onChange={e => setProductCategory(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                      >
-                        <option value="">Select...</option>
-                        <option value="presets">Presets & Filters</option>
-                        <option value="templates">Templates</option>
-                        <option value="ebooks">E-books & Guides</option>
-                        <option value="courses">Courses</option>
-                        <option value="music">Music & Audio</option>
-                        <option value="art">Art & Design</option>
-                        <option value="software">Software & Tools</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Navigation */}
       <div className="border-t border-border bg-background sticky bottom-0">
         <div className="container mx-auto max-w-2xl px-4 py-4 flex justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => setStep(step - 1)}
-            disabled={step === 0}
-            className="gap-1"
-          >
+          <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={step === 0} className="gap-1">
             <ChevronLeft className="w-4 h-4" /> Back
           </Button>
-
           {step < steps.length - 1 ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed()}
-              className="gap-1"
-            >
+            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gap-1">
               Next <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (

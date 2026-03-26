@@ -3,8 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { BadgeCheck, ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
+import { ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -109,6 +110,7 @@ const CreatorProfile = () => {
   const theme = THEME_STYLES[profile?.theme_color || "default"] || THEME_STYLES.default;
   const socialLinks = profile?.social_links || {};
   const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
+  const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
 
   return (
     <div className={`min-h-screen ${theme.bg}`}>
@@ -132,11 +134,16 @@ const CreatorProfile = () => {
             </Avatar>
           </motion.div>
 
-          <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-2 ${theme.text}`}>
+          <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-1.5 ${theme.text}`}>
             {profile?.display_name || username}
-            {profile?.is_pro && <BadgeCheck className="w-5 h-5 text-pro" />}
+            {isVerified && <VerifiedBadge className="w-5 h-5" />}
           </h1>
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
+          {profile?.category && (
+            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs capitalize ${theme.muted} border border-current/20`}>
+              {profile.category}
+            </span>
+          )}
           {profile?.bio && (
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
           )}
@@ -192,14 +199,8 @@ const CreatorProfile = () => {
           </div>
         )}
 
-        {/* Subscriptions */}
         {subscriptions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-6"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
             <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text}`}>Memberships</h3>
             <div className="space-y-3">
               {subscriptions.map(sub => (
@@ -230,13 +231,8 @@ const CreatorProfile = () => {
           </motion.div>
         )}
 
-        {/* Products */}
         {products.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
               <ShoppingBag className="w-4 h-4" /> Shop
             </h3>
@@ -267,7 +263,6 @@ const CreatorProfile = () => {
           </motion.div>
         )}
 
-        {/* Product detail dialog */}
         <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
@@ -275,39 +270,27 @@ const CreatorProfile = () => {
               <img src={buyingProduct.image_url} alt={buyingProduct.name} className="w-full h-48 object-cover rounded-xl" />
             )}
             <p className="text-sm text-muted-foreground">{buyingProduct?.description || "No description"}</p>
-            {buyingProduct?.category && <p className="text-xs text-muted-foreground capitalize">Category: {buyingProduct.category}</p>}
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">{buyingProduct?.price === 0 ? "Free" : `$${buyingProduct?.price}`}</span>
               <div className="flex gap-2">
                 {buyingProduct?.file_url && buyingProduct?.price === 0 && (
                   <a href={buyingProduct.file_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="gap-2 rounded-xl">
-                      <Download className="w-4 h-4" /> Download
-                    </Button>
+                    <Button variant="outline" className="gap-2 rounded-xl"><Download className="w-4 h-4" /> Download</Button>
                   </a>
                 )}
-                <Button
-                  disabled
-                  variant="outline"
-                  className="gap-2 rounded-xl"
-                >
-                  Payments coming soon
-                </Button>
+                <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Subscription detail dialog */}
         <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingSub?.name}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
-              <Button disabled variant="outline" className="gap-2 rounded-xl">
-                Payments coming soon
-              </Button>
+              <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
             </div>
           </DialogContent>
         </Dialog>
