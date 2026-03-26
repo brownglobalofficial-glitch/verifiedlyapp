@@ -324,14 +324,21 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string | null
           avatar_url: string | null
           bio: string | null
+          category: string | null
           created_at: string
           display_name: string | null
           id: string
+          is_elite: boolean | null
+          is_featured: boolean | null
           is_pro: boolean | null
+          is_verified: boolean | null
           onboarding_completed: boolean | null
           paypal_email: string | null
+          referral_code: string | null
+          referred_by: string | null
           social_links: Json | null
           theme_color: string | null
           updated_at: string
@@ -339,14 +346,21 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          category?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          is_elite?: boolean | null
+          is_featured?: boolean | null
           is_pro?: boolean | null
+          is_verified?: boolean | null
           onboarding_completed?: boolean | null
           paypal_email?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           social_links?: Json | null
           theme_color?: string | null
           updated_at?: string
@@ -354,14 +368,21 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          category?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          is_elite?: boolean | null
+          is_featured?: boolean | null
           is_pro?: boolean | null
+          is_verified?: boolean | null
           onboarding_completed?: boolean | null
           paypal_email?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           social_links?: Json | null
           theme_color?: string | null
           updated_at?: string
