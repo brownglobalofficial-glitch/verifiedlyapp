@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { BadgeCheck, Search, ShoppingBag, Image } from "lucide-react";
+import { Search, ShoppingBag } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import Navbar from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
 
-const CATEGORIES = [
+const PRODUCT_CATEGORIES = [
   { value: "all", label: "All" },
   { value: "presets", label: "Presets" },
   { value: "templates", label: "Templates" },
@@ -20,17 +20,34 @@ const CATEGORIES = [
   { value: "software", label: "Software" },
 ];
 
+const CREATOR_CATEGORIES = [
+  { value: "all", label: "All" },
+  { value: "player", label: "Player" },
+  { value: "musician", label: "Musician" },
+  { value: "artist", label: "Artist" },
+  { value: "influencer", label: "Influencer" },
+  { value: "coach", label: "Coach" },
+  { value: "trainer", label: "Trainer" },
+  { value: "content creator", label: "Content Creator" },
+  { value: "podcaster", label: "Podcaster" },
+  { value: "streamer", label: "Streamer" },
+  { value: "photographer", label: "Photographer" },
+  { value: "brand", label: "Brand" },
+  { value: "agency", label: "Agency" },
+];
+
 const Explore = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [creators, setCreators] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"creators" | "products">("products");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [creatorCategoryFilter, setCreatorCategoryFilter] = useState("all");
 
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: prods }, { data: profs }] = await Promise.all([
-        supabase.from("products").select("*, profiles(username, display_name, is_pro, avatar_url)").eq("is_published", true).limit(50),
+        supabase.from("products").select("*, profiles(username, display_name, is_pro, is_verified, is_elite, avatar_url)").eq("is_published", true).limit(50),
         supabase.from("profiles").select("*").limit(50),
       ]);
       setProducts(prods || []);
@@ -44,10 +61,11 @@ const Explore = () => {
     const matchesCat = categoryFilter === "all" || p.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
-  const filteredCreators = creators.filter(c =>
-    c.display_name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.username?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCreators = creators.filter(c => {
+    const matchesSearch = c.display_name?.toLowerCase().includes(search.toLowerCase()) || c.username?.toLowerCase().includes(search.toLowerCase());
+    const matchesCat = creatorCategoryFilter === "all" || c.category === creatorCategoryFilter;
+    return matchesSearch && matchesCat;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,11 +90,25 @@ const Explore = () => {
 
         {tab === "products" && (
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-            {CATEGORIES.map(c => (
+            {PRODUCT_CATEGORIES.map(c => (
               <button
                 key={c.value}
                 onClick={() => setCategoryFilter(c.value)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${categoryFilter === c.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {tab === "creators" && (
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+            {CREATOR_CATEGORIES.map(c => (
+              <button
+                key={c.value}
+                onClick={() => setCreatorCategoryFilter(c.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${creatorCategoryFilter === c.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
               >
                 {c.label}
               </button>
@@ -98,10 +130,14 @@ const Explore = () => {
                     </Avatar>
                     <p className="font-semibold text-sm flex items-center justify-center gap-1">
                       {creator.display_name}
-                      {creator.is_pro && <BadgeCheck className="w-3 h-3 text-pro" />}
+                      {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3.5 h-3.5" />}
                     </p>
                     <p className="text-xs text-muted-foreground">@{creator.username}</p>
-                    {creator.bio && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{creator.bio}</p>}
+                    {creator.category && (
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground capitalize">
+                        {creator.category}
+                      </span>
+                    )}
                   </Card>
                 </Link>
               </motion.div>
@@ -129,7 +165,7 @@ const Explore = () => {
                         {product.profiles && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             {product.profiles.display_name}
-                            {product.profiles.is_pro && <BadgeCheck className="w-3 h-3 text-pro" />}
+                            {(product.profiles.is_verified || product.profiles.is_pro || product.profiles.is_elite) && <VerifiedBadge className="w-3 h-3" />}
                           </span>
                         )}
                       </div>

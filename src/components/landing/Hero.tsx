@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BadgeCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const Hero = () => {
   return (
@@ -18,7 +19,7 @@ const Hero = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary mb-8"
           >
-            <BadgeCheck className="w-4 h-4 text-pro" />
+            <VerifiedBadge className="w-4 h-4" />
             <span className="text-sm font-medium text-muted-foreground">The creator monetization platform</span>
           </motion.div>
           <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.1] mb-6">
@@ -30,7 +31,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              creativity.
+              content.
             </motion.span>
           </h1>
           <motion.p
@@ -39,7 +40,7 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            One link. All your content. Tips, subscriptions, digital products, 
+            One link. All your content. Subscriptions, digital products, 
             affiliates & sponsorships — all in one beautiful profile.
           </motion.p>
           <motion.div
@@ -79,9 +80,9 @@ const Hero = () => {
           <div className="bg-secondary rounded-2xl border border-border p-8 md:p-12">
             <div className="grid grid-cols-3 gap-8 text-center">
               {[
-                { value: "10%", label: "Platform fee" },
+                { value: "10%", label: "Platform fee (Free tier)" },
                 { value: "$0", label: "Monthly cost to start" },
-                { value: "∞", label: "Earning potential" },
+                { value: "0%", label: "Fees on Elite" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}

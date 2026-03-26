@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
+import FeaturedCreators from "@/components/landing/FeaturedCreators";
 import Pricing from "@/components/landing/Pricing";
 import Footer from "@/components/landing/Footer";
 
@@ -28,6 +29,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <Features />
+      <FeaturedCreators />
       <Pricing />
       <Footer />
     </div>

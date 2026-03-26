@@ -3,8 +3,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BadgeCheck, DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, Crown } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
+import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 
 const Dashboard = () => {
@@ -13,21 +15,16 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ earnings: 0, views: 0, subs: 0, products: 0 });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        navigate("/login");
-        return;
-      }
+      if (!session) { navigate("/login"); return; }
       setUser(session.user);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/login");
-        return;
-      }
+      if (!session) { navigate("/login"); return; }
       setUser(session.user);
       fetchProfile(session.user.id);
       fetchStats(session.user.id);
@@ -62,9 +59,18 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const copyReferralLink = () => {
+    if (profile?.referral_code) {
+      navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${profile.referral_code}`);
+      toast({ title: "Copied!", description: "Referral link copied to clipboard." });
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
 
   const username = profile?.username || user?.user_metadata?.username || "creator";
+  const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
+  const tierLabel = profile?.is_elite ? "Elite" : profile?.is_pro ? "Pro" : "Free";
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,13 +98,47 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold flex items-center gap-2">
-            Welcome, {profile?.display_name || "Creator"}
-            {profile?.is_pro && <BadgeCheck className="w-6 h-6 text-pro" />}
-          </h1>
-          <p className="text-muted-foreground mt-1">verifiedly.app/{username}</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold flex items-center gap-2">
+              Welcome, {profile?.display_name || "Creator"}
+              {isVerified && <VerifiedBadge className="w-6 h-6" />}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              verifiedly.app/{username}
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                {tierLabel}
+              </span>
+            </p>
+          </div>
+          {profile?.referral_code && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={copyReferralLink}>
+              <Share2 className="w-3 h-3" /> Share Referral
+            </Button>
+          )}
         </div>
+
+        {/* Referral Banner */}
+        {profile?.referral_code && (
+          <Card className="p-4 mb-6 bg-secondary">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold">Your Referral Link</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Earn 10% when someone you refer subscribes to Pro or Elite
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="text-xs bg-background px-2 py-1 rounded border border-border font-mono">
+                  {window.location.origin}/signup?ref={profile.referral_code}
+                </code>
+                <Button variant="ghost" size="sm" onClick={copyReferralLink}>
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
@@ -129,7 +169,11 @@ const Dashboard = () => {
             <Card className="p-6 card-hover cursor-pointer h-full">
               <Users className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Subscriptions</h3>
-              <p className="text-sm text-muted-foreground">Manage your subscription tiers</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.is_pro || profile?.is_elite ? "Manage your subscription tiers" : (
+                  <span>Pro/Elite feature — <span className="text-foreground underline">Upgrade</span></span>
+                )}
+              </p>
             </Card>
           </Link>
           <Link to="/dashboard/analytics">
@@ -143,7 +187,18 @@ const Dashboard = () => {
             <Card className="p-6 card-hover cursor-pointer h-full">
               <Megaphone className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Marketplace</h3>
-              <p className="text-sm text-muted-foreground">Find sponsorships & affiliate deals</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.account_type === "business"
+                  ? "Post sponsorships & affiliate deals"
+                  : "Find sponsorships & affiliate deals"}
+              </p>
+            </Card>
+          </Link>
+          <Link to="/dashboard/links">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <LinkIcon className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Manage Links</h3>
+              <p className="text-sm text-muted-foreground">Edit your link-in-bio cards</p>
             </Card>
           </Link>
           <Link to="/dashboard/settings">
@@ -153,16 +208,14 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Edit your bio, links, and profile</p>
             </Card>
           </Link>
-          {!profile?.is_pro && (
-            <Link to="/dashboard/pro">
-              <Card className="p-6 card-hover cursor-pointer border-2 border-foreground h-full">
-                <BadgeCheck className="w-8 h-8 mb-3" />
-                <h3 className="font-display font-semibold text-lg flex items-center gap-2">
-                  Upgrade to Pro <span className="badge-pro px-2 py-0.5 rounded-full text-xs">PRO</span>
-                </h3>
-                <p className="text-sm text-muted-foreground">Get verified, lower fees & product boosts</p>
-              </Card>
-            </Link>
+          {!profile?.is_pro && !profile?.is_elite && (
+            <Card className="p-6 card-hover cursor-pointer border-2 border-foreground h-full">
+              <VerifiedBadge className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg flex items-center gap-2">
+                Get Verified
+              </h3>
+              <p className="text-sm text-muted-foreground">Pro from $4.99/mo · Elite from $19.99/mo</p>
+            </Card>
           )}
         </div>
       </div>

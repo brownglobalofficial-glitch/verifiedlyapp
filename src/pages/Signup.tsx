@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,18 +11,34 @@ import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Eye, EyeOff } from "lucide-react";
 
+const ACCOUNT_TYPES = [
+  { value: "creator", label: "Creator" },
+  { value: "business", label: "Business" },
+];
+
+const CATEGORIES = [
+  "Player", "Musician", "Artist", "Influencer",
+  "Coach", "Trainer", "Content Creator",
+  "Podcaster", "Streamer", "Photographer",
+  "Brand", "Agency", "Team", "Organization",
+];
+
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [accountType, setAccountType] = useState("creator");
+  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
 
   const handleOAuth = async (provider: "google" | "apple") => {
     const { error } = await lovable.auth.signInWithOAuth(provider, {
@@ -33,7 +49,6 @@ const Signup = () => {
     }
   };
 
-  // Check username availability with debounce
   useEffect(() => {
     if (username.length < 3) { setUsernameAvailable(null); return; }
     setCheckingUsername(true);
@@ -45,6 +60,10 @@ const Signup = () => {
     }, 400);
     return () => clearTimeout(timer);
   }, [username]);
+
+  const filteredCategories = accountType === "business"
+    ? ["Brand", "Agency", "Team", "Organization"]
+    : ["Player", "Musician", "Artist", "Influencer", "Coach", "Trainer", "Content Creator", "Podcaster", "Streamer", "Photographer"];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +86,13 @@ const Signup = () => {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { username: username.toLowerCase(), display_name: displayName },
+        data: {
+          username: username.toLowerCase(),
+          display_name: displayName,
+          account_type: accountType,
+          category,
+          referred_by: referralCode,
+        },
       },
     });
     setLoading(false);
@@ -87,7 +112,7 @@ const Signup = () => {
             <img src={logo} alt="Verifiedly" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Start monetizing your creativity</p>
+          <p className="text-sm text-muted-foreground mt-1">Monetize your content</p>
         </div>
 
         <div className="space-y-3">
@@ -108,6 +133,38 @@ const Signup = () => {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
+          {/* Account Type */}
+          <div>
+            <Label>Account Type</Label>
+            <div className="flex gap-2 mt-1">
+              {ACCOUNT_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => { setAccountType(t.value); setCategory(""); }}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${accountType === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <Label>Category</Label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            >
+              <option value="">Select category...</option>
+              {filteredCategories.map(c => (
+                <option key={c} value={c.toLowerCase()}>{c}</option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <Label htmlFor="displayName">Display Name</Label>
             <Input id="displayName" value={displayName} onChange={e => setDisplayName(e.target.value)} required placeholder="Your Name" />
@@ -137,6 +194,13 @@ const Signup = () => {
               </button>
             </div>
           </div>
+
+          {referralCode && (
+            <div className="bg-secondary rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Referred by code: <span className="font-mono font-medium text-foreground">{referralCode}</span></p>
+            </div>
+          )}
+
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
             <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
