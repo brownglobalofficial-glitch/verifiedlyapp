@@ -1,65 +1,90 @@
+import { Link } from "react-router-dom";
+
 const Privacy = () => (
   <div className="min-h-screen bg-background py-12 px-4">
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
+      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground"><em>Last updated: March 16, 2026</em></p>
-      <p className="text-muted-foreground text-xs border border-border rounded-lg p-3 bg-muted/30">
-        ⚠️ <strong>Disclaimer:</strong> This privacy policy is a template and has NOT been reviewed by a licensed attorney. 
-        It should be reviewed and customized by qualified legal counsel before being relied upon.
-      </p>
+      <p className="text-muted-foreground"><em>Last updated: March 27, 2026</em></p>
+
+      <p>This Privacy Policy describes how <strong>BrownGlobal Holdings LLC</strong> ("the Company," "we," "us," or "our"), operating the Verifiedly platform ("the Platform"), collects, uses, and protects your personal information.</p>
 
       <h2>1. Information We Collect</h2>
       <h3>Information You Provide</h3>
       <ul>
-        <li><strong>Account Information:</strong> Name, email, username, password</li>
-        <li><strong>Profile Information:</strong> Display name, bio, avatar, social links</li>
-        <li><strong>Content:</strong> Products, links, and other creator content you upload</li>
+        <li><strong>Account Information:</strong> Name, email address, username, password</li>
+        <li><strong>Profile Information:</strong> Display name, biography, avatar image, social media links, category</li>
+        <li><strong>Content:</strong> Digital products, bio links, subscription tiers, and other creator content</li>
+        <li><strong>Payment Information:</strong> Processed securely by our third-party payment processor (Stripe). We do not store your full payment card details.</li>
+        <li><strong>Communications:</strong> Messages sent through the Platform, support requests</li>
       </ul>
       <h3>Information Collected Automatically</h3>
       <ul>
-        <li><strong>Usage Data:</strong> Page views, link clicks, and interaction analytics</li>
-        <li><strong>Device Information:</strong> Browser type, operating system</li>
+        <li><strong>Usage Data:</strong> Page views, link clicks, interaction analytics, referral sources</li>
+        <li><strong>Device Information:</strong> Browser type, operating system, IP address (hashed for analytics)</li>
+        <li><strong>Cookies:</strong> Essential cookies for authentication and session management</li>
       </ul>
 
       <h2>2. How We Use Your Information</h2>
       <ul>
-        <li>To provide and maintain the Platform</li>
-        <li>To process transactions when payment features are enabled</li>
+        <li>To provide, maintain, and improve the Platform</li>
+        <li>To process transactions and manage subscriptions</li>
         <li>To provide analytics to creators about their audience</li>
-        <li>To communicate with you about your account</li>
-        <li>To enforce our Terms of Service</li>
+        <li>To communicate with you about your account, updates, and promotional offers</li>
+        <li>To enforce our Terms of Service and protect against fraud</li>
+        <li>To comply with legal obligations</li>
+        <li>To administer the referral program</li>
       </ul>
 
       <h2>3. Information Sharing</h2>
-      <p>We do not sell your personal information. We may share information with:</p>
+      <p>BrownGlobal Holdings LLC does not sell your personal information. We may share information with:</p>
       <ul>
-        <li><strong>Service Providers:</strong> Third-party services that help us operate the Platform (hosting, analytics)</li>
-        <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-        <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
+        <li><strong>Service Providers:</strong> Third-party services that help us operate the Platform, including hosting (Supabase), payment processing (Stripe), and analytics</li>
+        <li><strong>Legal Requirements:</strong> When required by law, subpoena, court order, or to protect our rights, property, or safety</li>
+        <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, reorganization, or sale of assets</li>
+        <li><strong>With Your Consent:</strong> When you explicitly authorize sharing</li>
       </ul>
 
       <h2>4. Data Security</h2>
-      <p>We implement reasonable security measures to protect your information. However, no method of transmission over the Internet is 100% secure.</p>
+      <p>We implement industry-standard security measures including encryption in transit (TLS/SSL), secure password hashing, and row-level security on all database tables. However, no method of electronic transmission or storage is 100% secure, and we cannot guarantee absolute security.</p>
 
-      <h2>5. Your Rights</h2>
-      <p>You have the right to:</p>
+      <h2>5. Data Retention</h2>
+      <p>We retain your personal information for as long as your account is active or as needed to provide services. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law or for legitimate business purposes (e.g., fraud prevention).</p>
+
+      <h2>6. Your Rights</h2>
+      <p>Depending on your jurisdiction, you may have the right to:</p>
       <ul>
-        <li>Access and update your personal information</li>
-        <li>Request deletion of your account and data</li>
+        <li>Access and receive a copy of your personal data</li>
+        <li>Correct inaccurate personal data</li>
+        <li>Request deletion of your account and personal data</li>
+        <li>Object to or restrict processing of your data</li>
+        <li>Data portability</li>
         <li>Opt out of marketing communications</li>
+        <li>Withdraw consent at any time</li>
       </ul>
+      <p>To exercise these rights, contact <strong>support@verifiedly.app</strong>.</p>
 
-      <h2>6. Cookies</h2>
-      <p>We use essential cookies for authentication and session management. We do not use third-party advertising cookies.</p>
+      <h2>7. Cookies</h2>
+      <p>We use essential cookies for authentication and session management. We do not use third-party advertising or tracking cookies. You can configure your browser to refuse cookies, but some Platform features may not function properly.</p>
 
-      <h2>7. Children's Privacy</h2>
-      <p>The Platform is not intended for users under 18. We do not knowingly collect information from minors.</p>
+      <h2>8. Children's Privacy</h2>
+      <p>The Platform is not intended for users under 18 years of age. We do not knowingly collect personal information from minors. If we learn that we have collected data from a minor, we will delete it promptly.</p>
 
-      <h2>8. Changes to This Policy</h2>
-      <p>We may update this Privacy Policy from time to time. We will notify you of significant changes via email or Platform notification.</p>
+      <h2>9. International Data Transfers</h2>
+      <p>Your data may be processed in countries other than your own. We ensure appropriate safeguards are in place for international transfers in compliance with applicable data protection laws.</p>
 
-      <h2>9. Contact</h2>
-      <p>For privacy-related questions, contact us at <strong>privacy@verifiedly.app</strong>.</p>
+      <h2>10. California Privacy Rights (CCPA)</h2>
+      <p>California residents have additional rights under the CCPA, including the right to know what personal information is collected, the right to delete, and the right to opt out of the sale of personal information. We do not sell personal information.</p>
+
+      <h2>11. Changes to This Policy</h2>
+      <p>BrownGlobal Holdings LLC may update this Privacy Policy from time to time. We will notify registered users of material changes via email. The "Last updated" date at the top indicates when the policy was last revised.</p>
+
+      <h2>12. Contact</h2>
+      <p>For privacy-related questions or to exercise your rights, contact us at:</p>
+      <p>
+        <strong>BrownGlobal Holdings LLC</strong><br />
+        Email: <strong>support@verifiedly.app</strong>
+      </p>
     </div>
   </div>
 );

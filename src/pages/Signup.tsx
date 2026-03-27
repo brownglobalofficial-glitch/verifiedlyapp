@@ -85,7 +85,7 @@ const Signup = () => {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/onboarding`,
         data: {
           username: username.toLowerCase(),
           display_name: displayName,
@@ -100,7 +100,7 @@ const Signup = () => {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Account created!", description: "Check your email to verify your account." });
-      navigate("/onboarding");
+      navigate("/login?confirmed=pending");
     }
   };
 

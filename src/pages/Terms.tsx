@@ -1,58 +1,87 @@
+import { Link } from "react-router-dom";
+
 const Terms = () => (
   <div className="min-h-screen bg-background py-12 px-4">
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
+      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground"><em>Last updated: March 16, 2026</em></p>
-      <p className="text-muted-foreground text-xs border border-border rounded-lg p-3 bg-muted/30">
-        ⚠️ <strong>Disclaimer:</strong> These terms are templates and have NOT been reviewed by a licensed attorney. 
-        They should be reviewed and customized by qualified legal counsel before being relied upon.
-      </p>
+      <p className="text-muted-foreground"><em>Last updated: March 27, 2026</em></p>
 
       <h2>1. Acceptance of Terms</h2>
-      <p>By accessing or using Verifiedly ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+      <p>By accessing or using Verifiedly ("the Platform"), operated by <strong>BrownGlobal Holdings LLC</strong> ("the Company," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, do not use the Platform.</p>
 
-      <h2>2. Eligibility</h2>
-      <p>You must be at least 18 years old (or the age of majority in your jurisdiction) to use the Platform. By registering, you represent that you meet this requirement.</p>
+      <h2>2. Company Information</h2>
+      <p>Verifiedly is owned and operated by BrownGlobal Holdings LLC. For questions regarding these Terms, contact us at <strong>support@verifiedly.app</strong>.</p>
 
-      <h2>3. Account Registration</h2>
-      <p>You agree to provide accurate, current, and complete information during registration and to keep your account information updated. You are responsible for safeguarding your password and for all activities under your account.</p>
+      <h2>3. Eligibility</h2>
+      <p>You must be at least 18 years old (or the age of majority in your jurisdiction) to use the Platform. By registering, you represent and warrant that you meet this requirement.</p>
 
-      <h2>4. Creator Content</h2>
-      <p>Creators retain ownership of all content they upload. By posting content, you grant Verifiedly a non-exclusive, worldwide, royalty-free license to display, distribute, and promote your content on the Platform.</p>
-      <p>You represent that you have the rights to all content you upload and that your content does not violate any laws or third-party rights.</p>
+      <h2>4. Account Registration</h2>
+      <p>You agree to provide accurate, current, and complete information during registration and to keep your account information updated. You are solely responsible for safeguarding your password and for all activities conducted under your account. You must notify us immediately of any unauthorized use.</p>
 
-      <h2>5. Prohibited Conduct</h2>
+      <h2>5. Account Types and Subscriptions</h2>
+      <p>The Platform offers the following tiers:</p>
       <ul>
-        <li>Uploading illegal, harmful, or infringing content</li>
+        <li><strong>Free:</strong> Basic access with a 10% platform fee on transactions.</li>
+        <li><strong>Verifiedly Pro ($4.99/mo):</strong> Reduced 5% platform fee, verified badge, subscription tiers, and priority support.</li>
+        <li><strong>Verifiedly Elite ($19.99/mo):</strong> 0% platform fees, verified badge, all Pro features, priority listing, and exclusive perks.</li>
+      </ul>
+      <p>Subscription fees are billed monthly and are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice.</p>
+
+      <h2>6. Creator Content</h2>
+      <p>Creators retain full ownership of all content they upload to the Platform. By posting content, you grant BrownGlobal Holdings LLC a non-exclusive, worldwide, royalty-free, sublicensable license to display, distribute, and promote your content on and in connection with the Platform.</p>
+      <p>You represent and warrant that you have all necessary rights to the content you upload and that your content does not violate any applicable laws or third-party rights, including intellectual property and privacy rights.</p>
+
+      <h2>7. Referral Program</h2>
+      <p>Users may earn referral commissions (10% of the referred user's first subscription payment) when a referred user subscribes to a paid plan. BrownGlobal Holdings LLC reserves the right to modify, suspend, or terminate the referral program at any time. Abuse of the referral system, including self-referrals or fraudulent activity, will result in forfeiture of commissions and potential account termination.</p>
+
+      <h2>8. Marketplace</h2>
+      <p>Business accounts may post sponsorship and affiliate campaigns. Creators may apply to campaigns. BrownGlobal Holdings LLC does not guarantee any outcomes from marketplace interactions and is not a party to agreements between businesses and creators.</p>
+
+      <h2>9. Prohibited Conduct</h2>
+      <ul>
+        <li>Uploading illegal, harmful, defamatory, or infringing content</li>
         <li>Impersonating another person or entity</li>
-        <li>Attempting to gain unauthorized access to the Platform</li>
-        <li>Using the Platform for money laundering or fraud</li>
+        <li>Attempting to gain unauthorized access to the Platform or its systems</li>
+        <li>Using the Platform for money laundering, fraud, or any illegal activity</li>
         <li>Harassing, threatening, or abusing other users</li>
+        <li>Manipulating the referral system or platform metrics</li>
+        <li>Scraping, data mining, or automated access to the Platform</li>
       </ul>
 
-      <h2>6. Payments & Fees</h2>
-      <p>Payments are currently not processed through the Platform. When payment processing is enabled, applicable fees (including a platform fee) will be clearly disclosed before transactions.</p>
+      <h2>10. Payments & Fees</h2>
+      <p>All payments are processed through our third-party payment processor (Stripe). Platform fees are deducted automatically from transactions based on your subscription tier. BrownGlobal Holdings LLC is not responsible for payment processor outages or delays.</p>
 
-      <h2>7. Intellectual Property</h2>
-      <p>The Verifiedly name, logo, and Platform design are the property of Verifiedly. You may not use our trademarks without prior written permission.</p>
+      <h2>11. Intellectual Property</h2>
+      <p>The Verifiedly name, logo, and Platform design are the exclusive property of BrownGlobal Holdings LLC. You may not use our trademarks, trade names, or branding without prior written permission.</p>
 
-      <h2>8. Termination</h2>
-      <p>We may suspend or terminate your account at our discretion if you violate these Terms. You may delete your account at any time by contacting support.</p>
+      <h2>12. Termination</h2>
+      <p>We may suspend or terminate your account at our sole discretion if you violate these Terms or engage in conduct that we determine is harmful to the Platform or other users. You may delete your account at any time by contacting <strong>support@verifiedly.app</strong>. Upon termination, your right to use the Platform ceases immediately.</p>
 
-      <h2>9. Disclaimer of Warranties</h2>
-      <p>THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT GUARANTEE UNINTERRUPTED OR ERROR-FREE SERVICE.</p>
+      <h2>13. Disclaimer of Warranties</h2>
+      <p>THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. BROWNGLOBAL HOLDINGS LLC DOES NOT GUARANTEE UNINTERRUPTED, SECURE, OR ERROR-FREE SERVICE.</p>
 
-      <h2>10. Limitation of Liability</h2>
-      <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, VERIFIEDLY SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE PLATFORM.</p>
+      <h2>14. Limitation of Liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, BROWNGLOBAL HOLDINGS LLC AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE PLATFORM, INCLUDING BUT NOT LIMITED TO LOSS OF REVENUE, DATA, OR GOODWILL.</p>
 
-      <h2>11. Governing Law</h2>
-      <p>These Terms shall be governed by the laws of Belize, without regard to conflict of law principles.</p>
+      <h2>15. Indemnification</h2>
+      <p>You agree to indemnify, defend, and hold harmless BrownGlobal Holdings LLC and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses arising from your use of the Platform or violation of these Terms.</p>
 
-      <h2>12. Changes to Terms</h2>
-      <p>We reserve the right to modify these Terms at any time. Continued use of the Platform after changes constitutes acceptance of the updated Terms.</p>
+      <h2>16. Governing Law & Dispute Resolution</h2>
+      <p>These Terms shall be governed by and construed in accordance with the laws of the State of Wyoming, United States, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.</p>
 
-      <h2>13. Contact</h2>
-      <p>For questions about these Terms, contact us at <strong>support@verifiedly.app</strong>.</p>
+      <h2>17. Severability</h2>
+      <p>If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force and effect.</p>
+
+      <h2>18. Changes to Terms</h2>
+      <p>BrownGlobal Holdings LLC reserves the right to modify these Terms at any time. We will notify registered users of material changes via email. Continued use of the Platform after changes constitutes acceptance of the updated Terms.</p>
+
+      <h2>19. Contact</h2>
+      <p>For questions about these Terms, contact us at:</p>
+      <p>
+        <strong>BrownGlobal Holdings LLC</strong><br />
+        Email: <strong>support@verifiedly.app</strong>
+      </p>
     </div>
   </div>
 );

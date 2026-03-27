@@ -8,11 +8,13 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
+import { Shield } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({ earnings: 0, views: 0, subs: 0, products: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -28,6 +30,9 @@ const Dashboard = () => {
       setUser(session.user);
       fetchProfile(session.user.id);
       fetchStats(session.user.id);
+      supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "admin").then(({ data }) => {
+        if (data && data.length > 0) setIsAdmin(true);
+      });
     });
 
     return () => subscription.unsubscribe();
@@ -61,7 +66,7 @@ const Dashboard = () => {
 
   const copyReferralLink = () => {
     if (profile?.referral_code) {
-      navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${profile.referral_code}`);
+      navigator.clipboard.writeText(`https://verifiedly.app/signup?ref=${profile.referral_code}`);
       toast({ title: "Copied!", description: "Referral link copied to clipboard." });
     }
   };
@@ -130,7 +135,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <code className="text-xs bg-background px-2 py-1 rounded border border-border font-mono">
-                  {window.location.origin}/signup?ref={profile.referral_code}
+                  verifiedly.app/signup?ref={profile.referral_code}
                 </code>
                 <Button variant="ghost" size="sm" onClick={copyReferralLink}>
                   <Copy className="w-3 h-3" />
@@ -216,6 +221,15 @@ const Dashboard = () => {
               </h3>
               <p className="text-sm text-muted-foreground">Pro from $4.99/mo · Elite from $19.99/mo</p>
             </Card>
+          )}
+          {isAdmin && (
+            <Link to="/dashboard/admin">
+              <Card className="p-6 card-hover cursor-pointer h-full border-2 border-primary">
+                <Shield className="w-8 h-8 mb-3" />
+                <h3 className="font-display font-semibold text-lg">Admin Panel</h3>
+                <p className="text-sm text-muted-foreground">Manage users, verification, & analytics</p>
+              </Card>
+            </Link>
           )}
         </div>
       </div>

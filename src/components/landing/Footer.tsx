@@ -13,10 +13,11 @@ const Footer = () => {
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
             <Link to="/explore" className="hover:text-foreground transition-colors">Explore</Link>
-            <Link to="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2026 Verifiedly. All rights reserved.
+            © 2026 BrownGlobal Holdings LLC. All rights reserved.
           </p>
         </div>
       </div>

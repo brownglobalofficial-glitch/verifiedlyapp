@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +17,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isPending = searchParams.get("confirmed") === "pending";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +51,16 @@ const Login = () => {
           <h1 className="text-2xl font-display font-bold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mt-1">Log in to your account</p>
         </div>
+
+        {isPending && (
+          <div className="bg-secondary rounded-lg p-4 flex items-start gap-3">
+            <Mail className="w-5 h-5 mt-0.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Check your email</p>
+              <p className="text-xs text-muted-foreground mt-0.5">We sent a confirmation link. Click it to verify your account and you'll be signed in automatically.</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3">
           <Button variant="outline" className="w-full gap-2" onClick={() => handleOAuth("google")}>
