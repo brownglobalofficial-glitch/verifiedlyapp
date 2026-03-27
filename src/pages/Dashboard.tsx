@@ -222,6 +222,15 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Pro from $4.99/mo · Elite from $19.99/mo</p>
             </Card>
           )}
+          {isAdmin && (
+            <Link to="/dashboard/admin">
+              <Card className="p-6 card-hover cursor-pointer h-full border-2 border-primary">
+                <Shield className="w-8 h-8 mb-3" />
+                <h3 className="font-display font-semibold text-lg">Admin Panel</h3>
+                <p className="text-sm text-muted-foreground">Manage users, verification, & analytics</p>
+              </Card>
+            </Link>
+          )}
         </div>
       </div>
     </div>
