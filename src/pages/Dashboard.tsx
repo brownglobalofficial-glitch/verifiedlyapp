@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({ earnings: 0, views: 0, subs: 0, products: 0 });
   const navigate = useNavigate();
   const { toast } = useToast();
