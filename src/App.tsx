@@ -21,6 +21,7 @@ import ManageLinks from "./pages/ManageLinks";
 import Onboarding from "./pages/Onboarding";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/dashboard/analytics" element={<Analytics />} />
           <Route path="/dashboard/marketplace" element={<Marketplace />} />
           <Route path="/dashboard/links" element={<ManageLinks />} />
+          <Route path="/dashboard/admin" element={<Admin />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="*" element={<NotFound />} />

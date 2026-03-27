@@ -8,6 +8,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
+import { Shield } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
