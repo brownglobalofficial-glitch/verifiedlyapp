@@ -30,6 +30,9 @@ const Dashboard = () => {
       setUser(session.user);
       fetchProfile(session.user.id);
       fetchStats(session.user.id);
+      supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "admin").then(({ data }) => {
+        if (data && data.length > 0) setIsAdmin(true);
+      });
     });
 
     return () => subscription.unsubscribe();
