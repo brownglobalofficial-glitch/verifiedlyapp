@@ -61,7 +61,6 @@ const Login = () => {
             </div>
           </div>
         )}
-        </div>
 
         <div className="space-y-3">
           <Button variant="outline" className="w-full gap-2" onClick={() => handleOAuth("google")}>
