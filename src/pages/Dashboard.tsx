@@ -61,7 +61,7 @@ const Dashboard = () => {
 
   const copyReferralLink = () => {
     if (profile?.referral_code) {
-      navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${profile.referral_code}`);
+      navigator.clipboard.writeText(`https://verifiedly.app/signup?ref=${profile.referral_code}`);
       toast({ title: "Copied!", description: "Referral link copied to clipboard." });
     }
   };
