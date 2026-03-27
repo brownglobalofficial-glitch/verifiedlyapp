@@ -130,7 +130,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <code className="text-xs bg-background px-2 py-1 rounded border border-border font-mono">
-                  {window.location.origin}/signup?ref={profile.referral_code}
+                  verifiedly.app/signup?ref={profile.referral_code}
                 </code>
                 <Button variant="ghost" size="sm" onClick={copyReferralLink}>
                   <Copy className="w-3 h-3" />
