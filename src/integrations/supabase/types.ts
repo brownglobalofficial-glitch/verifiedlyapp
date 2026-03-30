@@ -285,6 +285,27 @@ export type Database = {
         }
         Relationships: []
       }
+      followers: {
+        Row: {
+          created_at: string
+          creator_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       link_clicks: {
         Row: {
           created_at: string
@@ -415,8 +436,10 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           category: string | null
+          contact_email: string | null
           created_at: string
           display_name: string | null
+          follower_count: number | null
           id: string
           is_elite: boolean | null
           is_featured: boolean | null
@@ -437,8 +460,10 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
+          follower_count?: number | null
           id: string
           is_elite?: boolean | null
           is_featured?: boolean | null
@@ -459,8 +484,10 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          contact_email?: string | null
           created_at?: string
           display_name?: string | null
+          follower_count?: number | null
           id?: string
           is_elite?: boolean | null
           is_featured?: boolean | null
