@@ -145,6 +145,7 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
       setWebsite(data.website || "");
+      setContactEmail(data.contact_email || "");
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
       const sl = (data.social_links || {}) as Record<string, string>;
