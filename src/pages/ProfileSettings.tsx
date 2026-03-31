@@ -190,6 +190,7 @@ const ProfileSettings = () => {
       display_name: displayName,
       bio,
       website,
+      contact_email: contactEmail || null,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       paypal_email: paypalEmail,
       theme_color: themeColor,
