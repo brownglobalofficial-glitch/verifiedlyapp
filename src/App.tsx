@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -10,6 +12,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import FanDashboard from "./pages/FanDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import ManageProducts from "./pages/ManageProducts";
 import ManageSubscriptions from "./pages/ManageSubscriptions";
@@ -25,12 +28,42 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
+// Handles OAuth redirect: if user signed in via OAuth and hasn't completed onboarding, redirect to /onboarding
+const OAuthRedirectHandler = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        // Check if this is an OAuth user who needs onboarding
+        const provider = session.user.app_metadata?.provider;
+        if (provider && provider !== "email") {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed, username")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          
+          if (!profile?.onboarding_completed) {
+            navigate("/onboarding");
+          }
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <OAuthRedirectHandler />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
@@ -48,6 +81,7 @@ const App = () => (
           <Route path="/dashboard/marketplace" element={<Marketplace />} />
           <Route path="/dashboard/links" element={<ManageLinks />} />
           <Route path="/dashboard/admin" element={<Admin />} />
+          <Route path="/fan" element={<FanDashboard />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="*" element={<NotFound />} />

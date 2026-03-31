@@ -99,8 +99,7 @@ const Signup = () => {
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Account created!", description: "Check your email to verify your account." });
-      navigate("/login?confirmed=pending");
+      navigate(`/login?confirmed=pending&email=${encodeURIComponent(email)}`);
     }
   };
 

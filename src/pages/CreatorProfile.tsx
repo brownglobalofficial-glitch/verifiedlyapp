@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ShoppingBag, Image, Download, Globe, ChevronRight } from "lucide-react";
+import { ShoppingBag, Image, Download, Globe, ChevronRight, Users, Mail } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import FollowButton from "@/components/FollowButton";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -57,6 +58,7 @@ const CreatorProfile = () => {
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
   const [buyingSub, setBuyingSub] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!username) return;
@@ -87,6 +89,24 @@ const CreatorProfile = () => {
     }
     const url = String(link).startsWith("http") ? String(link) : `https://${platform}.com/${String(link).replace("@", "")}`;
     window.open(url, "_blank");
+  };
+
+  const handleTip = async () => {
+    const session = await supabase.auth.getSession();
+    if (!session.data.session) {
+      toast({ title: "Sign in required", description: "Create an account to send a tip.", variant: "destructive" });
+      navigate("/signup");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("create-tip", {
+        body: { creatorId: profile.id, amount: 500 },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start tip", variant: "destructive" });
+    }
   };
 
   if (loading) return (
@@ -139,14 +159,37 @@ const CreatorProfile = () => {
             {isVerified && <VerifiedBadge className="w-5 h-5" />}
           </h1>
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
-          {profile?.category && (
-            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs capitalize ${theme.muted} border border-current/20`}>
-              {profile.category}
+          
+          {/* Follower count & category */}
+          <div className="flex items-center justify-center gap-3 mt-1">
+            {profile?.category && (
+              <span className={`px-2 py-0.5 rounded-full text-xs capitalize ${theme.muted} border border-current/20`}>
+                {profile.category}
+              </span>
+            )}
+            <span className={`text-xs ${theme.muted} flex items-center gap-1`}>
+              <Users className="w-3 h-3" /> {profile?.follower_count || 0} followers
             </span>
-          )}
+          </div>
+
           {profile?.bio && (
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
           )}
+
+          {/* Follow + Tip + Contact */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <FollowButton creatorId={profile?.id} />
+            <Button variant="outline" size="sm" onClick={handleTip} className="gap-1.5">
+              💰 Tip
+            </Button>
+            {profile?.contact_email && (
+              <a href={`mailto:${profile.contact_email}`}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Mail className="w-3.5 h-3.5" /> Contact
+                </Button>
+              </a>
+            )}
+          </div>
 
           {(activeSocials.length > 0 || profile?.website) && (
             <div className="flex justify-center gap-2 mt-4">

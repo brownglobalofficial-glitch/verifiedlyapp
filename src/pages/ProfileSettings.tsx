@@ -108,6 +108,7 @@ const ProfileSettings = () => {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [website, setWebsite] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [instagram, setInstagram] = useState("");
   const [twitter, setTwitter] = useState("");
   const [youtube, setYoutube] = useState("");
@@ -144,6 +145,7 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
       setWebsite(data.website || "");
+      setContactEmail(data.contact_email || "");
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
       const sl = (data.social_links || {}) as Record<string, string>;
@@ -188,6 +190,7 @@ const ProfileSettings = () => {
       display_name: displayName,
       bio,
       website,
+      contact_email: contactEmail || null,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       paypal_email: paypalEmail,
       theme_color: themeColor,
@@ -294,6 +297,7 @@ const ProfileSettings = () => {
             <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
             <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Tell your fans about yourself..." /></div>
             <div><Label>Website</Label><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" /></div>
+            <div><Label>Contact Email (shown on profile)</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="contact@you.com" type="email" /></div>
             <div><Label>PayPal Email (for receiving payments)</Label><Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" /></div>
 
             <div className="border-t border-border pt-6">
