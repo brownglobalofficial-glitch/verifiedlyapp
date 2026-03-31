@@ -3,8 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, Crown } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
@@ -75,6 +76,7 @@ const Dashboard = () => {
 
   const username = profile?.username || user?.user_metadata?.username || "creator";
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
+  const currentTier = profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free";
   const tierLabel = profile?.is_elite ? "Elite" : profile?.is_pro ? "Pro" : "Free";
 
   return (
@@ -123,7 +125,6 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Referral Banner */}
         {profile?.referral_code && (
           <Card className="p-4 mb-6 bg-secondary">
             <div className="flex items-center justify-between">
@@ -213,15 +214,7 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Edit your bio, links, and profile</p>
             </Card>
           </Link>
-          {!profile?.is_pro && !profile?.is_elite && (
-            <Card className="p-6 card-hover cursor-pointer border-2 border-foreground h-full">
-              <VerifiedBadge className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg flex items-center gap-2">
-                Get Verified
-              </h3>
-              <p className="text-sm text-muted-foreground">Pro from $4.99/mo · Elite from $19.99/mo</p>
-            </Card>
-          )}
+          <UpgradePrompt currentTier={currentTier as "free" | "pro" | "elite"} />
           {isAdmin && (
             <Link to="/dashboard/admin">
               <Card className="p-6 card-hover cursor-pointer h-full border-2 border-primary">

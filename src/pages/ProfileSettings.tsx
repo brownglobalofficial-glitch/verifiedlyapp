@@ -297,6 +297,7 @@ const ProfileSettings = () => {
             <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
             <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Tell your fans about yourself..." /></div>
             <div><Label>Website</Label><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" /></div>
+            <div><Label>Contact Email (shown on profile)</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="contact@you.com" type="email" /></div>
             <div><Label>PayPal Email (for receiving payments)</Label><Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" /></div>
 
             <div className="border-t border-border pt-6">
