@@ -53,7 +53,7 @@ const FeaturedCreators = () => {
                   </Avatar>
                   <p className="font-semibold text-sm flex items-center justify-center gap-1">
                     {creator.display_name}
-                    {(creator.is_verified || creator.is_pro) && <VerifiedBadge className="w-4 h-4" />}
+                    {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-4 h-4" />}
                   </p>
                   <p className="text-xs text-muted-foreground">@{creator.username}</p>
                   {creator.category && (
