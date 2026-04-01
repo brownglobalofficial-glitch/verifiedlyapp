@@ -57,6 +57,9 @@ const CreatorProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
   const [buyingSub, setBuyingSub] = useState<any>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [tipAmount, setTipAmount] = useState(500);
+  const [showTipDialog, setShowTipDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
