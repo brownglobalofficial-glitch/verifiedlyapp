@@ -334,14 +334,13 @@ const CreatorProfile = () => {
             <p className="text-sm text-muted-foreground">{buyingProduct?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">{buyingProduct?.price === 0 ? "Free" : `$${buyingProduct?.price}`}</span>
-              <div className="flex gap-2">
-                {buyingProduct?.file_url && buyingProduct?.price === 0 && (
-                  <a href={buyingProduct.file_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="gap-2 rounded-xl"><Download className="w-4 h-4" /> Download</Button>
-                  </a>
-                )}
-                <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
-              </div>
+              <Button
+                onClick={() => handleBuyProduct(buyingProduct)}
+                disabled={checkoutLoading}
+                className="gap-2 rounded-xl"
+              >
+                {checkoutLoading ? "Loading..." : buyingProduct?.price === 0 ? "Download Free" : `Buy for $${buyingProduct?.price}`}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -352,8 +351,34 @@ const CreatorProfile = () => {
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
-              <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
+              <Button disabled variant="outline" className="gap-2 rounded-xl">Subscribe (Coming Soon)</Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Tip Dialog */}
+        <Dialog open={showTipDialog} onOpenChange={setShowTipDialog}>
+          <DialogContent className="rounded-2xl max-w-sm">
+            <DialogHeader><DialogTitle>Send a tip to {profile?.display_name}</DialogTitle></DialogHeader>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {[300, 500, 1000, 2000, 5000, 10000].map(amt => (
+                <Button
+                  key={amt}
+                  variant={tipAmount === amt ? "default" : "outline"}
+                  onClick={() => setTipAmount(amt)}
+                  className="rounded-xl"
+                >
+                  ${(amt / 100).toFixed(0)}
+                </Button>
+              ))}
+            </div>
+            <Button
+              onClick={() => handleTip(tipAmount)}
+              disabled={checkoutLoading}
+              className="w-full mt-4 rounded-xl"
+            >
+              {checkoutLoading ? "Loading..." : `Send $${(tipAmount / 100).toFixed(0)} Tip`}
+            </Button>
           </DialogContent>
         </Dialog>
 
