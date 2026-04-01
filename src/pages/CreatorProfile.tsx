@@ -198,7 +198,7 @@ const CreatorProfile = () => {
           {/* Follow + Tip + Contact */}
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            <Button variant="outline" size="sm" onClick={handleTip} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5">
               💰 Tip
             </Button>
             {profile?.contact_email && (
