@@ -94,22 +94,38 @@ const CreatorProfile = () => {
     window.open(url, "_blank");
   };
 
-  const handleTip = async () => {
-    const session = await supabase.auth.getSession();
-    if (!session.data.session) {
-      toast({ title: "Sign in required", description: "Create an account to send a tip.", variant: "destructive" });
-      navigate("/signup");
-      return;
-    }
+  const handleTip = async (amount: number) => {
+    setCheckoutLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-tip", {
-        body: { creatorId: profile.id, amount: 500 },
+        body: { creatorId: profile.id, amount },
       });
       if (error) throw error;
       if (data?.url) window.open(data.url, "_blank");
+      setShowTipDialog(false);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to start tip", variant: "destructive" });
     }
+    setCheckoutLoading(false);
+  };
+
+  const handleBuyProduct = async (product: any) => {
+    if (product.price === 0 && product.file_url) {
+      window.open(product.file_url, "_blank");
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-product-checkout", {
+        body: { productId: product.id, creatorId: profile.id },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+      setBuyingProduct(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start checkout", variant: "destructive" });
+    }
+    setCheckoutLoading(false);
   };
 
   if (loading) return (
