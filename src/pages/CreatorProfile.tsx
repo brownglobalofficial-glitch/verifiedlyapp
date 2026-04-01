@@ -57,6 +57,9 @@ const CreatorProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
   const [buyingSub, setBuyingSub] = useState<any>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [tipAmount, setTipAmount] = useState(500);
+  const [showTipDialog, setShowTipDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -91,22 +94,38 @@ const CreatorProfile = () => {
     window.open(url, "_blank");
   };
 
-  const handleTip = async () => {
-    const session = await supabase.auth.getSession();
-    if (!session.data.session) {
-      toast({ title: "Sign in required", description: "Create an account to send a tip.", variant: "destructive" });
-      navigate("/signup");
-      return;
-    }
+  const handleTip = async (amount: number) => {
+    setCheckoutLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-tip", {
-        body: { creatorId: profile.id, amount: 500 },
+        body: { creatorId: profile.id, amount },
       });
       if (error) throw error;
       if (data?.url) window.open(data.url, "_blank");
+      setShowTipDialog(false);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to start tip", variant: "destructive" });
     }
+    setCheckoutLoading(false);
+  };
+
+  const handleBuyProduct = async (product: any) => {
+    if (product.price === 0 && product.file_url) {
+      window.open(product.file_url, "_blank");
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-product-checkout", {
+        body: { productId: product.id, creatorId: profile.id },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+      setBuyingProduct(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start checkout", variant: "destructive" });
+    }
+    setCheckoutLoading(false);
   };
 
   if (loading) return (
@@ -179,7 +198,7 @@ const CreatorProfile = () => {
           {/* Follow + Tip + Contact */}
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            <Button variant="outline" size="sm" onClick={handleTip} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5">
               💰 Tip
             </Button>
             {profile?.contact_email && (
@@ -315,14 +334,13 @@ const CreatorProfile = () => {
             <p className="text-sm text-muted-foreground">{buyingProduct?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">{buyingProduct?.price === 0 ? "Free" : `$${buyingProduct?.price}`}</span>
-              <div className="flex gap-2">
-                {buyingProduct?.file_url && buyingProduct?.price === 0 && (
-                  <a href={buyingProduct.file_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="gap-2 rounded-xl"><Download className="w-4 h-4" /> Download</Button>
-                  </a>
-                )}
-                <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
-              </div>
+              <Button
+                onClick={() => handleBuyProduct(buyingProduct)}
+                disabled={checkoutLoading}
+                className="gap-2 rounded-xl"
+              >
+                {checkoutLoading ? "Loading..." : buyingProduct?.price === 0 ? "Download Free" : `Buy for $${buyingProduct?.price}`}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -333,8 +351,34 @@ const CreatorProfile = () => {
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
-              <Button disabled variant="outline" className="gap-2 rounded-xl">Payments coming soon</Button>
+              <Button disabled variant="outline" className="gap-2 rounded-xl">Subscribe (Coming Soon)</Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Tip Dialog */}
+        <Dialog open={showTipDialog} onOpenChange={setShowTipDialog}>
+          <DialogContent className="rounded-2xl max-w-sm">
+            <DialogHeader><DialogTitle>Send a tip to {profile?.display_name}</DialogTitle></DialogHeader>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {[300, 500, 1000, 2000, 5000, 10000].map(amt => (
+                <Button
+                  key={amt}
+                  variant={tipAmount === amt ? "default" : "outline"}
+                  onClick={() => setTipAmount(amt)}
+                  className="rounded-xl"
+                >
+                  ${(amt / 100).toFixed(0)}
+                </Button>
+              ))}
+            </div>
+            <Button
+              onClick={() => handleTip(tipAmount)}
+              disabled={checkoutLoading}
+              className="w-full mt-4 rounded-xl"
+            >
+              {checkoutLoading ? "Loading..." : `Send $${(tipAmount / 100).toFixed(0)} Tip`}
+            </Button>
           </DialogContent>
         </Dialog>
 
