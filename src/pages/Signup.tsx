@@ -12,15 +12,9 @@ import logo from "@/assets/verifiedly-logo.webp";
 import { Eye, EyeOff } from "lucide-react";
 
 const ACCOUNT_TYPES = [
-  { value: "creator", label: "Creator" },
-  { value: "business", label: "Business" },
-];
-
-const CATEGORIES = [
-  "Player", "Musician", "Artist", "Influencer",
-  "Coach", "Trainer", "Content Creator",
-  "Podcaster", "Streamer", "Photographer",
-  "Brand", "Agency", "Team", "Organization",
+  { value: "fan", label: "Fan", desc: "Follow creators, buy products" },
+  { value: "creator", label: "Creator / Player", desc: "Sell products, build an audience" },
+  { value: "business", label: "Business", desc: "Post campaigns, find creators" },
 ];
 
 const Signup = () => {
