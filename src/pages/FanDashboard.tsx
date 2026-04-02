@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, ShoppingBag, LogOut, Users, Download } from "lucide-react";
+import { Heart, ShoppingBag, LogOut, Users, Download, ExternalLink } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
@@ -12,6 +12,7 @@ import type { User } from "@supabase/supabase-js";
 const FanDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [following, setFollowing] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -19,24 +20,22 @@ const FanDashboard = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUser(session.user);
-      fetchFollowing(session.user.id);
+      fetchData(session.user.id);
     });
   }, [navigate]);
 
-  const fetchFollowing = async (userId: string) => {
-    const { data } = await supabase
-      .from("followers")
-      .select("creator_id, created_at")
-      .eq("follower_id", userId);
-    
-    if (data && data.length > 0) {
-      const creatorIds = data.map(f => f.creator_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", creatorIds);
+  const fetchData = async (userId: string) => {
+    const [followRes, purchaseRes] = await Promise.all([
+      supabase.from("followers").select("creator_id").eq("follower_id", userId),
+      supabase.from("purchases").select("*").eq("buyer_id", userId).order("created_at", { ascending: false }),
+    ]);
+
+    if (followRes.data && followRes.data.length > 0) {
+      const creatorIds = followRes.data.map(f => f.creator_id);
+      const { data: profiles } = await supabase.from("profiles").select("*").in("id", creatorIds);
       setFollowing(profiles || []);
     }
+    setPurchases(purchaseRes.data || []);
     setLoading(false);
   };
 
@@ -59,9 +58,7 @@ const FanDashboard = () => {
         <div className="container mx-auto flex items-center justify-between">
           <Link to="/"><img src={logo} alt="Verifiedly" className="h-7" /></Link>
           <div className="flex items-center gap-3">
-            <Link to="/explore">
-              <Button variant="ghost" size="sm">Explore</Button>
-            </Link>
+            <Link to="/explore"><Button variant="ghost" size="sm">Explore</Button></Link>
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
           </div>
         </div>
@@ -69,7 +66,7 @@ const FanDashboard = () => {
 
       <div className="container mx-auto py-8 px-4 max-w-3xl">
         <h1 className="text-3xl font-display font-bold mb-2">My Dashboard</h1>
-        <p className="text-muted-foreground mb-8">Track your purchases, subscriptions, and followed creators</p>
+        <p className="text-muted-foreground mb-8">Track your purchases, downloads, and followed creators</p>
 
         <div className="grid grid-cols-3 gap-4 mb-8">
           <Card className="p-4 text-center">
@@ -79,16 +76,52 @@ const FanDashboard = () => {
           </Card>
           <Card className="p-4 text-center">
             <ShoppingBag className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-2xl font-display font-bold">0</p>
+            <p className="text-2xl font-display font-bold">{purchases.length}</p>
             <p className="text-xs text-muted-foreground">Purchases</p>
           </Card>
           <Card className="p-4 text-center">
             <Download className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-2xl font-display font-bold">0</p>
+            <p className="text-2xl font-display font-bold">{purchases.filter(p => p.file_url).length}</p>
             <p className="text-xs text-muted-foreground">Downloads</p>
           </Card>
         </div>
 
+        {/* Purchases */}
+        {purchases.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5" /> My Purchases
+            </h2>
+            <div className="space-y-3">
+              {purchases.map(p => (
+                <Card key={p.id} className="p-4 flex items-center gap-4">
+                  {p.product_image_url ? (
+                    <img src={p.product_image_url} alt={p.product_name} className="w-14 h-14 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                      <ShoppingBag className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{p.product_name || "Product"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${p.amount} · {new Date(p.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {p.file_url && (
+                    <a href={p.file_url} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </Button>
+                    </a>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Following */}
         <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
           <Heart className="w-5 h-5" /> Following
         </h2>
