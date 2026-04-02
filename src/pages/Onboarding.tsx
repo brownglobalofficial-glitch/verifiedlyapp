@@ -25,10 +25,13 @@ const CREATOR_CATEGORIES = [
   "Player", "Musician", "Artist", "Influencer",
   "Coach", "Trainer", "Content Creator",
   "Podcaster", "Streamer", "Photographer",
+  "Entrepreneur", "Writer", "Designer", "Developer",
+  "Fitness", "Chef", "Educator",
 ];
 
 const BUSINESS_CATEGORIES = [
   "Brand", "Agency", "Team", "Organization",
+  "Startup", "Non-Profit", "E-Commerce", "Media Company",
 ];
 
 const Onboarding = () => {
@@ -181,7 +184,7 @@ const Onboarding = () => {
 
     setSaving(false);
     toast({ title: "You're all set! 🎉", description: "Your profile is live." });
-    navigate("/dashboard");
+    navigate(accountType === "fan" ? "/fan" : "/dashboard");
   };
 
   const canProceed = () => {
@@ -189,7 +192,7 @@ const Onboarding = () => {
     return true;
   };
 
-  const categories = accountType === "business" ? BUSINESS_CATEGORIES : CREATOR_CATEGORIES;
+  const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -230,12 +233,16 @@ const Onboarding = () => {
                   <p className="text-muted-foreground mt-1">This helps us personalize your experience</p>
                 </div>
 
-                <div className="flex gap-3">
-                  {[{ value: "creator", label: "Creator", desc: "Sell products, build an audience" }, { value: "business", label: "Business", desc: "Post campaigns, find creators" }].map(t => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {[
+                    { value: "fan", label: "Fan", desc: "Follow creators, buy products" },
+                    { value: "creator", label: "Creator / Player", desc: "Sell products, build an audience" },
+                    { value: "business", label: "Business", desc: "Post campaigns, find creators" },
+                  ].map(t => (
                     <button
                       key={t.value}
                       onClick={() => { setAccountType(t.value); setCategory(""); }}
-                      className={`flex-1 rounded-xl border-2 p-5 text-left transition-all ${accountType === t.value ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
+                      className={`rounded-xl border-2 p-5 text-left transition-all ${accountType === t.value ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
                     >
                       <p className="font-display font-semibold">{t.label}</p>
                       <p className="text-sm text-muted-foreground mt-1">{t.desc}</p>
