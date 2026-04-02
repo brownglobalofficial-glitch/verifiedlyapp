@@ -56,8 +56,10 @@ const Signup = () => {
   }, [username]);
 
   const filteredCategories = accountType === "business"
-    ? ["Brand", "Agency", "Team", "Organization"]
-    : ["Player", "Musician", "Artist", "Influencer", "Coach", "Trainer", "Content Creator", "Podcaster", "Streamer", "Photographer"];
+    ? ["Brand", "Agency", "Team", "Organization", "Startup", "Non-Profit", "E-Commerce", "Media Company"]
+    : accountType === "creator"
+    ? ["Player", "Musician", "Artist", "Influencer", "Coach", "Trainer", "Content Creator", "Podcaster", "Streamer", "Photographer", "Entrepreneur", "Writer", "Designer", "Developer", "Fitness", "Chef", "Educator"]
+    : [];
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
