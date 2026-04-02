@@ -192,7 +192,7 @@ const Onboarding = () => {
     return true;
   };
 
-  const categories = accountType === "business" ? BUSINESS_CATEGORIES : CREATOR_CATEGORIES;
+  const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
