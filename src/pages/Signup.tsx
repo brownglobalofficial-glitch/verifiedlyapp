@@ -131,13 +131,13 @@ const Signup = () => {
           {/* Account Type */}
           <div>
             <Label>Account Type</Label>
-            <div className="flex gap-2 mt-1">
+            <div className="grid grid-cols-3 gap-2 mt-1">
               {ACCOUNT_TYPES.map(t => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => { setAccountType(t.value); setCategory(""); }}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${accountType === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+                  className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-center ${accountType === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
                 >
                   {t.label}
                 </button>
@@ -145,20 +145,21 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Category */}
-          <div>
-            <Label>Category</Label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-            >
-              <option value="">Select category...</option>
-              {filteredCategories.map(c => (
-                <option key={c} value={c.toLowerCase()}>{c}</option>
-              ))}
-            </select>
-          </div>
+          {filteredCategories.length > 0 && (
+            <div>
+              <Label>Category</Label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              >
+                <option value="">Select category...</option>
+                {filteredCategories.map(c => (
+                  <option key={c} value={c.toLowerCase()}>{c}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="displayName">Display Name</Label>
