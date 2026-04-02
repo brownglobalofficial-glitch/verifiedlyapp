@@ -25,10 +25,13 @@ const CREATOR_CATEGORIES = [
   "Player", "Musician", "Artist", "Influencer",
   "Coach", "Trainer", "Content Creator",
   "Podcaster", "Streamer", "Photographer",
+  "Entrepreneur", "Writer", "Designer", "Developer",
+  "Fitness", "Chef", "Educator",
 ];
 
 const BUSINESS_CATEGORIES = [
   "Brand", "Agency", "Team", "Organization",
+  "Startup", "Non-Profit", "E-Commerce", "Media Company",
 ];
 
 const Onboarding = () => {
