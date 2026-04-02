@@ -184,7 +184,7 @@ const Onboarding = () => {
 
     setSaving(false);
     toast({ title: "You're all set! 🎉", description: "Your profile is live." });
-    navigate("/dashboard");
+    navigate(accountType === "fan" ? "/fan" : "/dashboard");
   };
 
   const canProceed = () => {
