@@ -505,6 +505,51 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          amount: number
+          buyer_email: string | null
+          buyer_id: string | null
+          created_at: string
+          creator_id: string
+          file_url: string | null
+          id: string
+          product_id: string | null
+          product_image_url: string | null
+          product_name: string | null
+          status: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          amount?: number
+          buyer_email?: string | null
+          buyer_id?: string | null
+          created_at?: string
+          creator_id: string
+          file_url?: string | null
+          id?: string
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_email?: string | null
+          buyer_id?: string | null
+          created_at?: string
+          creator_id?: string
+          file_url?: string | null
+          id?: string
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: []
+      }
       social_analytics: {
         Row: {
           clicks: number | null
