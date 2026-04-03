@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
@@ -141,6 +141,35 @@ const Dashboard = () => {
                 <Button variant="ghost" size="sm" onClick={copyReferralLink}>
                   <Copy className="w-3 h-3" />
                 </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Stripe Connect Status */}
+        {!profile?.stripe_connect_account_id && (
+          <Card className="p-4 mb-6 border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold">Payouts not set up</p>
+                  <p className="text-xs text-muted-foreground">Connect your Stripe account to receive payments from sales and tips</p>
+                </div>
+              </div>
+              <Link to="/dashboard/settings">
+                <Button size="sm" variant="outline">Set up payouts</Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+        {profile?.stripe_connect_account_id && (
+          <Card className="p-4 mb-6 border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Payouts enabled</p>
+                <p className="text-xs text-muted-foreground">Your Stripe account is connected — earnings are paid out automatically</p>
               </div>
             </div>
           </Card>
