@@ -114,7 +114,8 @@ const ProfileSettings = () => {
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
   const [facebook, setFacebook] = useState("");
-  const [paypalEmail, setPaypalEmail] = useState("");
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
 
@@ -136,6 +137,13 @@ const ProfileSettings = () => {
       fetchProfile(session.user.id);
       fetchLinks(session.user.id);
     });
+    // Handle Stripe Connect return
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("stripe_onboarded") === "true") {
+      toast({ title: "Stripe connected! 🎉", description: "Your payout account is now set up." });
+      setStripeConnected(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, [navigate]);
 
   const fetchProfile = async (userId: string) => {
@@ -154,7 +162,7 @@ const ProfileSettings = () => {
       setYoutube(sl.youtube || "");
       setTiktok(sl.tiktok || "");
       setFacebook(sl.facebook || "");
-      setPaypalEmail(data.paypal_email || "");
+      setStripeConnected(!!data.stripe_connect_account_id);
     }
     setLoading(false);
   };
@@ -192,7 +200,6 @@ const ProfileSettings = () => {
       website,
       contact_email: contactEmail || null,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
-      paypal_email: paypalEmail,
       theme_color: themeColor,
     }).eq("id", profile.id);
     setSaving(false);
@@ -298,7 +305,42 @@ const ProfileSettings = () => {
             <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={4} placeholder="Tell your fans about yourself..." /></div>
             <div><Label>Website</Label><Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourwebsite.com" /></div>
             <div><Label>Contact Email (shown on profile)</Label><Input value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="contact@you.com" type="email" /></div>
-            <div><Label>PayPal Email (for receiving payments)</Label><Input value={paypalEmail} onChange={e => setPaypalEmail(e.target.value)} placeholder="your@paypal.email" type="email" /></div>
+            <div className="border-t border-border pt-6">
+              <h3 className="font-display font-semibold text-lg mb-4">Payout Settings</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Connect your Stripe account to receive payouts from product sales, tips, and subscriptions.
+              </p>
+              {stripeConnected ? (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <Check className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium">Stripe account connected — payouts enabled</span>
+                </div>
+              ) : (
+                <Button
+                  onClick={async () => {
+                    setStripeLoading(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("create-connect-account");
+                      if (error) throw error;
+                      if (data.onboarded) {
+                        setStripeConnected(true);
+                        toast({ title: "Already connected!", description: "Your Stripe account is set up." });
+                      } else if (data.url) {
+                        window.open(data.url, "_blank");
+                      }
+                    } catch (err: any) {
+                      toast({ title: "Error", description: err.message, variant: "destructive" });
+                    } finally {
+                      setStripeLoading(false);
+                    }
+                  }}
+                  disabled={stripeLoading}
+                  className="w-full"
+                >
+                  {stripeLoading ? "Setting up..." : "Connect Stripe Account"}
+                </Button>
+              )}
+            </div>
 
             <div className="border-t border-border pt-6">
               <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>

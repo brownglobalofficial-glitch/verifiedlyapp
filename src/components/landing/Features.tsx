@@ -10,7 +10,7 @@ const features = [
   {
     icon: DollarSign,
     title: "Tips & Donations",
-    description: "Let fans support you directly with tips via PayPal and DigiWallet.",
+    description: "Let fans support you directly with tips via Stripe. Get paid instantly to your bank account.",
   },
   {
     icon: Users,

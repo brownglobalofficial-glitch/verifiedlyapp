@@ -37,7 +37,7 @@ serve(async (req) => {
 
     // Get creator profile for fee calculation
     const { data: creator } = await supabaseClient
-      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
 
     let feePercent = 10;
@@ -66,7 +66,7 @@ serve(async (req) => {
       if (customers.data.length > 0) customerId = customers.data[0].id;
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : customerEmail,
       line_items: [{
@@ -91,7 +91,21 @@ serve(async (req) => {
         platform_fee_percent: String(feePercent),
         buyer_email: customerEmail || "guest",
       },
-    });
+    };
+
+    // Use Stripe Connect destination charges if creator has a connected account
+    if (creator.stripe_connect_account_id && applicationFee > 0) {
+      sessionParams.payment_intent_data = {
+        application_fee_amount: applicationFee,
+        transfer_data: { destination: creator.stripe_connect_account_id },
+      };
+    } else if (creator.stripe_connect_account_id) {
+      sessionParams.payment_intent_data = {
+        transfer_data: { destination: creator.stripe_connect_account_id },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id });
 
