@@ -137,6 +137,13 @@ const ProfileSettings = () => {
       fetchProfile(session.user.id);
       fetchLinks(session.user.id);
     });
+    // Handle Stripe Connect return
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("stripe_onboarded") === "true") {
+      toast({ title: "Stripe connected! 🎉", description: "Your payout account is now set up." });
+      setStripeConnected(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, [navigate]);
 
   const fetchProfile = async (userId: string) => {
