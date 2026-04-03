@@ -44,7 +44,7 @@ serve(async (req) => {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
     // Create a simple checkout for tips (no auth required for tippers)
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       line_items: [{
         price_data: {
           currency: "usd",
@@ -64,7 +64,21 @@ serve(async (req) => {
         type: "tip",
         platform_fee_percent: String(feePercent),
       },
-    });
+    };
+
+    // Use Stripe Connect destination charges if creator has connected account
+    if (creator.stripe_connect_account_id && applicationFee > 0) {
+      sessionParams.payment_intent_data = {
+        application_fee_amount: applicationFee,
+        transfer_data: { destination: creator.stripe_connect_account_id },
+      };
+    } else if (creator.stripe_connect_account_id) {
+      sessionParams.payment_intent_data = {
+        transfer_data: { destination: creator.stripe_connect_account_id },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id });
 
