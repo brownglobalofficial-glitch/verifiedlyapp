@@ -155,7 +155,7 @@ const ProfileSettings = () => {
       setYoutube(sl.youtube || "");
       setTiktok(sl.tiktok || "");
       setFacebook(sl.facebook || "");
-      setPaypalEmail(data.paypal_email || "");
+      setStripeConnected(!!data.stripe_connect_account_id);
     }
     setLoading(false);
   };
