@@ -193,7 +193,6 @@ const ProfileSettings = () => {
       website,
       contact_email: contactEmail || null,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
-      paypal_email: paypalEmail,
       theme_color: themeColor,
     }).eq("id", profile.id);
     setSaving(false);
