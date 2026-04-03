@@ -114,7 +114,8 @@ const ProfileSettings = () => {
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
   const [facebook, setFacebook] = useState("");
-  const [paypalEmail, setPaypalEmail] = useState("");
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
 
