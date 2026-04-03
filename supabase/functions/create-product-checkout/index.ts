@@ -37,7 +37,7 @@ serve(async (req) => {
 
     // Get creator profile for fee calculation
     const { data: creator } = await supabaseClient
-      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
 
     let feePercent = 10;
