@@ -31,6 +31,7 @@ const Index = () => {
       <Hero />
       <Features />
       <FeaturedCreators />
+      <FanCTA />
       <Pricing />
       <Footer />
     </div>
