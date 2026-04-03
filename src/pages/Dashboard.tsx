@@ -146,7 +146,35 @@ const Dashboard = () => {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {/* Stripe Connect Status */}
+        {!profile?.stripe_connect_account_id && (
+          <Card className="p-4 mb-6 border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold">Payouts not set up</p>
+                  <p className="text-xs text-muted-foreground">Connect your Stripe account to receive payments from sales and tips</p>
+                </div>
+              </div>
+              <Link to="/dashboard/settings">
+                <Button size="sm" variant="outline">Set up payouts</Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+        {profile?.stripe_connect_account_id && (
+          <Card className="p-4 mb-6 border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Payouts enabled</p>
+                <p className="text-xs text-muted-foreground">Your Stripe account is connected — earnings are paid out automatically</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
           {[
             { label: "Total Earnings", value: `$${stats.earnings.toLocaleString()}`, icon: DollarSign },
             { label: "Subscribers", value: stats.subs.toLocaleString(), icon: Users },
