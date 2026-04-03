@@ -30,7 +30,7 @@ serve(async (req) => {
     logStep("Request parsed", { creatorId, amount });
 
     // Get creator profile to determine platform fee
-    const { data: creator } = await supabaseClient.from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+    const { data: creator } = await supabaseClient.from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
 
     // Calculate platform fee based on tier
