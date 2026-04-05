@@ -96,6 +96,92 @@ const SortableLinkItem = ({
   );
 };
 
+const DomainSearchSection = () => {
+  const [domainQuery, setDomainQuery] = useState("");
+  const [domainResult, setDomainResult] = useState<any>(null);
+  const [checking, setChecking] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const { toast } = useToast();
+
+  const checkDomain = async () => {
+    if (!domainQuery.trim()) return;
+    let domain = domainQuery.trim().toLowerCase();
+    if (!domain.includes(".")) domain += ".com";
+    setChecking(true);
+    setDomainResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("check-domain", {
+        body: { domain },
+      });
+      if (error) throw error;
+      setDomainResult(data);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const purchaseDomain = async () => {
+    if (!domainResult?.available) return;
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-domain", {
+        body: { domain: domainResult.domain, purchasePrice: domainResult.price },
+      });
+      if (error) throw error;
+      toast({ title: "Domain purchased! 🎉", description: `${domainResult.domain} is now yours and points to your Verifiedly profile.` });
+      setDomainResult(null);
+      setDomainQuery("");
+    } catch (err: any) {
+      toast({ title: "Purchase failed", description: err.message, variant: "destructive" });
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-border pt-6">
+      <h3 className="font-display font-semibold text-lg mb-2">Custom Domain</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Don't have a website? Get a custom domain that redirects to your Verifiedly profile.
+      </p>
+      <div className="flex gap-2">
+        <Input
+          value={domainQuery}
+          onChange={e => setDomainQuery(e.target.value)}
+          placeholder="yourname.com"
+          onKeyDown={e => e.key === "Enter" && checkDomain()}
+        />
+        <Button onClick={checkDomain} disabled={checking || !domainQuery.trim()}>
+          {checking ? "Checking..." : "Search"}
+        </Button>
+      </div>
+      {domainResult && (
+        <Card className="mt-3 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold">{domainResult.domain}</p>
+              {domainResult.available ? (
+                <p className="text-sm text-primary">
+                  ✓ Available {domainResult.price ? `— $${domainResult.price}/yr` : ""}
+                </p>
+              ) : (
+                <p className="text-sm text-destructive">✗ Not available</p>
+              )}
+            </div>
+            {domainResult.available && (
+              <Button onClick={purchaseDomain} disabled={purchasing} size="sm">
+                {purchasing ? "Purchasing..." : "Buy Domain"}
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 const ProfileSettings = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
