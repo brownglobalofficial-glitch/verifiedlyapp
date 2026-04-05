@@ -69,7 +69,12 @@ const Onboarding = () => {
   // Step 3: Theme
   const [theme, setTheme] = useState("default");
 
-  const steps = ["Type", "Profile", "Links", "Theme"];
+  // Step: Stripe Connect (for creators/businesses)
+  const [stripeConnecting, setStripeConnecting] = useState(false);
+  const [stripeConnected, setStripeConnected] = useState(false);
+
+  const needsStripe = accountType === "creator" || accountType === "business";
+  const steps = needsStripe ? ["Type", "Profile", "Links", "Payouts", "Theme"] : ["Type", "Profile", "Links", "Theme"];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
