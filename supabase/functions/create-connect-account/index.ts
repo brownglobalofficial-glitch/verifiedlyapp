@@ -74,10 +74,13 @@ serve(async (req) => {
 
     // Create onboarding link
     const origin = req.headers.get("origin") || "https://verifiedlyapp.lovable.app";
+    const { return_url } = await req.json().catch(() => ({}));
+    const returnUrl = return_url || `${origin}/settings?stripe_onboarded=true`;
+    const refreshUrl = return_url ? `${origin}/onboarding` : `${origin}/settings`;
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/settings`,
-      return_url: `${origin}/settings?stripe_onboarded=true`,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
       type: "account_onboarding",
     });
 
