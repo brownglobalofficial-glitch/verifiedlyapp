@@ -206,14 +206,18 @@ const Onboarding = () => {
   const handleStripeConnect = async () => {
     setStripeConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-connect-account");
+      const { data, error } = await supabase.functions.invoke("create-connect-account", {
+        body: {
+          return_url: `${window.location.origin}/onboarding?stripe_onboarded=true`,
+          refresh_url: `${window.location.origin}/onboarding`,
+        },
+      });
       if (error) throw error;
       if (data.onboarded) {
         setStripeConnected(true);
         toast({ title: "Stripe connected! 🎉", description: "You're ready to receive payouts." });
       } else if (data.url) {
-        // Redirect to Stripe onboarding, return to /onboarding with query param
-        window.location.href = data.url.replace(/return_url=[^&]+/, `return_url=${encodeURIComponent(window.location.origin + "/onboarding?stripe_onboarded=true")}`);
+        window.location.href = data.url;
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
