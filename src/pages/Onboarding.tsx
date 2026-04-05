@@ -384,7 +384,62 @@ const Onboarding = () => {
               </div>
             )}
 
-            {step === 3 && (
+            {needsStripe && step === 3 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-display font-bold">Connect your payout account</h1>
+                  <p className="text-muted-foreground mt-1">
+                    Set up Stripe to receive payments from product sales, tips, and subscriptions.
+                    This is required before you can start selling.
+                  </p>
+                </div>
+
+                {stripeConnected ? (
+                  <Card className="p-6 text-center space-y-3">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
+                      <Check className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="font-display font-semibold text-lg">Stripe Connected!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your payout account is set up. You'll receive payments directly to your bank account.
+                    </p>
+                  </Card>
+                ) : (
+                  <Card className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="font-display font-semibold">Why connect Stripe?</h3>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          Get paid directly to your bank account
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          Accept credit cards, Apple Pay, and more
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                          Automatic payouts — no manual withdrawals
+                        </li>
+                      </ul>
+                    </div>
+                    <Button
+                      onClick={handleStripeConnect}
+                      disabled={stripeConnecting}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {stripeConnecting ? "Setting up..." : "Connect Stripe Account"}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      You'll be redirected to Stripe to complete setup securely.
+                    </p>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {step === (needsStripe ? 4 : 3) && (
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-display font-bold">Choose your theme</h1>
