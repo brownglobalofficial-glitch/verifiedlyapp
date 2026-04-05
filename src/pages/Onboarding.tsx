@@ -198,7 +198,28 @@ const Onboarding = () => {
 
   const canProceed = () => {
     if (step === 1) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
+    // Payouts step index: 3 for creators/businesses (Type=0, Profile=1, Links=2, Payouts=3)
+    if (needsStripe && step === 3) return stripeConnected;
     return true;
+  };
+
+  const handleStripeConnect = async () => {
+    setStripeConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-connect-account");
+      if (error) throw error;
+      if (data.onboarded) {
+        setStripeConnected(true);
+        toast({ title: "Stripe connected! 🎉", description: "You're ready to receive payouts." });
+      } else if (data.url) {
+        // Redirect to Stripe onboarding, return to /onboarding with query param
+        window.location.href = data.url.replace(/return_url=[^&]+/, `return_url=${encodeURIComponent(window.location.origin + "/onboarding?stripe_onboarded=true")}`);
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setStripeConnecting(false);
+    }
   };
 
   const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
