@@ -19,6 +19,10 @@ serve(async (req) => {
   );
 
   try {
+    // Parse body first (may contain return_url)
+    let body: Record<string, any> = {};
+    try { body = await req.json(); } catch { /* no body is fine */ }
+
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
@@ -37,7 +41,6 @@ serve(async (req) => {
     let accountId = profile?.stripe_connect_account_id;
 
     if (!accountId) {
-      // Create a new Express connected account
       const account = await stripe.accounts.create({
         type: "express",
         email: user.email,
@@ -52,7 +55,6 @@ serve(async (req) => {
       });
       accountId = account.id;
 
-      // Save to profile
       await supabase
         .from("profiles")
         .update({ stripe_connect_account_id: accountId })
@@ -74,10 +76,12 @@ serve(async (req) => {
 
     // Create onboarding link
     const origin = req.headers.get("origin") || "https://verifiedlyapp.lovable.app";
+    const returnUrl = body.return_url || `${origin}/settings?stripe_onboarded=true`;
+    const refreshUrl = body.refresh_url || `${origin}/settings`;
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/settings`,
-      return_url: `${origin}/settings?stripe_onboarded=true`,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
       type: "account_onboarding",
     });
 
