@@ -236,6 +236,13 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Edit your link-in-bio cards</p>
             </Card>
           </Link>
+          <Link to="/dashboard/content">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <Video className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Content</h3>
+              <p className="text-sm text-muted-foreground">Upload videos, go live & manage subscriber content</p>
+            </Card>
+          </Link>
           <Link to="/dashboard/settings">
             <Card className="p-6 card-hover cursor-pointer h-full">
               <Settings className="w-8 h-8 mb-3" />
