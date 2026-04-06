@@ -7,19 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gift } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const ManageSubscriptions = () => {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [perks, setPerks] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
   const [open, setOpen] = useState(false);
+  const [perkOpen, setPerkOpen] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [features, setFeatures] = useState("");
   const [saving, setSaving] = useState(false);
+  const [perkName, setPerkName] = useState("");
+  const [perkDesc, setPerkDesc] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -34,17 +39,33 @@ const ManageSubscriptions = () => {
   const fetchSubs = async (uid: string) => {
     const { data } = await supabase.from("subscriptions").select("*").eq("creator_id", uid).order("created_at", { ascending: false });
     setSubscriptions(data || []);
+    // Fetch perks for all subscriptions
+    if (data && data.length > 0) {
+      const { data: allPerks } = await supabase
+        .from("subscription_perks")
+        .select("*")
+        .in("subscription_id", data.map(s => s.id))
+        .order("sort_order", { ascending: true });
+      const grouped: Record<string, any[]> = {};
+      (allPerks || []).forEach(p => {
+        if (!grouped[p.subscription_id]) grouped[p.subscription_id] = [];
+        grouped[p.subscription_id].push(p);
+      });
+      setPerks(grouped);
+    }
     setLoading(false);
   };
 
   const handleCreate = async () => {
     if (!name || !price) return;
     setSaving(true);
+    const featuresArr = features.split("\n").map(f => f.trim()).filter(Boolean);
     const { error } = await supabase.from("subscriptions").insert({
       creator_id: userId,
       name,
       description,
       price: parseFloat(price),
+      features: featuresArr.length > 0 ? featuresArr : null,
       is_active: true,
     });
     setSaving(false);
@@ -52,7 +73,7 @@ const ManageSubscriptions = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Subscription tier created!" });
-      setName(""); setDescription(""); setPrice(""); setOpen(false);
+      setName(""); setDescription(""); setPrice(""); setFeatures(""); setOpen(false);
       fetchSubs(userId);
     }
   };
@@ -61,6 +82,28 @@ const ManageSubscriptions = () => {
     await supabase.from("subscriptions").delete().eq("id", id);
     fetchSubs(userId);
     toast({ title: "Subscription deleted" });
+  };
+
+  const handleAddPerk = async (subId: string) => {
+    if (!perkName) return;
+    const { error } = await supabase.from("subscription_perks").insert({
+      subscription_id: subId,
+      creator_id: userId,
+      perk_name: perkName,
+      perk_description: perkDesc || null,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Perk added!" });
+      setPerkName(""); setPerkDesc(""); setPerkOpen(null);
+      fetchSubs(userId);
+    }
+  };
+
+  const handleDeletePerk = async (perkId: string) => {
+    await supabase.from("subscription_perks").delete().eq("id", perkId);
+    fetchSubs(userId);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -88,6 +131,15 @@ const ManageSubscriptions = () => {
                 <div><Label>Name</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Gold Tier" /></div>
                 <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What subscribers get..." /></div>
                 <div><Label>Monthly Price (USD)</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} min="0" step="0.01" /></div>
+                <div>
+                  <Label>Features (one per line)</Label>
+                  <Textarea
+                    value={features}
+                    onChange={e => setFeatures(e.target.value)}
+                    placeholder={"Exclusive videos\nEarly access\nMonthly Q&A"}
+                    rows={4}
+                  />
+                </div>
                 <Button onClick={handleCreate} disabled={saving} className="w-full">{saving ? "Creating..." : "Create Tier"}</Button>
               </div>
             </DialogContent>
@@ -95,18 +147,76 @@ const ManageSubscriptions = () => {
         </div>
 
         {subscriptions.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">No subscription tiers yet.</p>
+          <p className="text-center text-muted-foreground py-12">No subscription tiers yet. Create one to start earning recurring revenue.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {subscriptions.map(sub => (
-              <Card key={sub.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">{sub.name}</p>
-                  <p className="text-sm text-muted-foreground">${sub.price}/mo · {sub.is_active ? "Active" : "Inactive"}</p>
+              <Card key={sub.id} className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-semibold text-lg">{sub.name}</p>
+                    <p className="text-sm text-muted-foreground">${sub.price}/mo · {sub.is_active ? "Active" : "Inactive"}</p>
+                    {sub.description && <p className="text-sm text-muted-foreground mt-1">{sub.description}</p>}
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(sub.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(sub.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+
+                {/* Features list */}
+                {sub.features && sub.features.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Features</p>
+                    <ul className="text-sm space-y-1">
+                      {sub.features.map((f: string, i: number) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <span className="text-primary">✓</span> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Perks */}
+                <div className="border-t border-border pt-3 mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1">
+                      <Gift className="w-3 h-3" /> Subscriber Perks
+                    </p>
+                    <Dialog open={perkOpen === sub.id} onOpenChange={(o) => setPerkOpen(o ? sub.id : null)}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs">
+                          <Plus className="w-3 h-3" /> Add Perk
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Add Perk to {sub.name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div><Label>Perk Name</Label><Input value={perkName} onChange={e => setPerkName(e.target.value)} placeholder="e.g. Discord access" /></div>
+                          <div><Label>Description (optional)</Label><Textarea value={perkDesc} onChange={e => setPerkDesc(e.target.value)} placeholder="Details about this perk..." /></div>
+                          <Button onClick={() => handleAddPerk(sub.id)} className="w-full">Add Perk</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  {(perks[sub.id] || []).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No perks added yet</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {(perks[sub.id] || []).map(perk => (
+                        <div key={perk.id} className="flex items-center justify-between text-sm bg-secondary/50 rounded px-3 py-1.5">
+                          <div>
+                            <span className="font-medium">{perk.perk_name}</span>
+                            {perk.perk_description && <span className="text-muted-foreground ml-2">— {perk.perk_description}</span>}
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleDeletePerk(perk.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
