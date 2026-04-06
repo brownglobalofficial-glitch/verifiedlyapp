@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2 } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
@@ -234,6 +234,13 @@ const Dashboard = () => {
               <LinkIcon className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Manage Links</h3>
               <p className="text-sm text-muted-foreground">Edit your link-in-bio cards</p>
+            </Card>
+          </Link>
+          <Link to="/dashboard/content">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <Video className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Content</h3>
+              <p className="text-sm text-muted-foreground">Upload videos, go live & manage subscriber content</p>
             </Card>
           </Link>
           <Link to="/dashboard/settings">

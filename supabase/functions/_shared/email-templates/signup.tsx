@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -21,6 +22,8 @@ interface SignupEmailProps {
   confirmationUrl: string
 }
 
+const LOGO_URL = 'https://pwahrywcgtgfaaghkpoo.supabase.co/storage/v1/object/public/product-images/email%2Fverifiedly-logo.webp'
+
 export const SignupEmail = ({
   siteName,
   siteUrl,
@@ -32,7 +35,7 @@ export const SignupEmail = ({
     <Preview>Welcome to Verifiedly — confirm your email to get started</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>✓ Verifiedly</Text>
+        <Img src={LOGO_URL} alt="Verifiedly" width="140" height="auto" style={{ marginBottom: '30px' }} />
         <Heading style={h1}>Welcome aboard!</Heading>
         <Text style={text}>
           Thanks for joining{' '}
@@ -63,7 +66,6 @@ export default SignupEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Space Grotesk', Arial, sans-serif" }
 const container = { padding: '40px 25px' }
-const logo = { fontSize: '20px', fontWeight: 'bold' as const, fontFamily: "'Space Grotesk', Arial, sans-serif", color: '#0d0d0d', margin: '0 0 30px' }
 const h1 = { fontSize: '24px', fontWeight: 'bold' as const, fontFamily: "'Space Grotesk', Arial, sans-serif", color: '#0d0d0d', margin: '0 0 20px' }
 const text = { fontSize: '15px', color: '#737373', lineHeight: '1.6', margin: '0 0 20px' }
 const link = { color: '#0d0d0d', textDecoration: 'underline' }

@@ -8,6 +8,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
@@ -16,13 +17,15 @@ interface ReauthenticationEmailProps {
   token: string
 }
 
+const LOGO_URL = 'https://pwahrywcgtgfaaghkpoo.supabase.co/storage/v1/object/public/product-images/email%2Fverifiedly-logo.webp'
+
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>Your Verifiedly verification code</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={logo}>✓ Verifiedly</Text>
+        <Img src={LOGO_URL} alt="Verifiedly" width="140" height="auto" style={{ marginBottom: '30px' }} />
         <Heading style={h1}>Verify your identity</Heading>
         <Text style={text}>Use the code below to confirm your identity:</Text>
         <Text style={codeStyle}>{token}</Text>
@@ -38,7 +41,6 @@ export default ReauthenticationEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', 'Space Grotesk', Arial, sans-serif" }
 const container = { padding: '40px 25px' }
-const logo = { fontSize: '20px', fontWeight: 'bold' as const, fontFamily: "'Space Grotesk', Arial, sans-serif", color: '#0d0d0d', margin: '0 0 30px' }
 const h1 = { fontSize: '24px', fontWeight: 'bold' as const, fontFamily: "'Space Grotesk', Arial, sans-serif", color: '#0d0d0d', margin: '0 0 20px' }
 const text = { fontSize: '15px', color: '#737373', lineHeight: '1.6', margin: '0 0 20px' }
 const codeStyle = { fontFamily: 'Courier, monospace', fontSize: '28px', fontWeight: 'bold' as const, color: '#0d0d0d', letterSpacing: '4px', margin: '0 0 30px' }

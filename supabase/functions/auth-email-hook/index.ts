@@ -36,10 +36,10 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "verifiedlyapp"
-const SENDER_DOMAIN = "notify.verifiedly.app"
+const SITE_NAME = "Verifiedly"
+const SENDER_DOMAIN = "notify.brownglobal.app"
 const ROOT_DOMAIN = "verifiedly.app"
-const FROM_DOMAIN = "verifiedly.app" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "brownglobal.app"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
