@@ -163,6 +163,69 @@ export type Database = {
           },
         ]
       }
+      creator_content: {
+        Row: {
+          content_type: string
+          created_at: string
+          creator_id: string
+          description: string | null
+          file_url: string | null
+          id: string
+          is_published: boolean
+          live_stream_url: string | null
+          subscription_tier_id: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          content_type?: string
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_published?: boolean
+          live_stream_url?: string | null
+          subscription_tier_id?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          is_published?: boolean
+          live_stream_url?: string | null
+          subscription_tier_id?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_content_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_content_subscription_tier_id_fkey"
+            columns: ["subscription_tier_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       earnings: {
         Row: {
           amount: number
@@ -629,6 +692,51 @@ export type Database = {
             columns: ["subscriber_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_perks: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          perk_description: string | null
+          perk_name: string
+          sort_order: number
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          perk_description?: string | null
+          perk_name: string
+          sort_order?: number
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          perk_description?: string | null
+          perk_name?: string
+          sort_order?: number
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_perks_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_perks_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
