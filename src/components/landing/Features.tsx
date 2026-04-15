@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link2, DollarSign, ShoppingBag, Users, BadgeCheck, Megaphone } from "lucide-react";
+import { Link2, DollarSign, ShoppingBag, Users, BadgeCheck, Video } from "lucide-react";
 
 const features = [
   {
@@ -10,27 +10,27 @@ const features = [
   {
     icon: DollarSign,
     title: "Tips & Donations",
-    description: "Let fans support you directly with tips via Stripe. Get paid instantly to your bank account.",
+    description: "Let fans and customers support you directly with tips via Stripe. Get paid instantly.",
   },
   {
     icon: Users,
     title: "Subscriptions",
-    description: "Create recurring subscription tiers for exclusive content and perks.",
+    description: "Create recurring subscription tiers with custom perks for exclusive content access.",
   },
   {
     icon: ShoppingBag,
     title: "Digital Products",
-    description: "Sell e-books, presets, templates, courses, and more on your profile.",
+    description: "Sell e-books, presets, templates, courses, game assets, and more on your profile.",
   },
   {
-    icon: Megaphone,
-    title: "Sponsorships & Affiliates",
-    description: "Get matched with brand deals and earn affiliate commissions.",
+    icon: Video,
+    title: "Videos & Live Streams",
+    description: "Upload subscriber-only videos, go live on YouTube/Twitch/Kick, and manage exclusive content.",
   },
   {
     icon: BadgeCheck,
-    title: "Verifiedly Pro",
-    description: "Get verified, lower fees, and boost your digital products on the platform.",
+    title: "Get Verified",
+    description: "Get your verification badge, lower fees, and boost visibility across the platform.",
   },
 ];
 
@@ -60,8 +60,8 @@ const Features = () => {
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
             Everything you need to earn
           </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            One platform, every revenue stream. Built specifically for creators.
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
+            One platform, every revenue stream. Built for creators, athletes, businesses & teams.
           </p>
         </motion.div>
         <motion.div
@@ -69,7 +69,7 @@ const Features = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
         >
           {features.map((feature) => (
             <motion.div

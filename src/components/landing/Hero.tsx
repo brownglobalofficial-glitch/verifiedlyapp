@@ -20,9 +20,9 @@ const Hero = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary mb-8"
           >
             <VerifiedBadge className="w-4 h-4" />
-            <span className="text-sm font-medium text-muted-foreground">The creator monetization platform</span>
+            <span className="text-sm font-medium text-muted-foreground">For creators, athletes, businesses & teams</span>
           </motion.div>
-          <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.1] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.1] mb-6">
             Monetize your
             <br />
             <motion.span
@@ -38,10 +38,11 @@ const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
+            className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            One link. All your content. Subscriptions, digital products, 
-            affiliates & sponsorships — all in one beautiful profile.
+            One link. All your content. Subscriptions, digital products, tips,
+            exclusive videos & live streams — all in one beautiful profile. 
+            Start free as a creator, athlete, business, or team.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -51,7 +52,7 @@ const Hero = () => {
           >
             <Link to="/signup">
               <Button size="lg" className="text-base px-8 h-12 gap-2">
-                Start for free <ArrowRight className="w-4 h-4" />
+                Get started for free <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <a href="#features">
@@ -66,7 +67,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Free to start. No credit card required.
+            Free to start. No credit card required. Fans sign up free too.
           </motion.p>
         </motion.div>
 
@@ -77,12 +78,12 @@ const Hero = () => {
           className="mt-16 relative"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background z-10 pointer-events-none" />
-          <div className="bg-secondary rounded-2xl border border-border p-8 md:p-12">
-            <div className="grid grid-cols-3 gap-8 text-center">
+          <div className="bg-secondary rounded-2xl border border-border p-6 sm:p-8 md:p-12">
+            <div className="grid grid-cols-3 gap-4 sm:gap-8 text-center">
               {[
-                { value: "10%", label: "Platform fee (Free tier)" },
-                { value: "$0", label: "Monthly cost to start" },
-                { value: "0%", label: "Fees on Elite" },
+                { value: "$0", label: "To get started" },
+                { value: "10%→0%", label: "Platform fees" },
+                { value: "∞", label: "Revenue streams" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -90,8 +91,8 @@ const Hero = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.7 + i * 0.15 }}
                 >
-                  <p className="text-3xl md:text-4xl font-display font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                  <p className="text-2xl sm:text-3xl md:text-4xl font-display font-bold">{stat.value}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
