@@ -71,14 +71,14 @@ serve(async (req) => {
     };
 
     // Use Stripe Connect destination charges if creator has connected account
-    if (creator.stripe_connect_account_id && applicationFee > 0) {
+    if (stripeConnectAccountId && applicationFee > 0) {
       sessionParams.payment_intent_data = {
         application_fee_amount: applicationFee,
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
-    } else if (creator.stripe_connect_account_id) {
+    } else if (stripeConnectAccountId) {
       sessionParams.payment_intent_data = {
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
     }
 
