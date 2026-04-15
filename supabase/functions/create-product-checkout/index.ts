@@ -37,8 +37,13 @@ serve(async (req) => {
 
     // Get creator profile for fee calculation
     const { data: creator } = await supabaseClient
-      .from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
+
+    // Get stripe connect account from private data
+    const { data: privateData } = await supabaseClient
+      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+    const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
     let feePercent = 10;
     if (creator.is_elite) feePercent = 0;
