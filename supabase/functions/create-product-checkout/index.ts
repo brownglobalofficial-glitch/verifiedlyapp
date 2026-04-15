@@ -37,8 +37,13 @@ serve(async (req) => {
 
     // Get creator profile for fee calculation
     const { data: creator } = await supabaseClient
-      .from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
+
+    // Get stripe connect account from private data
+    const { data: privateData } = await supabaseClient
+      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+    const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
     let feePercent = 10;
     if (creator.is_elite) feePercent = 0;
@@ -94,14 +99,14 @@ serve(async (req) => {
     };
 
     // Use Stripe Connect destination charges if creator has a connected account
-    if (creator.stripe_connect_account_id && applicationFee > 0) {
+    if (stripeConnectAccountId && applicationFee > 0) {
       sessionParams.payment_intent_data = {
         application_fee_amount: applicationFee,
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
-    } else if (creator.stripe_connect_account_id) {
+    } else if (stripeConnectAccountId) {
       sessionParams.payment_intent_data = {
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
     }
 

@@ -36,9 +36,14 @@ serve(async (req) => {
 
     // Get creator profile
     const { data: creator } = await supabase
-      .from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
-    if (!creator.stripe_connect_account_id) throw new Error("Creator has not set up payments");
+
+    // Get stripe connect account from private data
+    const { data: privateData } = await supabase
+      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+    const stripeConnectAccountId = privateData?.stripe_connect_account_id;
+    if (!stripeConnectAccountId) throw new Error("Creator has not set up payments");
 
     // Calculate platform fee
     let feePercent = 10;
@@ -99,11 +104,11 @@ serve(async (req) => {
     if (applicationFee > 0) {
       sessionParams.subscription_data = {
         application_fee_percent: feePercent,
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
     } else {
       sessionParams.subscription_data = {
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
     }
 

@@ -36,14 +36,21 @@ serve(async (req) => {
     const cleanDomain = domain.toLowerCase().trim();
     const nameComAuth = "Basic " + btoa(`${username}:${token}`);
 
-    // Get the user's profile for contact info
+    // Get the user's profile for display info
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, contact_email, username")
+      .select("display_name, username")
       .eq("id", user.id)
       .single();
 
-    const contactEmail = profile?.contact_email || user.email;
+    // Get contact email from private data
+    const { data: privateData } = await supabase
+      .from("creator_private_data")
+      .select("contact_email")
+      .eq("id", user.id)
+      .single();
+
+    const contactEmail = privateData?.contact_email || user.email;
     const contactName = profile?.display_name || profile?.username || "Domain Owner";
     const [firstName, ...lastParts] = contactName.split(" ");
     const lastName = lastParts.join(" ") || firstName;

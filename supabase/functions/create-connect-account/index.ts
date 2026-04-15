@@ -31,14 +31,20 @@ serve(async (req) => {
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
-    // Check if user already has a connect account
+    // Check if user already has a connect account (from private data table)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("stripe_connect_account_id, display_name, username")
+      .select("display_name, username")
       .eq("id", user.id)
       .single();
 
-    let accountId = profile?.stripe_connect_account_id;
+    const { data: privateData } = await supabase
+      .from("creator_private_data")
+      .select("stripe_connect_account_id")
+      .eq("id", user.id)
+      .single();
+
+    let accountId = privateData?.stripe_connect_account_id;
 
     if (!accountId) {
       const account = await stripe.accounts.create({
@@ -55,6 +61,12 @@ serve(async (req) => {
       });
       accountId = account.id;
 
+      // Store in private data table
+      await supabase
+        .from("creator_private_data")
+        .upsert({ id: user.id, stripe_connect_account_id: accountId }, { onConflict: "id" });
+
+      // Also update profiles for backward compatibility (will be removed later)
       await supabase
         .from("profiles")
         .update({ stripe_connect_account_id: accountId })

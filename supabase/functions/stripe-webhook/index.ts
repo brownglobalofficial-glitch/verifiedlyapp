@@ -12,13 +12,15 @@ const FROM_DOMAIN = "brownglobal.app";
 
 async function notifyCreator(supabase: any, creatorId: string, subject: string, bodyHtml: string) {
   try {
-    // Get creator email
-    const { data: creator } = await supabase
-      .from("profiles").select("display_name, contact_email").eq("id", creatorId).single();
+    // Get contact email from private data table first, then fall back to auth email
+    const { data: privateData } = await supabase
+      .from("creator_private_data").select("contact_email").eq("id", creatorId).single();
 
-    // Get auth email
-    const { data: userData } = await supabase.auth.admin.getUserById(creatorId);
-    const email = creator?.contact_email || userData?.user?.email;
+    let email = privateData?.contact_email;
+    if (!email) {
+      const { data: userData } = await supabase.auth.admin.getUserById(creatorId);
+      email = userData?.user?.email;
+    }
     if (!email) { log("No email for creator notification", { creatorId }); return; }
 
     const messageId = crypto.randomUUID();
@@ -70,14 +72,17 @@ serve(async (req) => {
   try {
     const body = await req.text();
     const sig = req.headers.get("stripe-signature");
-    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
     let event: Stripe.Event;
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(body);
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret || !sig) {
+      log("ERROR: Webhook secret not configured or signature missing");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 400,
+      });
     }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
     log("Event received", { type: event.type, id: event.id });
 

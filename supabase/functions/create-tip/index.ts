@@ -29,9 +29,13 @@ serve(async (req) => {
     if (!creatorId || !amount || amount < 100) throw new Error("creatorId and amount (min 100 cents) required");
     logStep("Request parsed", { creatorId, amount });
 
-    // Get creator profile to determine platform fee
-    const { data: creator } = await supabaseClient.from("profiles").select("is_pro, is_elite, display_name, username, stripe_connect_account_id").eq("id", creatorId).single();
+    // Get creator profile for display info + fee tier
+    const { data: creator } = await supabaseClient.from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
     if (!creator) throw new Error("Creator not found");
+
+    // Get stripe connect account from private data
+    const { data: privateData } = await supabaseClient.from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+    const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
     // Calculate platform fee based on tier
     let feePercent = 10;
@@ -67,14 +71,14 @@ serve(async (req) => {
     };
 
     // Use Stripe Connect destination charges if creator has connected account
-    if (creator.stripe_connect_account_id && applicationFee > 0) {
+    if (stripeConnectAccountId && applicationFee > 0) {
       sessionParams.payment_intent_data = {
         application_fee_amount: applicationFee,
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
-    } else if (creator.stripe_connect_account_id) {
+    } else if (stripeConnectAccountId) {
       sessionParams.payment_intent_data = {
-        transfer_data: { destination: creator.stripe_connect_account_id },
+        transfer_data: { destination: stripeConnectAccountId },
       };
     }
 
