@@ -12,13 +12,15 @@ const FROM_DOMAIN = "brownglobal.app";
 
 async function notifyCreator(supabase: any, creatorId: string, subject: string, bodyHtml: string) {
   try {
-    // Get creator email
-    const { data: creator } = await supabase
-      .from("profiles").select("display_name, contact_email").eq("id", creatorId).single();
+    // Get contact email from private data table first, then fall back to auth email
+    const { data: privateData } = await supabase
+      .from("creator_private_data").select("contact_email").eq("id", creatorId).single();
 
-    // Get auth email
-    const { data: userData } = await supabase.auth.admin.getUserById(creatorId);
-    const email = creator?.contact_email || userData?.user?.email;
+    let email = privateData?.contact_email;
+    if (!email) {
+      const { data: userData } = await supabase.auth.admin.getUserById(creatorId);
+      email = userData?.user?.email;
+    }
     if (!email) { log("No email for creator notification", { creatorId }); return; }
 
     const messageId = crypto.randomUUID();
