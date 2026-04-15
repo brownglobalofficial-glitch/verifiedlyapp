@@ -75,11 +75,15 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
     let event: Stripe.Event;
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(body);
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret || !sig) {
+      log("ERROR: Webhook secret not configured or signature missing");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 400,
+      });
     }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
     log("Event received", { type: event.type, id: event.id });
 
