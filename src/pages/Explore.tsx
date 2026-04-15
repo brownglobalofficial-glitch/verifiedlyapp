@@ -61,6 +61,16 @@ const Explore = () => {
   const [priceRange, setPriceRange] = useState<"all" | "free" | "under5" | "under25" | "over25">("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  const showTrending = !search && !verifiedOnly && priceRange === "all" &&
+    categoryFilter === "all" && creatorCategoryFilter === "all";
+
+  const trendingCreators = [...creators]
+    .sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0))
+    .slice(0, 6);
+
+  const featuredCreators = creators.filter(c => c.is_featured);
+
+  const bestSellingProducts = [...products].slice(0, 6);
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: prods }, { data: profs }, { data: subs }] = await Promise.all([
