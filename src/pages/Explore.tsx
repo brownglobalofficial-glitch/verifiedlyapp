@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Search, ShoppingBag, Users, Video, TrendingUp, SlidersHorizontal, X } from "lucide-react";
+import { Search, ShoppingBag, Users, Video, TrendingUp, SlidersHorizontal, X, Crown, Star, Flame } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -61,6 +61,16 @@ const Explore = () => {
   const [priceRange, setPriceRange] = useState<"all" | "free" | "under5" | "under25" | "over25">("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  const showTrending = !search && !verifiedOnly && priceRange === "all" &&
+    categoryFilter === "all" && creatorCategoryFilter === "all";
+
+  const trendingCreators = [...creators]
+    .sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0))
+    .slice(0, 6);
+
+  const featuredCreators = creators.filter(c => c.is_featured);
+
+  const bestSellingProducts = [...products].slice(0, 6);
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: prods }, { data: profs }, { data: subs }] = await Promise.all([
@@ -318,6 +328,101 @@ const Explore = () => {
                 {c.label}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Trending & Featured Sections */}
+        {showTrending && tab === "creators" && (trendingCreators.length > 0 || featuredCreators.length > 0) && (
+          <div className="space-y-8 mb-8">
+            {/* Featured Creators */}
+            {featuredCreators.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-display font-bold">Featured Creators</h2>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                  {featuredCreators.map((creator) => (
+                    <Link key={creator.id} to={`/${creator.username}`} className="shrink-0 w-36">
+                      <Card className="p-4 card-hover text-center h-full border-primary/20 bg-primary/5">
+                        <Crown className="w-4 h-4 text-primary mx-auto mb-2" />
+                        <Avatar className="w-14 h-14 mx-auto mb-2">
+                          {creator.avatar_url ? <AvatarImage src={creator.avatar_url} alt={creator.display_name} /> : null}
+                          <AvatarFallback className="text-lg font-display font-bold">
+                            {creator.display_name?.[0]?.toUpperCase() || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-xs flex items-center justify-center gap-1 truncate">
+                          {creator.display_name}
+                          {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3 h-3" />}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">@{creator.username}</p>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trending Creators */}
+            {trendingCreators.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Flame className="w-5 h-5 text-destructive" />
+                  <h2 className="text-lg font-display font-bold">Trending Creators</h2>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+                  {trendingCreators.map((creator, i) => (
+                    <Link key={creator.id} to={`/${creator.username}`} className="shrink-0 w-36">
+                      <Card className="p-4 card-hover text-center h-full relative">
+                        <span className="absolute top-2 left-2 text-xs font-bold text-muted-foreground">#{i + 1}</span>
+                        <Avatar className="w-14 h-14 mx-auto mb-2">
+                          {creator.avatar_url ? <AvatarImage src={creator.avatar_url} alt={creator.display_name} /> : null}
+                          <AvatarFallback className="text-lg font-display font-bold">
+                            {creator.display_name?.[0]?.toUpperCase() || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="font-semibold text-xs flex items-center justify-center gap-1 truncate">
+                          {creator.display_name}
+                          {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3 h-3" />}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{creator.follower_count || 0} followers</p>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showTrending && tab === "products" && bestSellingProducts.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-display font-bold">Popular Products</h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {bestSellingProducts.map((product) => (
+                <Link key={product.id} to={product.profiles ? `/${product.profiles.username}` : "#"} className="shrink-0 w-44">
+                  <Card className="card-hover overflow-hidden h-full">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
+                    ) : (
+                      <div className="w-full h-24 bg-muted flex items-center justify-center">
+                        <ShoppingBag className="w-6 h-6 text-muted-foreground/40" />
+                      </div>
+                    )}
+                    <div className="p-2.5">
+                      <p className="font-semibold text-xs line-clamp-1">{product.name}</p>
+                      <p className="font-display font-bold text-sm mt-1">
+                        {product.price === 0 ? "Free" : `$${product.price}`}
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 
