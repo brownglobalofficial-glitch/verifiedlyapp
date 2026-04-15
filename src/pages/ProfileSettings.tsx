@@ -239,7 +239,6 @@ const ProfileSettings = () => {
       setDisplayName(data.display_name || "");
       setBio(data.bio || "");
       setWebsite(data.website || "");
-      setContactEmail(data.contact_email || "");
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
       const sl = (data.social_links || {}) as Record<string, string>;
@@ -250,6 +249,11 @@ const ProfileSettings = () => {
       setFacebook(sl.facebook || "");
       setStripeConnected(!!data.stripe_connect_account_id);
     }
+
+    // Fetch private data (contact_email etc.)
+    const { data: privateData } = await supabase.from("creator_private_data").select("contact_email").eq("id", userId).maybeSingle();
+    setContactEmail(privateData?.contact_email || "");
+
     setLoading(false);
   };
 
@@ -284,10 +288,16 @@ const ProfileSettings = () => {
       display_name: displayName,
       bio,
       website,
-      contact_email: contactEmail || null,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       theme_color: themeColor,
     }).eq("id", profile.id);
+
+    // Save contact_email to private data table
+    await supabase.from("creator_private_data").upsert({
+      id: profile.id,
+      contact_email: contactEmail || null,
+    }, { onConflict: "id" });
+
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
