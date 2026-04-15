@@ -251,7 +251,7 @@ const ProfileSettings = () => {
     }
 
     // Fetch private data (contact_email etc.)
-    const { data: privateData } = await supabase.from("creator_private_data").select("contact_email").eq("id", userId).maybeSingle();
+    const { data: privateData } = await (supabase.from("creator_private_data" as any).select("contact_email").eq("id", userId).maybeSingle() as any);
     setContactEmail(privateData?.contact_email || "");
 
     setLoading(false);
@@ -293,7 +293,7 @@ const ProfileSettings = () => {
     }).eq("id", profile.id);
 
     // Save contact_email to private data table
-    await supabase.from("creator_private_data").upsert({
+    await (supabase.from("creator_private_data" as any) as any).upsert({
       id: profile.id,
       contact_email: contactEmail || null,
     }, { onConflict: "id" });
