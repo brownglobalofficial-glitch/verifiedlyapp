@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ShoppingBag, Image, Download, Globe, ChevronRight, Users, Mail } from "lucide-react";
+import { ShoppingBag, Image, Download, Globe, ChevronRight, Users, Mail, Video, Radio, FileText, Lock } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import FollowButton from "@/components/FollowButton";
@@ -52,7 +52,9 @@ const CreatorProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [perks, setPerks] = useState<Record<string, any[]>>({});
   const [bioLinks, setBioLinks] = useState<any[]>([]);
+  const [publicContent, setPublicContent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [buyingProduct, setBuyingProduct] = useState<any>(null);
@@ -71,14 +73,31 @@ const CreatorProfile = () => {
       if (!prof) { setNotFound(true); setLoading(false); return; }
       setProfile(prof);
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
-      const [{ data: prods }, { data: subs }, { data: blinks }] = await Promise.all([
+      const [{ data: prods }, { data: subs }, { data: blinks }, { data: content }] = await Promise.all([
         supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
         supabase.from("subscriptions").select("*").eq("creator_id", prof.id).eq("is_active", true),
         supabase.from("bio_links").select("*").eq("creator_id", prof.id).eq("is_active", true).order("sort_order", { ascending: true }),
+        supabase.from("creator_content").select("*").eq("creator_id", prof.id).eq("is_published", true).order("created_at", { ascending: false }),
       ]);
       setProducts(prods || []);
       setSubscriptions(subs || []);
       setBioLinks(blinks || []);
+      setPublicContent(content || []);
+
+      // Fetch perks for subscriptions
+      if (subs && subs.length > 0) {
+        const { data: allPerks } = await supabase
+          .from("subscription_perks")
+          .select("*")
+          .in("subscription_id", subs.map(s => s.id))
+          .order("sort_order", { ascending: true });
+        const grouped: Record<string, any[]> = {};
+        (allPerks || []).forEach(p => {
+          if (!grouped[p.subscription_id]) grouped[p.subscription_id] = [];
+          grouped[p.subscription_id].push(p);
+        });
+        setPerks(grouped);
+      }
       setLoading(false);
     };
     fetchData();
@@ -128,6 +147,25 @@ const CreatorProfile = () => {
     setCheckoutLoading(false);
   };
 
+  const handleSubscribe = async (sub: any) => {
+    if (!profile?.stripe_connect_account_id) {
+      toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-subscription-checkout", {
+        body: { subscriptionId: sub.id, creatorId: profile.id },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+      setBuyingSub(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start subscription", variant: "destructive" });
+    }
+    setCheckoutLoading(false);
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="animate-pulse flex flex-col items-center gap-4">
@@ -150,6 +188,12 @@ const CreatorProfile = () => {
   const socialLinks = profile?.social_links || {};
   const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
+
+  const contentIcon = (type: string) => {
+    if (type === "video") return <Video className="w-4 h-4" />;
+    if (type === "live_stream") return <Radio className="w-4 h-4" />;
+    return <FileText className="w-4 h-4" />;
+  };
 
   return (
     <div className={`min-h-screen ${theme.bg}`}>
@@ -179,7 +223,6 @@ const CreatorProfile = () => {
           </h1>
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
           
-          {/* Follower count & category */}
           <div className="flex items-center justify-center gap-3 mt-1">
             {profile?.category && (
               <span className={`px-2 py-0.5 rounded-full text-xs capitalize ${theme.muted} border border-current/20`}>
@@ -195,7 +238,6 @@ const CreatorProfile = () => {
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
           )}
 
-          {/* Follow + Tip + Contact */}
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
             <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5">
@@ -261,6 +303,46 @@ const CreatorProfile = () => {
           </div>
         )}
 
+        {/* Public Content */}
+        {publicContent.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-6">
+            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
+              <Video className="w-4 h-4" /> Content
+            </h3>
+            <div className="space-y-3">
+              {publicContent.map(item => (
+                <div
+                  key={item.id}
+                  className={`${theme.linkBg} rounded-2xl border border-border/50 p-4 shadow-sm transition-all ${theme.linkHover}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                      {contentIcon(item.content_type)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-semibold text-sm ${theme.text} truncate`}>{item.title}</p>
+                      <div className={`flex items-center gap-2 text-xs ${theme.muted}`}>
+                        <span className="capitalize">{item.content_type.replace("_", " ")}</span>
+                        {item.visibility === "subscribers" && (
+                          <span className="flex items-center gap-0.5"><Lock className="w-3 h-3" /> Subscribers</span>
+                        )}
+                      </div>
+                    </div>
+                    {item.content_type === "live_stream" && item.live_stream_url && item.visibility === "public" && (
+                      <a href={item.live_stream_url} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="outline" className="text-xs">Watch</Button>
+                      </a>
+                    )}
+                  </div>
+                  {item.description && (
+                    <p className={`text-xs ${theme.muted} mt-2 line-clamp-2`}>{item.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {subscriptions.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
             <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text}`}>Memberships</h3>
@@ -286,6 +368,18 @@ const CreatorProfile = () => {
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {(perks[sub.id] || []).length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-border/30">
+                      <p className={`text-xs font-medium ${theme.muted} mb-1`}>Perks included:</p>
+                      <ul className="space-y-1">
+                        {(perks[sub.id] || []).map(perk => (
+                          <li key={perk.id} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
+                            <span>🎁</span> {perk.perk_name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               ))}
@@ -325,6 +419,7 @@ const CreatorProfile = () => {
           </motion.div>
         )}
 
+        {/* Product Purchase Dialog */}
         <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
@@ -345,13 +440,42 @@ const CreatorProfile = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Subscription Dialog */}
         <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingSub?.name}</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
+            {buyingSub?.features && buyingSub.features.length > 0 && (
+              <ul className="space-y-1.5 mt-2">
+                {buyingSub.features.map((f: string, i: number) => (
+                  <li key={i} className="text-sm flex items-center gap-2">
+                    <span className="text-primary">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {buyingSub && (perks[buyingSub.id] || []).length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Perks:</p>
+                <ul className="space-y-1">
+                  {(perks[buyingSub.id] || []).map(perk => (
+                    <li key={perk.id} className="text-sm flex items-center gap-2">
+                      <span>🎁</span> {perk.perk_name}
+                      {perk.perk_description && <span className="text-muted-foreground text-xs">— {perk.perk_description}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
-              <Button disabled variant="outline" className="gap-2 rounded-xl">Subscribe (Coming Soon)</Button>
+              <Button
+                onClick={() => handleSubscribe(buyingSub)}
+                disabled={checkoutLoading}
+                className="gap-2 rounded-xl"
+              >
+                {checkoutLoading ? "Loading..." : "Subscribe Now"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
