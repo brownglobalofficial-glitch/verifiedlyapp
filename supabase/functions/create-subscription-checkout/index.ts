@@ -25,8 +25,9 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { subscriptionId, creatorId } = await req.json();
+    const { subscriptionId, creatorId, interval } = await req.json();
     if (!subscriptionId || !creatorId) throw new Error("subscriptionId and creatorId required");
+    const billingInterval = interval === "year" ? "year" : "month";
 
     // Get subscription tier details
     const { data: sub, error: subErr } = await supabase
