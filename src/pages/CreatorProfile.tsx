@@ -214,6 +214,20 @@ const CreatorProfile = () => {
           grouped[p.subscription_id].push(p);
         });
         setPerks(grouped);
+
+        // Member counts per tier (count of 'subscribe' events minus 'unsubscribe')
+        const { data: events } = await supabase
+          .from("subscriber_events")
+          .select("subscription_id, event_type")
+          .in("subscription_id", subs.map(s => s.id));
+        const counts: Record<string, number> = {};
+        (events || []).forEach((e: any) => {
+          if (!e.subscription_id) return;
+          counts[e.subscription_id] = (counts[e.subscription_id] || 0) + (e.event_type === "subscribe" ? 1 : -1);
+        });
+        // clamp at 0
+        Object.keys(counts).forEach(k => { if (counts[k] < 0) counts[k] = 0; });
+        setMemberCounts(counts);
       }
       setLoading(false);
     };
