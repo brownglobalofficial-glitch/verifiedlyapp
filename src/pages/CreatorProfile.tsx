@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import MembershipTiers from "@/components/MembershipTiers";
 
 type ThemeStyle = {
   bg: string;
