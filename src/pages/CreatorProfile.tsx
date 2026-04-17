@@ -464,44 +464,24 @@ const CreatorProfile = () => {
 
         {subscriptions.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
-            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
-              <Sparkles className="w-4 h-4" /> Memberships
-            </h3>
-            <div className="space-y-3">
-              {subscriptions.map(sub => (
-                <button
-                  key={sub.id}
-                  type="button"
-                  className={`${theme.linkBg} w-full text-left rounded-2xl border border-border/50 p-5 shadow-sm cursor-pointer transition-all ${theme.linkHover}`}
-                  onClick={() => setBuyingSub(sub)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className={`font-semibold ${theme.text}`}>{sub.name}</p>
-                      {sub.description && <p className={`text-sm mt-0.5 ${theme.muted} line-clamp-2`}>{sub.description}</p>}
-                    </div>
-                    <span className={`font-display font-bold text-lg ${theme.text} shrink-0`}>
-                      ${sub.price}
-                      <span className={`text-xs ${theme.muted} font-normal`}>/mo</span>
-                    </span>
-                  </div>
-                  {(sub.features?.length > 0 || (perks[sub.id] || []).length > 0) && (
-                    <ul className="mt-3 space-y-1.5">
-                      {(sub.features || []).map((f: string, i: number) => (
-                        <li key={`f-${i}`} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
-                          <Check className="w-3 h-3 shrink-0" /> {f}
-                        </li>
-                      ))}
-                      {(perks[sub.id] || []).map(perk => (
-                        <li key={perk.id} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
-                          <Gift className="w-3 h-3 shrink-0" /> {perk.perk_name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`font-display font-semibold text-sm ${theme.text} flex items-center gap-2`}>
+                <Sparkles className="w-4 h-4" /> Memberships
+              </h3>
+              {subscriptions.length > 1 && (
+                <Link to={`/${profile?.username}/membership`} className={`text-xs ${theme.muted} hover:opacity-70 transition-opacity flex items-center gap-0.5`}>
+                  Compare tiers <ChevronRight className="w-3 h-3" />
+                </Link>
+              )}
             </div>
+            <MembershipTiers
+              tiers={subscriptions}
+              perks={perks}
+              memberCounts={memberCounts}
+              onSubscribe={(tier, interval) => handleSubscribe(tier, interval)}
+              loadingTierId={checkoutLoading ? subscriptions.find(s => s.id)?.id || null : null}
+              variant="compact"
+            />
           </motion.div>
         )}
 
