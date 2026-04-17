@@ -538,35 +538,7 @@ const CreatorProfile = () => {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
-          <DialogContent className="rounded-2xl">
-            <DialogHeader><DialogTitle>{buyingSub?.name}</DialogTitle></DialogHeader>
-            {buyingSub?.description && <p className="text-sm text-muted-foreground">{buyingSub.description}</p>}
-            {buyingSub?.features && buyingSub.features.length > 0 && (
-              <ul className="space-y-1.5 mt-2">
-                {buyingSub.features.map((f: string, i: number) => (
-                  <li key={i} className="text-sm flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {buyingSub && (perks[buyingSub.id] || []).length > 0 && (
-              <div className="mt-2">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Perks:</p>
-                <ul className="space-y-1">
-                  {(perks[buyingSub.id] || []).map(perk => (
-                    <li key={perk.id} className="text-sm flex items-start gap-2">
-                      <Gift className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span>
-                        {perk.perk_name}
-                        {perk.perk_description && <span className="text-muted-foreground text-xs"> — {perk.perk_description}</span>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+
             <div className="flex items-center justify-between mt-4">
               <span className="text-2xl font-display font-bold">${buyingSub?.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></span>
               <Button
