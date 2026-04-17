@@ -539,18 +539,6 @@ const CreatorProfile = () => {
         </Dialog>
 
 
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-2xl font-display font-bold">${buyingSub?.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></span>
-              <Button
-                onClick={() => handleSubscribe(buyingSub)}
-                disabled={checkoutLoading}
-                className="gap-2 rounded-xl"
-              >
-                {checkoutLoading ? "Loading..." : "Subscribe Now"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={showTipDialog} onOpenChange={setShowTipDialog}>
           <DialogContent className="rounded-2xl max-w-sm">
