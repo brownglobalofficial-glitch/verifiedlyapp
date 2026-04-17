@@ -32,11 +32,15 @@ import { CSS } from "@dnd-kit/utilities";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
+  { id: "mono", label: "Mono", bg: "bg-white", accent: "bg-black" },
   { id: "midnight", label: "Midnight", bg: "bg-[hsl(230,25%,12%)]", accent: "bg-[hsl(230,60%,60%)]" },
   { id: "sunset", label: "Sunset", bg: "bg-[hsl(20,30%,97%)]", accent: "bg-[hsl(20,90%,55%)]" },
   { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]" },
   { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]" },
   { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
+  { id: "blush", label: "Blush", bg: "bg-[hsl(345,40%,97%)]", accent: "bg-[hsl(345,75%,55%)]" },
+  { id: "sand", label: "Sand", bg: "bg-[hsl(40,30%,95%)]", accent: "bg-[hsl(30,40%,30%)]" },
+  { id: "neon", label: "Neon", bg: "bg-[hsl(280,15%,8%)]", accent: "bg-[hsl(290,90%,60%)]" },
 ];
 
 interface BioLink {
