@@ -262,12 +262,24 @@ const CreatorProfile = () => {
     setCheckoutLoading(false);
   };
 
-  const handleSubscribe = async (sub: any) => {
+  const handleSubscribe = async (sub: any, interval: "month" | "year" = "month") => {
     if (!profile?.has_payments) {
       toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
       return;
     }
     setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-subscription-checkout", {
+        body: { subscriptionId: sub.id, creatorId: profile.id, interval },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+      setBuyingSub(null);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start subscription", variant: "destructive" });
+    }
+    setCheckoutLoading(false);
+  };
     try {
       const { data, error } = await supabase.functions.invoke("create-subscription-checkout", {
         body: { subscriptionId: sub.id, creatorId: profile.id },
