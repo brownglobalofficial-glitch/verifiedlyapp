@@ -691,6 +691,7 @@ export type Database = {
           event_type: string
           id: string
           subscriber_id: string | null
+          subscription_id: string | null
         }
         Insert: {
           created_at?: string
@@ -698,6 +699,7 @@ export type Database = {
           event_type?: string
           id?: string
           subscriber_id?: string | null
+          subscription_id?: string | null
         }
         Update: {
           created_at?: string
@@ -705,6 +707,7 @@ export type Database = {
           event_type?: string
           id?: string
           subscriber_id?: string | null
+          subscription_id?: string | null
         }
         Relationships: [
           {
@@ -719,6 +722,13 @@ export type Database = {
             columns: ["subscriber_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriber_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]

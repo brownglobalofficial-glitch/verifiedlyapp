@@ -1,0 +1,2 @@
+ALTER TABLE public.subscriber_events ADD COLUMN IF NOT EXISTS subscription_id uuid REFERENCES public.subscriptions(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_subscriber_events_subscription_id ON public.subscriber_events(subscription_id);

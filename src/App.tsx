@@ -26,6 +26,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Admin from "./pages/Admin";
 import ManageContent from "./pages/ManageContent";
+import Membership from "./pages/Membership";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/fan" element={<FanDashboard />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
+          <Route path="/:username/membership" element={<Membership />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

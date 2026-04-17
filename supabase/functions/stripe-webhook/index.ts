@@ -194,6 +194,7 @@ serve(async (req) => {
         await supabase.from("subscriber_events").insert({
           creator_id: metadata.creator_id,
           subscriber_id: subscriberId,
+          subscription_id: metadata.subscription_id || null,
           event_type: "subscribe",
         });
 
