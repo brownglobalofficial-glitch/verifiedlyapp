@@ -87,6 +87,7 @@ const App = () => (
           <Route path="/fan" element={<FanDashboard />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
+          <Route path="/:username/membership" element={<Membership />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
