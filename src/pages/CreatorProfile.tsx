@@ -71,7 +71,9 @@ const CreatorProfile = () => {
       const { data: prof } = await supabase
         .from("profiles").select("*").eq("username", username.toLowerCase()).maybeSingle();
       if (!prof) { setNotFound(true); setLoading(false); return; }
-      setProfile(prof);
+      // Check whether creator has payments enabled via secure RPC (no sensitive ID exposed).
+      const { data: hasPayments } = await (supabase.rpc as any)("creator_has_payments", { _creator_id: prof.id });
+      setProfile({ ...prof, has_payments: !!hasPayments });
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
       const [{ data: prods }, { data: subs }, { data: blinks }, { data: content }] = await Promise.all([
         supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
@@ -148,7 +150,7 @@ const CreatorProfile = () => {
   };
 
   const handleSubscribe = async (sub: any) => {
-    if (!profile?.stripe_connect_account_id) {
+    if (!profile?.has_payments) {
       toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
       return;
     }
@@ -243,13 +245,7 @@ const CreatorProfile = () => {
             <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5">
               💰 Tip
             </Button>
-            {profile?.contact_email && (
-              <a href={`mailto:${profile.contact_email}`}>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Mail className="w-3.5 h-3.5" /> Contact
-                </Button>
-              </a>
-            )}
+            {/* Contact email moved to private data; creators can add a contact link via bio links. */}
           </div>
 
           {(activeSocials.length > 0 || profile?.website) && (
