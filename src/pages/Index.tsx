@@ -14,16 +14,37 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard", { replace: true });
-      } else {
+    let cancelled = false;
+    // Safety timeout: never block the landing page on auth more than 1.5s
+    const timeout = setTimeout(() => {
+      if (!cancelled) setChecking(false);
+    }, 1500);
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        clearTimeout(timeout);
+        if (session) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearTimeout(timeout);
         setChecking(false);
-      }
-    });
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [navigate]);
 
-  if (checking) return null;
+  // Render the landing page even while checking — avoids ever showing a blank screen
+  // if Supabase auth is slow, blocked by third-party cookie settings, or offline.
 
   return (
     <div className="min-h-screen bg-background">
