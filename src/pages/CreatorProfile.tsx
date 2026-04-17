@@ -3,47 +3,162 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ShoppingBag, Image, Download, Globe, ChevronRight, Users, Mail, Video, Radio, FileText, Lock } from "lucide-react";
+import {
+  ShoppingBag,
+  Image as ImageIcon,
+  Globe,
+  ChevronRight,
+  Users,
+  Video,
+  Radio,
+  FileText,
+  Lock,
+  Coins,
+  Gift,
+  Check,
+  Sparkles,
+} from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import FollowButton from "@/components/FollowButton";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const THEME_STYLES: Record<string, { 
-  bg: string; gradient: string; text: string; accent: string; 
-  accentText: string; muted: string; linkBg: string; linkHover: string;
-}> = {
-  default: { 
-    bg: "bg-[hsl(0,0%,98%)]", gradient: "from-[hsl(0,0%,95%)] to-[hsl(0,0%,98%)]",
-    text: "text-[hsl(0,0%,8%)]", accent: "bg-[hsl(0,0%,8%)]", accentText: "text-white",
-    muted: "text-[hsl(0,0%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(0,0%,96%)] hover:scale-[1.02]"
+type ThemeStyle = {
+  bg: string;
+  gradient: string;
+  text: string;
+  accent: string;
+  accentText: string;
+  muted: string;
+  linkBg: string;
+  linkHover: string;
+  ring: string;
+  font: string; // tailwind font-family class applied to the whole page
+};
+
+const THEME_STYLES: Record<string, ThemeStyle> = {
+  default: {
+    bg: "bg-[hsl(0,0%,98%)]",
+    gradient: "from-[hsl(0,0%,95%)] to-[hsl(0,0%,98%)]",
+    text: "text-[hsl(0,0%,8%)]",
+    accent: "bg-[hsl(0,0%,8%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(0,0%,45%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(0,0%,96%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-sans",
   },
-  midnight: { 
-    bg: "bg-[hsl(230,25%,8%)]", gradient: "from-[hsl(230,40%,18%)] to-[hsl(230,25%,8%)]",
-    text: "text-[hsl(230,20%,92%)]", accent: "bg-[hsl(230,60%,60%)]", accentText: "text-white",
-    muted: "text-[hsl(230,15%,55%)]", linkBg: "bg-[hsl(230,25%,14%)]", linkHover: "hover:bg-[hsl(230,25%,18%)] hover:scale-[1.02]"
+  mono: {
+    bg: "bg-[hsl(0,0%,100%)]",
+    gradient: "from-[hsl(0,0%,100%)] to-[hsl(0,0%,100%)]",
+    text: "text-[hsl(0,0%,4%)]",
+    accent: "bg-[hsl(0,0%,4%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(0,0%,40%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(0,0%,96%)] hover:-translate-y-0.5",
+    ring: "ring-black/10",
+    font: "font-sans",
   },
-  sunset: { 
-    bg: "bg-[hsl(20,40%,97%)]", gradient: "from-[hsl(20,60%,85%)] to-[hsl(20,40%,97%)]",
-    text: "text-[hsl(20,30%,12%)]", accent: "bg-[hsl(20,90%,55%)]", accentText: "text-white",
-    muted: "text-[hsl(20,15%,50%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(20,30%,95%)] hover:scale-[1.02]"
+  midnight: {
+    bg: "bg-[hsl(230,25%,8%)]",
+    gradient: "from-[hsl(230,40%,18%)] to-[hsl(230,25%,8%)]",
+    text: "text-[hsl(230,20%,92%)]",
+    accent: "bg-[hsl(230,60%,60%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(230,15%,55%)]",
+    linkBg: "bg-[hsl(230,25%,14%)]",
+    linkHover: "hover:bg-[hsl(230,25%,18%)] hover:scale-[1.02]",
+    ring: "ring-white/10",
+    font: "font-sans",
   },
-  forest: { 
-    bg: "bg-[hsl(150,25%,96%)]", gradient: "from-[hsl(150,35%,82%)] to-[hsl(150,25%,96%)]",
-    text: "text-[hsl(150,30%,12%)]", accent: "bg-[hsl(150,60%,35%)]", accentText: "text-white",
-    muted: "text-[hsl(150,10%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(150,20%,94%)] hover:scale-[1.02]"
+  sunset: {
+    bg: "bg-[hsl(20,40%,97%)]",
+    gradient: "from-[hsl(20,60%,85%)] to-[hsl(20,40%,97%)]",
+    text: "text-[hsl(20,30%,12%)]",
+    accent: "bg-[hsl(20,90%,55%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(20,15%,50%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(20,30%,95%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-serif",
   },
-  ocean: { 
-    bg: "bg-[hsl(200,35%,96%)]", gradient: "from-[hsl(200,50%,82%)] to-[hsl(200,35%,96%)]",
-    text: "text-[hsl(200,30%,12%)]", accent: "bg-[hsl(200,80%,45%)]", accentText: "text-white",
-    muted: "text-[hsl(200,15%,45%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(200,25%,94%)] hover:scale-[1.02]"
+  forest: {
+    bg: "bg-[hsl(150,25%,96%)]",
+    gradient: "from-[hsl(150,35%,82%)] to-[hsl(150,25%,96%)]",
+    text: "text-[hsl(150,30%,12%)]",
+    accent: "bg-[hsl(150,60%,35%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(150,10%,45%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(150,20%,94%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-serif",
   },
-  lavender: { 
-    bg: "bg-[hsl(270,35%,96%)]", gradient: "from-[hsl(270,40%,85%)] to-[hsl(270,35%,96%)]",
-    text: "text-[hsl(270,25%,12%)]", accent: "bg-[hsl(270,60%,55%)]", accentText: "text-white",
-    muted: "text-[hsl(270,10%,48%)]", linkBg: "bg-white", linkHover: "hover:bg-[hsl(270,25%,94%)] hover:scale-[1.02]"
+  ocean: {
+    bg: "bg-[hsl(200,35%,96%)]",
+    gradient: "from-[hsl(200,50%,82%)] to-[hsl(200,35%,96%)]",
+    text: "text-[hsl(200,30%,12%)]",
+    accent: "bg-[hsl(200,80%,45%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(200,15%,45%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(200,25%,94%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-sans",
+  },
+  lavender: {
+    bg: "bg-[hsl(270,35%,96%)]",
+    gradient: "from-[hsl(270,40%,85%)] to-[hsl(270,35%,96%)]",
+    text: "text-[hsl(270,25%,12%)]",
+    accent: "bg-[hsl(270,60%,55%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(270,10%,48%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(270,25%,94%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-serif",
+  },
+  blush: {
+    bg: "bg-[hsl(345,40%,97%)]",
+    gradient: "from-[hsl(345,55%,88%)] to-[hsl(345,40%,97%)]",
+    text: "text-[hsl(345,30%,14%)]",
+    accent: "bg-[hsl(345,75%,55%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(345,15%,50%)]",
+    linkBg: "bg-white",
+    linkHover: "hover:bg-[hsl(345,30%,95%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-serif",
+  },
+  sand: {
+    bg: "bg-[hsl(40,30%,95%)]",
+    gradient: "from-[hsl(40,40%,86%)] to-[hsl(40,30%,95%)]",
+    text: "text-[hsl(30,30%,14%)]",
+    accent: "bg-[hsl(30,40%,30%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(30,15%,42%)]",
+    linkBg: "bg-[hsl(40,40%,98%)]",
+    linkHover: "hover:bg-[hsl(40,30%,92%)] hover:scale-[1.02]",
+    ring: "ring-white/80",
+    font: "font-serif",
+  },
+  neon: {
+    bg: "bg-[hsl(280,15%,6%)]",
+    gradient: "from-[hsl(290,80%,18%)] via-[hsl(280,60%,12%)] to-[hsl(280,15%,6%)]",
+    text: "text-[hsl(290,30%,96%)]",
+    accent: "bg-[hsl(290,90%,60%)]",
+    accentText: "text-white",
+    muted: "text-[hsl(290,15%,65%)]",
+    linkBg: "bg-[hsl(280,20%,12%)]",
+    linkHover: "hover:bg-[hsl(280,25%,16%)] hover:scale-[1.02]",
+    ring: "ring-[hsl(290,90%,60%)]/30",
+    font: "font-mono",
   },
 };
 
@@ -71,7 +186,6 @@ const CreatorProfile = () => {
       const { data: prof } = await supabase
         .from("profiles").select("*").eq("username", username.toLowerCase()).maybeSingle();
       if (!prof) { setNotFound(true); setLoading(false); return; }
-      // Check whether creator has payments enabled via secure RPC (no sensitive ID exposed).
       const { data: hasPayments } = await (supabase.rpc as any)("creator_has_payments", { _creator_id: prof.id });
       setProfile({ ...prof, has_payments: !!hasPayments });
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
@@ -86,7 +200,6 @@ const CreatorProfile = () => {
       setBioLinks(blinks || []);
       setPublicContent(content || []);
 
-      // Fetch perks for subscriptions
       if (subs && subs.length > 0) {
         const { data: allPerks } = await supabase
           .from("subscription_perks")
@@ -169,11 +282,18 @@ const CreatorProfile = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="animate-pulse flex flex-col items-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-muted" />
-        <div className="w-32 h-4 rounded bg-muted" />
-        <div className="w-48 h-3 rounded bg-muted" />
+    <div className="min-h-screen bg-background pt-12 pb-12">
+      <div className="max-w-md mx-auto px-4 space-y-4">
+        <Skeleton className="w-24 h-24 rounded-full mx-auto" />
+        <Skeleton className="w-40 h-5 mx-auto" />
+        <Skeleton className="w-28 h-3 mx-auto" />
+        <Skeleton className="w-64 h-3 mx-auto" />
+        <div className="space-y-3 pt-6">
+          <Skeleton className="w-full h-14 rounded-2xl" />
+          <Skeleton className="w-full h-14 rounded-2xl" />
+          <Skeleton className="w-full h-14 rounded-2xl" />
+          <Skeleton className="w-full h-14 rounded-2xl" />
+        </div>
       </div>
     </div>
   );
@@ -198,7 +318,7 @@ const CreatorProfile = () => {
   };
 
   return (
-    <div className={`min-h-screen ${theme.bg}`}>
+    <div className={`min-h-screen ${theme.bg} ${theme.font}`}>
       <div className={`bg-gradient-to-b ${theme.gradient} pt-12 pb-8`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -211,7 +331,7 @@ const CreatorProfile = () => {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Avatar className="w-24 h-24 mx-auto mb-4 ring-4 ring-white/80 shadow-lg">
+            <Avatar className={`w-24 h-24 mx-auto mb-4 ring-4 ${theme.ring} shadow-lg`}>
               {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.display_name} /> : null}
               <AvatarFallback className="text-3xl font-display font-bold bg-muted">
                 {(profile?.display_name || username)?.[0]?.toUpperCase()}
@@ -224,8 +344,8 @@ const CreatorProfile = () => {
             {isVerified && <VerifiedBadge className="w-5 h-5" />}
           </h1>
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
-          
-          <div className="flex items-center justify-center gap-3 mt-1">
+
+          <div className="flex items-center justify-center gap-3 mt-1.5">
             {profile?.category && (
               <span className={`px-2 py-0.5 rounded-full text-xs capitalize ${theme.muted} border border-current/20`}>
                 {profile.category}
@@ -242,10 +362,9 @@ const CreatorProfile = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5">
-              💰 Tip
+            <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
+              <Coins className="w-4 h-4" /> Tip
             </Button>
-            {/* Contact email moved to private data; creators can add a contact link via bio links. */}
           </div>
 
           {(activeSocials.length > 0 || profile?.website) && (
@@ -256,12 +375,13 @@ const CreatorProfile = () => {
                   onClick={() => handleSocialClick(platform, String(link))}
                   className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted/80 hover:scale-110`}
                   title={platform}
+                  aria-label={`Open ${platform}`}
                 >
                   <SocialIcon platform={platform} className="w-4 h-4" />
                 </button>
               ))}
               {profile?.website && (
-                <a href={profile.website} target="_blank" rel="noopener noreferrer">
+                <a href={profile.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
                   <button className={`w-10 h-10 rounded-full border border-border/50 flex items-center justify-center transition-all ${theme.linkBg} hover:bg-muted/80 hover:scale-110`} title="Website">
                     <Globe className="w-4 h-4" />
                   </button>
@@ -290,7 +410,11 @@ const CreatorProfile = () => {
                 className="block"
               >
                 <div className={`${theme.linkBg} rounded-2xl border border-border/50 p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 shadow-sm ${theme.linkHover}`}>
-                  {link.icon && <span className="text-xl w-8 text-center">{link.icon}</span>}
+                  {link.thumbnail_url ? (
+                    <img src={link.thumbnail_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                  ) : link.icon ? (
+                    <span className="text-xl w-8 text-center">{link.icon}</span>
+                  ) : null}
                   <span className={`font-semibold text-sm flex-1 ${theme.text}`}>{link.title}</span>
                   <ChevronRight className={`w-4 h-4 ${theme.muted}`} />
                 </div>
@@ -299,7 +423,6 @@ const CreatorProfile = () => {
           </div>
         )}
 
-        {/* Public Content */}
         {publicContent.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-6">
             <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
@@ -326,7 +449,7 @@ const CreatorProfile = () => {
                     </div>
                     {item.content_type === "live_stream" && item.live_stream_url && item.visibility === "public" && (
                       <a href={item.live_stream_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline" className="text-xs">Watch</Button>
+                        <Button size="sm" variant="outline" className="text-xs rounded-full">Watch</Button>
                       </a>
                     )}
                   </div>
@@ -341,43 +464,42 @@ const CreatorProfile = () => {
 
         {subscriptions.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
-            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text}`}>Memberships</h3>
+            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
+              <Sparkles className="w-4 h-4" /> Memberships
+            </h3>
             <div className="space-y-3">
               {subscriptions.map(sub => (
-                <div
+                <button
                   key={sub.id}
-                  className={`${theme.linkBg} rounded-2xl border border-border/50 p-5 shadow-sm cursor-pointer transition-all ${theme.linkHover}`}
+                  type="button"
+                  className={`${theme.linkBg} w-full text-left rounded-2xl border border-border/50 p-5 shadow-sm cursor-pointer transition-all ${theme.linkHover}`}
                   onClick={() => setBuyingSub(sub)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <p className={`font-semibold ${theme.text}`}>{sub.name}</p>
-                      {sub.description && <p className={`text-sm mt-0.5 ${theme.muted}`}>{sub.description}</p>}
+                      {sub.description && <p className={`text-sm mt-0.5 ${theme.muted} line-clamp-2`}>{sub.description}</p>}
                     </div>
-                    <span className={`font-display font-bold text-lg ${theme.text}`}>${sub.price}<span className={`text-xs ${theme.muted} font-normal`}>/mo</span></span>
+                    <span className={`font-display font-bold text-lg ${theme.text} shrink-0`}>
+                      ${sub.price}
+                      <span className={`text-xs ${theme.muted} font-normal`}>/mo</span>
+                    </span>
                   </div>
-                  {sub.features && sub.features.length > 0 && (
-                    <ul className="mt-3 space-y-1">
-                      {sub.features.map((f: string, i: number) => (
-                        <li key={i} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
-                          <span className="w-1 h-1 rounded-full bg-current" /> {f}
+                  {(sub.features?.length > 0 || (perks[sub.id] || []).length > 0) && (
+                    <ul className="mt-3 space-y-1.5">
+                      {(sub.features || []).map((f: string, i: number) => (
+                        <li key={`f-${i}`} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
+                          <Check className="w-3 h-3 shrink-0" /> {f}
+                        </li>
+                      ))}
+                      {(perks[sub.id] || []).map(perk => (
+                        <li key={perk.id} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
+                          <Gift className="w-3 h-3 shrink-0" /> {perk.perk_name}
                         </li>
                       ))}
                     </ul>
                   )}
-                  {(perks[sub.id] || []).length > 0 && (
-                    <div className="mt-3 pt-2 border-t border-border/30">
-                      <p className={`text-xs font-medium ${theme.muted} mb-1`}>Perks included:</p>
-                      <ul className="space-y-1">
-                        {(perks[sub.id] || []).map(perk => (
-                          <li key={perk.id} className={`text-xs ${theme.muted} flex items-center gap-1.5`}>
-                            <span>🎁</span> {perk.perk_name}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                </button>
               ))}
             </div>
           </motion.div>
@@ -390,32 +512,32 @@ const CreatorProfile = () => {
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {products.map(product => (
-                <div
+                <button
                   key={product.id}
-                  className={`${theme.linkBg} rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all shadow-sm ${theme.linkHover}`}
+                  type="button"
+                  className={`${theme.linkBg} text-left rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all shadow-sm ${theme.linkHover}`}
                   onClick={() => setBuyingProduct(product)}
                 >
                   {product.image_url ? (
                     <img src={product.image_url} alt={product.name} className="w-full h-32 object-cover" />
                   ) : (
                     <div className="w-full h-32 bg-muted/50 flex items-center justify-center">
-                      <Image className="w-8 h-8 text-muted-foreground/40" />
+                      <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
                     </div>
                   )}
                   <div className="p-3">
-                    <p className={`font-semibold text-sm leading-tight ${theme.text}`}>{product.name}</p>
+                    <p className={`font-semibold text-sm leading-tight ${theme.text} line-clamp-2`}>{product.name}</p>
                     {product.category && <p className={`text-xs ${theme.muted} capitalize mt-0.5`}>{product.category}</p>}
                     <p className={`font-display font-bold mt-1.5 ${theme.text}`}>
                       {product.price === 0 ? "Free" : `$${product.price}`}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* Product Purchase Dialog */}
         <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
@@ -436,16 +558,15 @@ const CreatorProfile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Subscription Dialog */}
         <Dialog open={!!buyingSub} onOpenChange={() => setBuyingSub(null)}>
           <DialogContent className="rounded-2xl">
             <DialogHeader><DialogTitle>{buyingSub?.name}</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">{buyingSub?.description || "No description"}</p>
+            {buyingSub?.description && <p className="text-sm text-muted-foreground">{buyingSub.description}</p>}
             {buyingSub?.features && buyingSub.features.length > 0 && (
               <ul className="space-y-1.5 mt-2">
                 {buyingSub.features.map((f: string, i: number) => (
                   <li key={i} className="text-sm flex items-center gap-2">
-                    <span className="text-primary">✓</span> {f}
+                    <Check className="w-4 h-4 text-primary shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
@@ -455,16 +576,19 @@ const CreatorProfile = () => {
                 <p className="text-xs font-medium text-muted-foreground mb-1">Perks:</p>
                 <ul className="space-y-1">
                   {(perks[buyingSub.id] || []).map(perk => (
-                    <li key={perk.id} className="text-sm flex items-center gap-2">
-                      <span>🎁</span> {perk.perk_name}
-                      {perk.perk_description && <span className="text-muted-foreground text-xs">— {perk.perk_description}</span>}
+                    <li key={perk.id} className="text-sm flex items-start gap-2">
+                      <Gift className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <span>
+                        {perk.perk_name}
+                        {perk.perk_description && <span className="text-muted-foreground text-xs"> — {perk.perk_description}</span>}
+                      </span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
             <div className="flex items-center justify-between mt-4">
-              <span className="text-2xl font-display font-bold">${buyingSub?.price}/mo</span>
+              <span className="text-2xl font-display font-bold">${buyingSub?.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></span>
               <Button
                 onClick={() => handleSubscribe(buyingSub)}
                 disabled={checkoutLoading}
@@ -476,10 +600,13 @@ const CreatorProfile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Tip Dialog */}
         <Dialog open={showTipDialog} onOpenChange={setShowTipDialog}>
           <DialogContent className="rounded-2xl max-w-sm">
-            <DialogHeader><DialogTitle>Send a tip to {profile?.display_name}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Coins className="w-5 h-5" /> Send a tip to {profile?.display_name}
+              </DialogTitle>
+            </DialogHeader>
             <div className="grid grid-cols-3 gap-2 mt-2">
               {[300, 500, 1000, 2000, 5000, 10000].map(amt => (
                 <Button
@@ -495,8 +622,9 @@ const CreatorProfile = () => {
             <Button
               onClick={() => handleTip(tipAmount)}
               disabled={checkoutLoading}
-              className="w-full mt-4 rounded-xl"
+              className="w-full mt-4 rounded-xl gap-2"
             >
+              <Coins className="w-4 h-4" />
               {checkoutLoading ? "Loading..." : `Send $${(tipAmount / 100).toFixed(0)} Tip`}
             </Button>
           </DialogContent>
