@@ -226,6 +226,33 @@ export type Database = {
           },
         ]
       }
+      creator_private_data: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          id: string
+          paypal_email: string | null
+          stripe_connect_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          id: string
+          paypal_email?: string | null
+          stripe_connect_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          paypal_email?: string | null
+          stripe_connect_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -832,6 +859,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -840,6 +868,15 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_my_private_data: {
+        Args: never
+        Returns: {
+          contact_email: string
+          paypal_email: string
+          stripe_connect_account_id: string
+        }[]
+      }
+      get_my_referral_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

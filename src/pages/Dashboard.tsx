@@ -41,7 +41,17 @@ const Dashboard = () => {
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-    setProfile(data);
+    // referral_code and stripe_connect_account_id are no longer readable from profiles publicly.
+    // Fetch them via the secure owner-only paths.
+    const [{ data: refCode }, { data: priv }] = await Promise.all([
+      (supabase.rpc as any)("get_my_referral_code"),
+      (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", userId).maybeSingle() as any),
+    ]);
+    setProfile({
+      ...(data || {}),
+      referral_code: refCode ?? null,
+      stripe_connect_account_id: priv?.stripe_connect_account_id ?? null,
+    });
     setLoading(false);
   };
 
