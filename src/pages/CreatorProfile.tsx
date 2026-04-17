@@ -280,18 +280,6 @@ const CreatorProfile = () => {
     }
     setCheckoutLoading(false);
   };
-    try {
-      const { data, error } = await supabase.functions.invoke("create-subscription-checkout", {
-        body: { subscriptionId: sub.id, creatorId: profile.id },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-      setBuyingSub(null);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to start subscription", variant: "destructive" });
-    }
-    setCheckoutLoading(false);
-  };
 
   if (loading) return (
     <div className="min-h-screen bg-background pt-12 pb-12">
