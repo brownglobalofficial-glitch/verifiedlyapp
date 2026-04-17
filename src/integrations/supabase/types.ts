@@ -859,6 +859,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -866,6 +867,14 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_my_private_data: {
+        Args: never
+        Returns: {
+          contact_email: string
+          paypal_email: string
+          stripe_connect_account_id: string
+        }[]
       }
       get_my_referral_code: { Args: never; Returns: string }
       has_role: {
