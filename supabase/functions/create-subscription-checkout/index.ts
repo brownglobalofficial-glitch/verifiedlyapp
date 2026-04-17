@@ -51,9 +51,11 @@ serve(async (req) => {
     if (creator.is_elite) feePercent = 0;
     else if (creator.is_pro) feePercent = 5;
 
-    const amountCents = Math.round(sub.price * 100);
+    // Annual = monthly price * 10 (~17% off / 2 months free)
+    const monthlyAmountCents = Math.round(sub.price * 100);
+    const amountCents = billingInterval === "year" ? monthlyAmountCents * 10 : monthlyAmountCents;
     const applicationFee = Math.round(amountCents * (feePercent / 100));
-    logStep("Fee calculated", { feePercent, applicationFee, amountCents });
+    logStep("Fee calculated", { feePercent, applicationFee, amountCents, billingInterval });
 
     // Get buyer info if authenticated
     let customerEmail: string | undefined;
@@ -83,10 +85,10 @@ serve(async (req) => {
           currency: "usd",
           product_data: {
             name: `${sub.name} — ${creator.display_name || creator.username}`,
-            description: sub.description || `Monthly subscription to ${creator.display_name || creator.username}`,
+            description: sub.description || `${billingInterval === "year" ? "Annual" : "Monthly"} subscription to ${creator.display_name || creator.username}`,
           },
           unit_amount: amountCents,
-          recurring: { interval: "month" },
+          recurring: { interval: billingInterval },
         },
         quantity: 1,
       }],
@@ -98,6 +100,7 @@ serve(async (req) => {
         subscription_id: subscriptionId,
         type: "creator_subscription",
         platform_fee_percent: String(feePercent),
+        billing_interval: billingInterval,
       },
     };
 
