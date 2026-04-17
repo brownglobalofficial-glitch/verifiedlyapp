@@ -247,12 +247,12 @@ const ProfileSettings = () => {
       setYoutube(sl.youtube || "");
       setTiktok(sl.tiktok || "");
       setFacebook(sl.facebook || "");
-      setStripeConnected(!!data.stripe_connect_account_id);
     }
 
-    // Fetch private data (contact_email etc.)
-    const { data: privateData } = await (supabase.from("creator_private_data" as any).select("contact_email").eq("id", userId).maybeSingle() as any);
+    // Fetch private data (contact_email + stripe connect status) — these live in creator_private_data
+    const { data: privateData } = await (supabase.from("creator_private_data" as any).select("contact_email, stripe_connect_account_id").eq("id", userId).maybeSingle() as any);
     setContactEmail(privateData?.contact_email || "");
+    setStripeConnected(!!privateData?.stripe_connect_account_id);
 
     setLoading(false);
   };
