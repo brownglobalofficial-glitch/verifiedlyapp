@@ -82,7 +82,10 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    const { PageSkeleton } = require("@/components/PageSkeleton");
+    return <PageSkeleton />;
+  }
 
   const username = profile?.username || user?.user_metadata?.username || "creator";
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
