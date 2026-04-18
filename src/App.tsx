@@ -3,31 +3,33 @@ import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import FanDashboard from "./pages/FanDashboard";
-import ProfileSettings from "./pages/ProfileSettings";
-import ManageProducts from "./pages/ManageProducts";
-import ManageSubscriptions from "./pages/ManageSubscriptions";
-import Explore from "./pages/Explore";
-import CreatorProfile from "./pages/CreatorProfile";
-import Marketplace from "./pages/Marketplace";
-import Analytics from "./pages/Analytics";
-import ManageLinks from "./pages/ManageLinks";
-import Onboarding from "./pages/Onboarding";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Admin from "./pages/Admin";
-import ManageContent from "./pages/ManageContent";
-import Membership from "./pages/Membership";
-import Product from "./pages/Product";
+import PageSkeleton from "@/components/PageSkeleton";
+
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const FanDashboard = lazy(() => import("./pages/FanDashboard"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const ManageProducts = lazy(() => import("./pages/ManageProducts"));
+const ManageSubscriptions = lazy(() => import("./pages/ManageSubscriptions"));
+const Explore = lazy(() => import("./pages/Explore"));
+const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const ManageLinks = lazy(() => import("./pages/ManageLinks"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Admin = lazy(() => import("./pages/Admin"));
+const ManageContent = lazy(() => import("./pages/ManageContent"));
+const Membership = lazy(() => import("./pages/Membership"));
+const Product = lazy(() => import("./pages/Product"));
 
 const queryClient = new QueryClient();
 
@@ -38,7 +40,6 @@ const OAuthRedirectHandler = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        // Check if this is an OAuth user who needs onboarding
         const provider = session.user.app_metadata?.provider;
         if (provider && provider !== "email") {
           const { data: profile } = await supabase
@@ -67,31 +68,33 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <OAuthRedirectHandler />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/settings" element={<ProfileSettings />} />
-          <Route path="/dashboard/products" element={<ManageProducts />} />
-          <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
-          <Route path="/dashboard/analytics" element={<Analytics />} />
-          <Route path="/dashboard/marketplace" element={<Marketplace />} />
-          <Route path="/dashboard/links" element={<ManageLinks />} />
-          <Route path="/dashboard/content" element={<ManageContent />} />
-          <Route path="/dashboard/admin" element={<Admin />} />
-          <Route path="/fan" element={<FanDashboard />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/:username" element={<CreatorProfile />} />
-          <Route path="/:username/membership" element={<Membership />} />
-          <Route path="/:username/p/:productId" element={<Product />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/settings" element={<ProfileSettings />} />
+            <Route path="/dashboard/products" element={<ManageProducts />} />
+            <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
+            <Route path="/dashboard/analytics" element={<Analytics />} />
+            <Route path="/dashboard/marketplace" element={<Marketplace />} />
+            <Route path="/dashboard/links" element={<ManageLinks />} />
+            <Route path="/dashboard/content" element={<ManageContent />} />
+            <Route path="/dashboard/admin" element={<Admin />} />
+            <Route path="/fan" element={<FanDashboard />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/:username" element={<CreatorProfile />} />
+            <Route path="/:username/membership" element={<Membership />} />
+            <Route path="/:username/p/:productId" element={<Product />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

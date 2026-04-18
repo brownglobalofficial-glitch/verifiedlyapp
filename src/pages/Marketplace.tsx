@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Search, Megaphone, DollarSign, Handshake, Plus, ArrowLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
+import { GridSkeleton } from "@/components/PageSkeleton";
 import type { User } from "@supabase/supabase-js";
 
 const Marketplace = () => {
@@ -28,6 +29,7 @@ const Marketplace = () => {
   const [applicationMessage, setApplicationMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -65,6 +67,7 @@ const Marketplace = () => {
       const { data: myApps } = await supabase.from("campaign_applications").select("*, brand_campaigns(title, brand_name)").eq("creator_id", uid);
       setMyApplications(myApps || []);
     }
+    setLoading(false);
   };
 
   const handleApply = async (campaignId: string) => {
@@ -204,6 +207,7 @@ const Marketplace = () => {
               </div>
             </div>
 
+            {loading ? <GridSkeleton count={6} /> : (
             <div className="grid md:grid-cols-2 gap-4">
               {filtered.map((campaign, i) => (
                 <motion.div key={campaign.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.05 }}>
@@ -255,6 +259,7 @@ const Marketplace = () => {
               ))}
               {filtered.length === 0 && <p className="col-span-full text-center text-muted-foreground py-12">No campaigns found</p>}
             </div>
+            )}
           </TabsContent>
 
           {isBusiness && (

@@ -10,6 +10,7 @@ import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -82,7 +83,7 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
+  if (loading) return <PageSkeleton />;
 
   const username = profile?.username || user?.user_metadata?.username || "creator";
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
