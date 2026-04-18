@@ -207,6 +207,7 @@ const Marketplace = () => {
               </div>
             </div>
 
+            {loading ? <GridSkeleton count={6} /> : (
             <div className="grid md:grid-cols-2 gap-4">
               {filtered.map((campaign, i) => (
                 <motion.div key={campaign.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.05 }}>
