@@ -161,8 +161,25 @@ const Analytics = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
-        <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
-        <p className="text-muted-foreground mb-8">Track your growth and performance</p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
+            <p className="text-muted-foreground">Track your growth and performance</p>
+          </div>
+          <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg w-fit">
+            {RANGES.map((r) => (
+              <button
+                key={r.value}
+                onClick={() => setRange(r.value)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  range === r.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card className="p-5">
