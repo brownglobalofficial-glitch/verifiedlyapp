@@ -17,9 +17,19 @@ const chartConfig = {
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+type DateRange = "7" | "30" | "90" | "all";
+
+const RANGES: { value: DateRange; label: string }[] = [
+  { value: "7", label: "7 days" },
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+  { value: "all", label: "All time" },
+];
+
 const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [range, setRange] = useState<DateRange>("30");
   const [viewsData, setViewsData] = useState<any[]>([]);
   const [earningsData, setEarningsData] = useState<any[]>([]);
   const [subsData, setSubsData] = useState<any[]>([]);
@@ -33,9 +43,15 @@ const Analytics = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUserId(session.user.id);
-      fetchAnalytics(session.user.id);
+      fetchAnalytics(session.user.id, range);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
+
+  useEffect(() => {
+    if (userId) fetchAnalytics(userId, range);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
 
   const fetchAnalytics = async (uid: string) => {
     const [{ data: views }, { data: earnings }, { data: subs }, { data: social }, { data: bioLinks }] = await Promise.all([
