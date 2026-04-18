@@ -24,6 +24,8 @@ const Analytics = () => {
   const [earningsData, setEarningsData] = useState<any[]>([]);
   const [subsData, setSubsData] = useState<any[]>([]);
   const [socialStats, setSocialStats] = useState<any[]>([]);
+  const [linkStats, setLinkStats] = useState<{ id: string; title: string; clicks: number; ctr: number }[]>([]);
+  const [totalLinkClicks, setTotalLinkClicks] = useState(0);
   const [totals, setTotals] = useState({ earnings: 0, views: 0, subs: 0 });
   const navigate = useNavigate();
 
@@ -36,12 +38,26 @@ const Analytics = () => {
   }, [navigate]);
 
   const fetchAnalytics = async (uid: string) => {
-    const [{ data: views }, { data: earnings }, { data: subs }, { data: social }] = await Promise.all([
+    const [{ data: views }, { data: earnings }, { data: subs }, { data: social }, { data: bioLinks }] = await Promise.all([
       supabase.from("page_views").select("created_at").eq("creator_id", uid),
       supabase.from("earnings").select("amount, created_at, source").eq("creator_id", uid),
       supabase.from("subscriber_events").select("event_type, created_at").eq("creator_id", uid),
       supabase.from("social_analytics").select("*").eq("creator_id", uid),
+      supabase.from("bio_links").select("id, title, clicks").eq("creator_id", uid),
     ]);
+
+    // Per-link analytics
+    const totalViews = (views || []).length;
+    const links = (bioLinks || [])
+      .map((l) => ({
+        id: l.id,
+        title: l.title,
+        clicks: l.clicks || 0,
+        ctr: totalViews > 0 ? ((l.clicks || 0) / totalViews) * 100 : 0,
+      }))
+      .sort((a, b) => b.clicks - a.clicks);
+    setLinkStats(links);
+    setTotalLinkClicks(links.reduce((s, l) => s + l.clicks, 0));
 
     // Aggregate by month
     const now = new Date();
