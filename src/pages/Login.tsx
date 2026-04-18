@@ -25,14 +25,33 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
-    } else {
-      // Check account type to route fans to fan dashboard
-      const { data: profile } = await supabase.from("profiles").select("account_type").eq("id", data.user.id).maybeSingle();
-      navigate(profile?.account_type === "fan" ? "/fan" : "/dashboard");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({ title: "Login failed", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      // Try to fetch account type, but don't block navigation if it fails/times out
+      let accountType: string | null = null;
+      try {
+        const profilePromise = supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        const timeout = new Promise<{ data: null }>((resolve) =>
+          setTimeout(() => resolve({ data: null }), 1500)
+        );
+        const result: any = await Promise.race([profilePromise, timeout]);
+        accountType = result?.data?.account_type ?? null;
+      } catch {
+        // ignore — fall back to default route
+      }
+      navigate(accountType === "fan" ? "/fan" : "/dashboard", { replace: true });
+    } catch (err: any) {
+      toast({ title: "Login failed", description: err?.message ?? "Unknown error", variant: "destructive" });
+      setLoading(false);
     }
   };
 
