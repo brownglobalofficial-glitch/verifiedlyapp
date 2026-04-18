@@ -410,32 +410,53 @@ const CreatorProfile = () => {
 
       <div className="max-w-md mx-auto px-4 pb-12 -mt-2">
         {bioLinks.length > 0 && (
-          <div className="space-y-3 mb-6">
-            {bioLinks.map((link, i) => (
-              <motion.a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + i * 0.05 }}
-                onClick={() => {
-                  supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id }).then(() => {});
-                }}
-                className="block"
-              >
-                <div className={`${theme.linkBg} rounded-2xl border border-border/50 p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 shadow-sm ${theme.linkHover}`}>
-                  {link.thumbnail_url ? (
-                    <img src={link.thumbnail_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  ) : link.icon ? (
-                    <span className="text-xl w-8 text-center">{link.icon}</span>
-                  ) : null}
-                  <span className={`font-semibold text-sm flex-1 ${theme.text}`}>{link.title}</span>
-                  <ChevronRight className={`w-4 h-4 ${theme.muted}`} />
-                </div>
-              </motion.a>
-            ))}
+          <div className={`mb-6 ${profile?.link_layout === "cards" ? "grid grid-cols-1 gap-4" : "space-y-3"}`}>
+            {bioLinks.map((link, i) => {
+              const isCard = profile?.link_layout === "cards";
+              return (
+                <motion.a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 + i * 0.05 }}
+                  onClick={() => {
+                    supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id }).then(() => {});
+                  }}
+                  className="block"
+                >
+                  {isCard ? (
+                    <div className={`${theme.linkBg} rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all duration-200 shadow-sm ${theme.linkHover}`}>
+                      {link.thumbnail_url ? (
+                        <div className="aspect-[16/9] w-full bg-muted overflow-hidden">
+                          <img src={link.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className={`aspect-[16/9] w-full flex items-center justify-center text-5xl ${theme.muted}`}>
+                          {link.icon || "🔗"}
+                        </div>
+                      )}
+                      <div className="p-4 flex items-center justify-between gap-3">
+                        <span className={`font-semibold ${theme.text}`}>{link.title}</span>
+                        <ChevronRight className={`w-4 h-4 ${theme.muted}`} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`${theme.linkBg} rounded-2xl border border-border/50 p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 shadow-sm ${theme.linkHover}`}>
+                      {link.thumbnail_url ? (
+                        <img src={link.thumbnail_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      ) : link.icon ? (
+                        <span className="text-xl w-8 text-center">{link.icon}</span>
+                      ) : null}
+                      <span className={`font-semibold text-sm flex-1 ${theme.text}`}>{link.title}</span>
+                      <ChevronRight className={`w-4 h-4 ${theme.muted}`} />
+                    </div>
+                  )}
+                </motion.a>
+              );
+            })}
           </div>
         )}
 
