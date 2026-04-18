@@ -259,6 +259,7 @@ const Marketplace = () => {
               ))}
               {filtered.length === 0 && <p className="col-span-full text-center text-muted-foreground py-12">No campaigns found</p>}
             </div>
+            )}
           </TabsContent>
 
           {isBusiness && (
