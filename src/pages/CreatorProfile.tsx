@@ -507,29 +507,49 @@ const CreatorProfile = () => {
               <ShoppingBag className="w-4 h-4" /> Shop
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              {products.map(product => (
-                <button
-                  key={product.id}
-                  type="button"
-                  className={`${theme.linkBg} text-left rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all shadow-sm ${theme.linkHover}`}
-                  onClick={() => setBuyingProduct(product)}
-                >
-                  {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-32 object-cover" />
-                  ) : (
-                    <div className="w-full h-32 bg-muted/50 flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
+              {products.map((product, i) => {
+                const isFree = Number(product.price) === 0;
+                return (
+                  <motion.button
+                    key={product.id}
+                    type="button"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.04 }}
+                    className={`${theme.linkBg} text-left rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all shadow-sm ${theme.linkHover} group`}
+                    onClick={() => navigate(`/${profile.username}/p/${product.id}`)}
+                  >
+                    <div className="relative aspect-square overflow-hidden bg-muted/40">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      {isFree && (
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${theme.accent} ${theme.accentText}`}>
+                          Free
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="p-3">
-                    <p className={`font-semibold text-sm leading-tight ${theme.text} line-clamp-2`}>{product.name}</p>
-                    {product.category && <p className={`text-xs ${theme.muted} capitalize mt-0.5`}>{product.category}</p>}
-                    <p className={`font-display font-bold mt-1.5 ${theme.text}`}>
-                      {product.price === 0 ? "Free" : `$${product.price}`}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                    <div className="p-3">
+                      <p className={`font-semibold text-sm leading-tight ${theme.text} line-clamp-2`}>{product.name}</p>
+                      {product.category && <p className={`text-xs ${theme.muted} capitalize mt-0.5`}>{product.category}</p>}
+                      <div className="flex items-center justify-between mt-1.5">
+                        <p className={`font-display font-bold ${theme.text}`}>
+                          {isFree ? "Free" : `$${Number(product.price).toFixed(2)}`}
+                        </p>
+                        <ChevronRight className={`w-4 h-4 ${theme.muted} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </div>
           </motion.div>
         )}
