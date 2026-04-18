@@ -430,7 +430,8 @@ const Explore = () => {
         )}
 
         {/* Results */}
-        {tab === "creators" && (
+        {loading && <GridSkeleton count={8} />}
+        {!loading && tab === "creators" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredCreators.map((creator, i) => (
               <motion.div key={creator.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
