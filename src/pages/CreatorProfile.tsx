@@ -378,9 +378,11 @@ const CreatorProfile = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
-              <Coins className="w-4 h-4" /> Tip
-            </Button>
+            {profile?.stripe_connect_account_id && (
+              <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
+                <Coins className="w-4 h-4" /> Tip
+              </Button>
+            )}
           </div>
 
           {(activeSocials.length > 0 || profile?.website) && (

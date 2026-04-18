@@ -175,29 +175,37 @@ const Onboarding = () => {
     }
 
     setSaving(true);
-    await supabase.from("profiles").update({
-      username: username.toLowerCase(),
-      display_name: displayName,
-      bio,
-      account_type: accountType,
-      category: category || null,
-      social_links: { instagram, twitter, youtube, tiktok },
-      theme_color: theme,
-      onboarding_completed: true,
-    }).eq("id", userId);
+    try {
+      const { error: profileErr } = await supabase.from("profiles").update({
+        username: username.toLowerCase(),
+        display_name: displayName,
+        bio,
+        account_type: accountType,
+        category: category || null,
+        social_links: { instagram, twitter, youtube, tiktok },
+        theme_color: theme,
+        onboarding_completed: true,
+      }).eq("id", userId);
+      if (profileErr) throw profileErr;
 
-    if (links.length > 0) {
-      await supabase.from("bio_links").insert(
-        links.map((l, i) => ({
-          creator_id: userId, title: l.title, url: l.url,
-          icon: l.icon || null, sort_order: i,
-        }))
-      );
+      if (links.length > 0) {
+        const { error: linksErr } = await supabase.from("bio_links").insert(
+          links.map((l, i) => ({
+            creator_id: userId, title: l.title, url: l.url,
+            icon: l.icon || null, sort_order: i,
+          }))
+        );
+        if (linksErr) throw linksErr;
+      }
+
+      toast({ title: "You're all set! 🎉", description: "Your profile is live." });
+      navigate(accountType === "fan" ? "/fan" : "/dashboard");
+    } catch (err: any) {
+      console.error("Onboarding finish error:", err);
+      toast({ title: "Setup failed", description: err.message || "Could not complete setup. Please try again.", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    toast({ title: "You're all set! 🎉", description: "Your profile is live." });
-    navigate(accountType === "fan" ? "/fan" : "/dashboard");
   };
 
   const canProceed = () => {
