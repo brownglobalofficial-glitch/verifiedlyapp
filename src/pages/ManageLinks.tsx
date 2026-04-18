@@ -167,6 +167,7 @@ const ManageLinks = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [linkLayout, setLinkLayout] = useState<"compact" | "cards">("compact");
   const [saving, setSaving] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -190,13 +191,21 @@ const ManageLinks = () => {
       setUserId(session.user.id);
       const { data: prof } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, link_layout")
         .eq("id", session.user.id)
         .maybeSingle();
       if (prof?.username) setUsername(prof.username);
+      if (prof && (prof as any).link_layout) setLinkLayout((prof as any).link_layout);
       fetchLinks(session.user.id);
     });
   }, [navigate]);
+
+  const handleLayoutChange = async (layout: "compact" | "cards") => {
+    if (!userId) return;
+    setLinkLayout(layout);
+    await supabase.from("profiles").update({ link_layout: layout } as any).eq("id", userId);
+    setPreviewKey((k) => k + 1);
+  };
 
   const fetchLinks = async (uid: string) => {
     const { data } = await supabase
