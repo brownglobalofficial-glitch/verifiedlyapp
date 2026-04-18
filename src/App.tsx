@@ -27,6 +27,7 @@ import Privacy from "./pages/Privacy";
 import Admin from "./pages/Admin";
 import ManageContent from "./pages/ManageContent";
 import Membership from "./pages/Membership";
+import Product from "./pages/Product";
 
 const queryClient = new QueryClient();
 
