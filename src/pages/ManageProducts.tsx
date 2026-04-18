@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, Edit2, Image, ShoppingBag, Upload, FileIcon, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import logo from "@/assets/verifiedly-logo.webp";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
+import StripeRequiredBanner from "@/components/StripeRequiredBanner";
 
 const CATEGORIES = [
   { value: "", label: "No category" },
@@ -43,6 +45,7 @@ const ManageProducts = () => {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { stripeConnected } = useStripeConnect();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -109,6 +112,10 @@ const ManageProducts = () => {
 
   const handleSave = async () => {
     if (!name || !price) return;
+    if (!stripeConnected) {
+      toast({ title: "Connect Stripe first", description: "Finish payouts setup in settings before publishing products.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const payload = {
       name,
@@ -150,6 +157,10 @@ const ManageProducts = () => {
   };
 
   const handleTogglePublish = async (id: string, published: boolean) => {
+    if (published && !stripeConnected) {
+      toast({ title: "Connect Stripe first", description: "Finish payouts setup in settings before publishing.", variant: "destructive" });
+      return;
+    }
     await supabase.from("products").update({ is_published: published }).eq("id", id);
     setProducts(products.map(p => p.id === id ? { ...p, is_published: published } : p));
   };
@@ -173,11 +184,14 @@ const ManageProducts = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-3xl">
+        {stripeConnected === false && (
+          <StripeRequiredBanner message="Connect Stripe in settings to publish products and accept payments." />
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-display font-bold">Your Products</h1>
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
+          <Dialog open={open} onOpenChange={(o) => { if (o && !stripeConnected) { toast({ title: "Connect Stripe first", description: "Finish payouts setup in settings.", variant: "destructive" }); return; } setOpen(o); if (!o) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> New Product</Button>
+              <Button className="gap-2" disabled={!stripeConnected}><Plus className="w-4 h-4" /> New Product</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editingId ? "Edit Product" : "Create Product"}</DialogTitle></DialogHeader>

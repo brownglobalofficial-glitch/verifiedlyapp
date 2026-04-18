@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, Gift } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import logo from "@/assets/verifiedly-logo.webp";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
+import StripeRequiredBanner from "@/components/StripeRequiredBanner";
 
 const ManageSubscriptions = () => {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -27,6 +29,7 @@ const ManageSubscriptions = () => {
   const [perkDesc, setPerkDesc] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { stripeConnected } = useStripeConnect();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +61,10 @@ const ManageSubscriptions = () => {
 
   const handleCreate = async () => {
     if (!name || !price) return;
+    if (!stripeConnected) {
+      toast({ title: "Connect Stripe first", description: "Finish payouts setup in settings before creating tiers.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const featuresArr = features.split("\n").map(f => f.trim()).filter(Boolean);
     const { error } = await supabase.from("subscriptions").insert({
@@ -119,11 +126,14 @@ const ManageSubscriptions = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-3xl">
+        {stripeConnected === false && (
+          <StripeRequiredBanner message="Connect Stripe in settings to launch paid subscription tiers." />
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-display font-bold">Subscription Tiers</h1>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(o) => { if (o && !stripeConnected) { toast({ title: "Connect Stripe first", description: "Finish payouts setup in settings.", variant: "destructive" }); return; } setOpen(o); }}>
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> New Tier</Button>
+              <Button className="gap-2" disabled={!stripeConnected}><Plus className="w-4 h-4" /> New Tier</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Create Subscription Tier</DialogTitle></DialogHeader>
