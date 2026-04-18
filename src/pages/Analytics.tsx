@@ -173,6 +173,80 @@ const Analytics = () => {
           </div>
         )}
 
+        {/* Link Analytics */}
+        <div className="mb-8">
+          <h3 className="font-display font-semibold text-lg mb-4 flex items-center gap-2">
+            <LinkIcon className="w-5 h-5" /> Link Performance
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Card className="p-5">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <MousePointerClick className="w-4 h-4" />
+                <span className="text-xs font-medium">Total Link Clicks</span>
+              </div>
+              <p className="text-3xl font-display font-bold">{totalLinkClicks.toLocaleString()}</p>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <LinkIcon className="w-4 h-4" />
+                <span className="text-xs font-medium">Average CTR</span>
+              </div>
+              <p className="text-3xl font-display font-bold">
+                {totals.views > 0 ? ((totalLinkClicks / totals.views) * 100).toFixed(1) : "0.0"}%
+              </p>
+            </Card>
+          </div>
+
+          {linkStats.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <Card className="p-6">
+                <h4 className="font-display font-semibold mb-4">Top Links by Clicks</h4>
+                <ChartContainer config={chartConfig} className="h-[260px] w-full">
+                  <BarChart data={linkStats.slice(0, 8)} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                    <YAxis
+                      type="category"
+                      dataKey="title"
+                      tick={{ fontSize: 11 }}
+                      stroke="hsl(var(--muted-foreground))"
+                      width={100}
+                      tickFormatter={(v) => (v.length > 14 ? `${v.slice(0, 14)}…` : v)}
+                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="clicks" fill="hsl(var(--foreground))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </Card>
+
+              <Card className="p-6">
+                <h4 className="font-display font-semibold mb-4">All Links</h4>
+                <div className="space-y-2 max-h-[260px] overflow-y-auto">
+                  {linkStats.map((l, i) => (
+                    <div key={l.id} className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs text-muted-foreground w-5">#{i + 1}</span>
+                        <span className="text-sm font-medium truncate">{l.title}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+                        <span className="flex items-center gap-1">
+                          <MousePointerClick className="w-3 h-3" />
+                          {l.clicks.toLocaleString()}
+                        </span>
+                        <span className="font-mono">{l.ctr.toFixed(1)}% CTR</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          ) : (
+            <Card className="p-8 text-center text-sm text-muted-foreground mb-6">
+              No bio links yet. Add links on the Manage Links page to see analytics here.
+            </Card>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
             <h3 className="font-display font-semibold mb-4">Earnings Over Time</h3>
