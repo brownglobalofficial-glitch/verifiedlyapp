@@ -203,7 +203,7 @@ const Onboarding = () => {
   const canProceed = () => {
     if (step === 1) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
     // Payouts step index: 3 for creators/businesses (Type=0, Profile=1, Links=2, Payouts=3)
-    if (needsStripe && step === 3) return stripeConnected;
+    // Payouts step is optional — can be skipped and completed later from settings
     return true;
   };
 
@@ -398,7 +398,7 @@ const Onboarding = () => {
                   <h1 className="text-2xl font-display font-bold">Connect your payout account</h1>
                   <p className="text-muted-foreground mt-1">
                     Set up Stripe to receive payments from product sales, tips, and subscriptions.
-                    This is required before you can start selling.
+                    You can skip this for now and set it up later from your settings.
                   </p>
                 </div>
 
@@ -443,6 +443,11 @@ const Onboarding = () => {
                       You'll be redirected to Stripe to complete setup securely.
                     </p>
                   </Card>
+                )}
+                {!stripeConnected && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Not ready? You can skip this and connect Stripe later from your dashboard settings.
+                  </p>
                 )}
               </div>
             )}
