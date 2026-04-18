@@ -230,10 +230,10 @@ const ManageContent = () => {
                 {visibility === "subscribers" && subscriptions.length > 0 && (
                   <div>
                     <Label>Required Subscription Tier (optional)</Label>
-                    <Select value={subscriptionTierId} onValueChange={setSubscriptionTierId}>
+                    <Select value={subscriptionTierId || "any"} onValueChange={(v) => setSubscriptionTierId(v === "any" ? "" : v)}>
                       <SelectTrigger><SelectValue placeholder="Any subscriber" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any subscriber</SelectItem>
+                        <SelectItem value="any">Any subscriber</SelectItem>
                         {subscriptions.map(s => (
                           <SelectItem key={s.id} value={s.id}>{s.name} (${s.price}/mo)</SelectItem>
                         ))}
