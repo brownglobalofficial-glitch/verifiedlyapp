@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,23 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, GripVertical, MousePointerClick, RefreshCw, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft, Plus, Trash2, GripVertical, MousePointerClick, RefreshCw,
+  ExternalLink, ImagePlus, Smartphone, Tablet, Monitor, X,
+} from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -32,25 +27,58 @@ interface BioLink {
   title: string;
   url: string;
   icon: string | null;
+  thumbnail_url: string | null;
   is_active: boolean;
   sort_order: number;
   clicks: number;
 }
 
+type ViewportMode = "mobile" | "tablet" | "desktop";
+
+const VIEWPORT_SIZES: Record<ViewportMode, { w: number; h: number; label: string; icon: typeof Smartphone }> = {
+  mobile: { w: 320, h: 640, label: "Mobile", icon: Smartphone },
+  tablet: { w: 480, h: 640, label: "Tablet", icon: Tablet },
+  desktop: { w: 720, h: 540, label: "Desktop", icon: Monitor },
+};
+
+const uploadThumbnail = async (file: File, userId: string): Promise<string | null> => {
+  const ext = file.name.split(".").pop() || "png";
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("link-thumbnails").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) return null;
+  const { data } = supabase.storage.from("link-thumbnails").getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const SortableLinkRow = ({
-  link,
-  onToggle,
-  onDelete,
+  link, userId, onToggle, onDelete, onThumbnailChange,
 }: {
   link: BioLink;
+  userId: string;
   onToggle: (id: string, v: boolean) => void;
   onDelete: (id: string) => void;
+  onThumbnailChange: (id: string, url: string | null) => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 50 : "auto" as const,
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadThumbnail(file, userId);
+    setUploading(false);
+    if (url) onThumbnailChange(link.id, url);
+    e.target.value = "";
   };
 
   return (
@@ -68,6 +96,36 @@ const SortableLinkRow = ({
         >
           <GripVertical className="w-5 h-5" />
         </button>
+
+        {/* Thumbnail */}
+        <div className="relative shrink-0">
+          {link.thumbnail_url ? (
+            <div className="relative group">
+              <img src={link.thumbnail_url} alt="" className="w-12 h-12 rounded-lg object-cover border border-border" />
+              <button
+                onClick={() => onThumbnailChange(link.id, null)}
+                className="absolute -top-1 -right-1 bg-foreground text-background rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Remove thumbnail"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="w-12 h-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              aria-label="Upload thumbnail"
+            >
+              {uploading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImagePlus className="w-4 h-4" />
+              )}
+            </button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleFile} />
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -113,9 +171,13 @@ const ManageLinks = () => {
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newIcon, setNewIcon] = useState("");
+  const [newThumbnail, setNewThumbnail] = useState<string | null>(null);
+  const [newUploading, setNewUploading] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [viewport, setViewport] = useState<ViewportMode>("mobile");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const newFileRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -148,6 +210,18 @@ const ManageLinks = () => {
 
   const refreshPreview = () => setPreviewKey((k) => k + 1);
 
+  const handleNewThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!userId) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNewUploading(true);
+    const url = await uploadThumbnail(file, userId);
+    setNewUploading(false);
+    if (url) setNewThumbnail(url);
+    else toast({ title: "Upload failed", variant: "destructive" });
+    e.target.value = "";
+  };
+
   const handleAdd = async () => {
     if (!userId || !newTitle.trim() || !newUrl.trim()) return;
     setSaving(true);
@@ -159,6 +233,7 @@ const ManageLinks = () => {
       title: newTitle.trim(),
       url,
       icon: newIcon.trim() || null,
+      thumbnail_url: newThumbnail,
       sort_order: links.length,
     });
     setSaving(false);
@@ -168,6 +243,7 @@ const ManageLinks = () => {
       setNewTitle("");
       setNewUrl("");
       setNewIcon("");
+      setNewThumbnail(null);
       await fetchLinks(userId);
       refreshPreview();
       toast({ title: "Link added" });
@@ -185,6 +261,12 @@ const ManageLinks = () => {
     await supabase.from("bio_links").delete().eq("id", id);
     refreshPreview();
     toast({ title: "Link deleted" });
+  };
+
+  const handleThumbnailChange = async (id: string, url: string | null) => {
+    setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, thumbnail_url: url } : l)));
+    await supabase.from("bio_links").update({ thumbnail_url: url }).eq("id", id);
+    refreshPreview();
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -214,6 +296,7 @@ const ManageLinks = () => {
 
   const totalClicks = links.reduce((s, l) => s + l.clicks, 0);
   const previewUrl = username ? `/${username}` : null;
+  const vp = VIEWPORT_SIZES[viewport];
 
   return (
     <div className="min-h-screen bg-background">
@@ -228,7 +311,7 @@ const ManageLinks = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-7xl">
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+        <div className="grid lg:grid-cols-[1fr_420px] gap-8">
           {/* Left: editor */}
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -258,9 +341,38 @@ const ManageLinks = () => {
                     <Input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com" />
                   </div>
                 </div>
-                <div>
-                  <Label>Icon (emoji, optional)</Label>
-                  <Input value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="🔗" className="w-24" />
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <Label>Icon (emoji, optional)</Label>
+                    <Input value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="🔗" className="w-24" />
+                  </div>
+                  <div>
+                    <Label>Thumbnail</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {newThumbnail ? (
+                        <div className="relative">
+                          <img src={newThumbnail} alt="" className="w-12 h-12 rounded-lg object-cover border border-border" />
+                          <button
+                            onClick={() => setNewThumbnail(null)}
+                            className="absolute -top-1 -right-1 bg-foreground text-background rounded-full p-0.5"
+                            aria-label="Remove"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => newFileRef.current?.click()}
+                          disabled={newUploading}
+                          className="w-12 h-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                          aria-label="Upload thumbnail"
+                        >
+                          {newUploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                        </button>
+                      )}
+                      <input ref={newFileRef} type="file" accept="image/*" hidden onChange={handleNewThumbUpload} />
+                    </div>
+                  </div>
                 </div>
                 <Button onClick={handleAdd} disabled={saving || !newTitle.trim() || !newUrl.trim()} className="w-full">
                   {saving ? "Adding..." : "Add Link"}
@@ -276,8 +388,10 @@ const ManageLinks = () => {
                     <SortableLinkRow
                       key={link.id}
                       link={link}
+                      userId={userId!}
                       onToggle={handleToggle}
                       onDelete={handleDelete}
+                      onThumbnailChange={handleThumbnailChange}
                     />
                   ))}
                 </div>
@@ -291,7 +405,7 @@ const ManageLinks = () => {
             )}
           </div>
 
-          {/* Right: live phone preview */}
+          {/* Right: live preview */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
               <div className="flex items-center justify-between mb-3">
@@ -310,23 +424,49 @@ const ManageLinks = () => {
                 </div>
               </div>
 
-              {/* Phone frame */}
-              <div className="mx-auto w-[320px] h-[640px] rounded-[2.5rem] bg-foreground p-2.5 shadow-2xl">
-                <div className="relative w-full h-full rounded-[2rem] overflow-hidden bg-background">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-foreground rounded-b-2xl z-10" />
-                  {previewUrl ? (
-                    <iframe
-                      key={previewKey}
-                      src={previewUrl}
-                      title="Profile preview"
-                      className="w-full h-full border-0"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-4 text-center">
-                      Set up your profile to see a live preview
+              {/* Viewport switcher */}
+              <div className="flex items-center justify-center gap-1 p-1 bg-secondary rounded-lg mb-4">
+                {(Object.keys(VIEWPORT_SIZES) as ViewportMode[]).map((mode) => {
+                  const Icon = VIEWPORT_SIZES[mode].icon;
+                  const active = viewport === mode;
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => setViewport(mode)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {VIEWPORT_SIZES[mode].label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Phone/tablet/desktop frame */}
+              <div className="flex justify-center">
+                {viewport === "mobile" ? (
+                  <div className="w-[320px] h-[640px] rounded-[2.5rem] bg-foreground p-2.5 shadow-2xl">
+                    <div className="relative w-full h-full rounded-[2rem] overflow-hidden bg-background">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-foreground rounded-b-2xl z-10" />
+                      {previewUrl && (
+                        <iframe key={previewKey} src={previewUrl} title="Profile preview" className="w-full h-full border-0" />
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div
+                    className="rounded-2xl bg-foreground p-2 shadow-2xl"
+                    style={{ width: vp.w + 16, height: vp.h + 16 }}
+                  >
+                    <div className="w-full h-full rounded-xl overflow-hidden bg-background">
+                      {previewUrl && (
+                        <iframe key={previewKey} src={previewUrl} title="Profile preview" className="w-full h-full border-0" />
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <p className="text-xs text-muted-foreground text-center mt-3">
