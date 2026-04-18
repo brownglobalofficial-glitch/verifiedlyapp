@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import Navbar from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
+import { GridSkeleton } from "@/components/PageSkeleton";
 
 const PRODUCT_CATEGORIES = [
   { value: "all", label: "All" },
@@ -60,6 +61,7 @@ const Explore = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState<"all" | "free" | "under5" | "under25" | "over25">("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const showTrending = !search && !verifiedOnly && priceRange === "all" &&
     categoryFilter === "all" && creatorCategoryFilter === "all";
@@ -88,6 +90,7 @@ const Explore = () => {
       setProducts(prods || []);
       setCreators(profs || []);
       setSubscriptions(subs || []);
+      setLoading(false);
     };
     fetchData();
   }, []);
