@@ -472,7 +472,7 @@ const Explore = () => {
           </div>
         )}
 
-        {tab === "products" && (
+        {!loading && tab === "products" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredProducts.map((product, i) => (
               <motion.div key={product.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
@@ -516,7 +516,7 @@ const Explore = () => {
           </div>
         )}
 
-        {tab === "subscriptions" && (
+        {!loading && tab === "subscriptions" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredSubscriptions.map((sub, i) => (
               <motion.div key={sub.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
