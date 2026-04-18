@@ -39,6 +39,21 @@ const RouteOptimizer = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Global hover/focus prefetch: warm any internal link's chunk before the click.
+    const handler = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/") || href.startsWith("//")) return;
+      // Strip query/hash for matcher
+      const path = href.split("?")[0].split("#")[0];
+      import("@/lib/route-prefetch").then(({ prefetchPath }) => prefetchPath(path));
+    };
+    document.addEventListener("mouseover", handler, { passive: true });
+    document.addEventListener("focusin", handler, { passive: true });
+    document.addEventListener("touchstart", handler, { passive: true });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
         // Warm common authenticated destinations
@@ -70,7 +85,12 @@ const RouteOptimizer = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("mouseover", handler);
+      document.removeEventListener("focusin", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [navigate]);
 
   return null;
