@@ -389,6 +389,34 @@ const ManageLinks = () => {
               </div>
             </Card>
 
+            {/* Layout selector */}
+            <Card className="p-4 mb-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-sm">Link layout</p>
+                  <p className="text-xs text-muted-foreground">How links appear on your public profile</p>
+                </div>
+                <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg">
+                  <button
+                    onClick={() => handleLayoutChange("compact")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      linkLayout === "compact" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Compact
+                  </button>
+                  <button
+                    onClick={() => handleLayoutChange("cards")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      linkLayout === "cards" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Cards
+                  </button>
+                </div>
+              </div>
+            </Card>
+
             {/* Sortable link list */}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={links.map((l) => l.id)} strategy={verticalListSortingStrategy}>
