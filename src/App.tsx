@@ -6,40 +6,49 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageSkeleton from "@/components/PageSkeleton";
+import { routeLoaders, prefetchIdle } from "@/lib/route-prefetch";
 
-const Index = lazy(() => import("./pages/Index"));
+const Index = lazy(routeLoaders["/"]);
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const FanDashboard = lazy(() => import("./pages/FanDashboard"));
-const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
-const ManageProducts = lazy(() => import("./pages/ManageProducts"));
-const ManageSubscriptions = lazy(() => import("./pages/ManageSubscriptions"));
-const Explore = lazy(() => import("./pages/Explore"));
-const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
+const Login = lazy(routeLoaders["/login"]);
+const Signup = lazy(routeLoaders["/signup"]);
+const ForgotPassword = lazy(routeLoaders["/forgot-password"]);
+const ResetPassword = lazy(routeLoaders["/reset-password"]);
+const Dashboard = lazy(routeLoaders["/dashboard"]);
+const FanDashboard = lazy(routeLoaders["/fan"]);
+const ProfileSettings = lazy(routeLoaders["/dashboard/settings"]);
+const ManageProducts = lazy(routeLoaders["/dashboard/products"]);
+const ManageSubscriptions = lazy(routeLoaders["/dashboard/subscriptions"]);
+const Explore = lazy(routeLoaders["/explore"]);
+const CreatorProfile = lazy(routeLoaders["/creator-profile"]);
 const Marketplace = lazy(() => import("./pages/Marketplace"));
-const Analytics = lazy(() => import("./pages/Analytics"));
-const ManageLinks = lazy(() => import("./pages/ManageLinks"));
-const Onboarding = lazy(() => import("./pages/Onboarding"));
-const Terms = lazy(() => import("./pages/Terms"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Admin = lazy(() => import("./pages/Admin"));
-const ManageContent = lazy(() => import("./pages/ManageContent"));
-const Membership = lazy(() => import("./pages/Membership"));
-const Product = lazy(() => import("./pages/Product"));
+const Analytics = lazy(routeLoaders["/dashboard/analytics"]);
+const ManageLinks = lazy(routeLoaders["/dashboard/links"]);
+const Onboarding = lazy(routeLoaders["/onboarding"]);
+const Terms = lazy(routeLoaders["/terms"]);
+const Privacy = lazy(routeLoaders["/privacy"]);
+const Admin = lazy(routeLoaders["/dashboard/admin"]);
+const ManageContent = lazy(routeLoaders["/dashboard/content"]);
+const Membership = lazy(routeLoaders["/membership"]);
+const Product = lazy(routeLoaders["/product"]);
 
 const queryClient = new QueryClient();
 
-// Handles OAuth redirect: if user signed in via OAuth and hasn't completed onboarding, redirect to /onboarding
-const OAuthRedirectHandler = () => {
+// Handles OAuth redirect + warms likely next routes so navigation feels instant.
+const RouteOptimizer = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Warm common authenticated destinations
+        prefetchIdle([
+          "/dashboard",
+          "/dashboard/settings",
+          "/dashboard/links",
+          "/dashboard/analytics",
+          "/dashboard/products",
+        ]);
         const provider = session.user.app_metadata?.provider;
         if (provider && provider !== "email") {
           const { data: profile } = await supabase
@@ -47,11 +56,17 @@ const OAuthRedirectHandler = () => {
             .select("onboarding_completed, username")
             .eq("id", session.user.id)
             .maybeSingle();
-          
-          if (!profile?.onboarding_completed) {
-            navigate("/onboarding");
-          }
+          if (!profile?.onboarding_completed) navigate("/onboarding");
         }
+      }
+    });
+
+    // Also check current session on mount and prefetch accordingly
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links", "/dashboard/analytics"]);
+      } else {
+        prefetchIdle(["/login", "/signup", "/explore"]);
       }
     });
 
@@ -67,7 +82,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <OAuthRedirectHandler />
+        <RouteOptimizer />
         <Suspense fallback={<PageSkeleton />}>
           <Routes>
             <Route path="/" element={<Index />} />
