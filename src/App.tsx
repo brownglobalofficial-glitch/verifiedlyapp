@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,8 +35,11 @@ const Product = lazy(routeLoaders["/product"]);
 const queryClient = new QueryClient();
 
 // Handles OAuth redirect + warms likely next routes so navigation feels instant.
+const AUTH_PAGES = new Set(["/login", "/signup"]);
+
 const RouteOptimizer = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Global hover/focus prefetch: warm any internal link's chunk before the click.
@@ -46,7 +49,6 @@ const RouteOptimizer = () => {
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
-      // Strip query/hash for matcher
       const path = href.split("?")[0].split("#")[0];
       import("@/lib/route-prefetch").then(({ prefetchPath }) => prefetchPath(path));
     };
@@ -54,9 +56,29 @@ const RouteOptimizer = () => {
     document.addEventListener("focusin", handler, { passive: true });
     document.addEventListener("touchstart", handler, { passive: true });
 
+    const redirectAuthedAway = async (userId: string) => {
+      // Only redirect if currently sitting on /login or /signup
+      if (!AUTH_PAGES.has(window.location.pathname)) return;
+      let accountType: string | null = null;
+      try {
+        const profilePromise = supabase
+          .from("profiles")
+          .select("account_type")
+          .eq("id", userId)
+          .maybeSingle();
+        const timeout = new Promise<{ data: null }>((resolve) =>
+          setTimeout(() => resolve({ data: null }), 1500)
+        );
+        const result: any = await Promise.race([profilePromise, timeout]);
+        accountType = result?.data?.account_type ?? null;
+      } catch {
+        // ignore
+      }
+      navigate(accountType === "fan" ? "/fan" : "/dashboard", { replace: true });
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        // Warm common authenticated destinations
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
         prefetchIdle([
           "/dashboard",
           "/dashboard/settings",
@@ -71,15 +93,20 @@ const RouteOptimizer = () => {
             .select("onboarding_completed, username")
             .eq("id", session.user.id)
             .maybeSingle();
-          if (!profile?.onboarding_completed) navigate("/onboarding");
+          if (!profile?.onboarding_completed) {
+            navigate("/onboarding");
+            return;
+          }
         }
+        // Auto-redirect away from /login or /signup
+        redirectAuthedAway(session.user.id);
       }
     });
 
-    // Also check current session on mount and prefetch accordingly
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links", "/dashboard/analytics"]);
+        redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup", "/explore"]);
       }
@@ -91,7 +118,7 @@ const RouteOptimizer = () => {
       document.removeEventListener("focusin", handler);
       document.removeEventListener("touchstart", handler);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   return null;
 };

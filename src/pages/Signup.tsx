@@ -76,26 +76,30 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/onboarding`,
-        data: {
-          username: username.toLowerCase(),
-          display_name: displayName,
-          account_type: accountType,
-          category,
-          referred_by: referralCode,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/onboarding`,
+          data: {
+            username: username.toLowerCase(),
+            display_name: displayName,
+            account_type: accountType,
+            category,
+            referred_by: referralCode,
+          },
         },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-    } else {
-      navigate(`/login?confirmed=pending&email=${encodeURIComponent(email)}`);
+      });
+      if (error) {
+        toast({ title: "Signup failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      navigate(`/login?confirmed=pending&email=${encodeURIComponent(email)}`, { replace: true });
+    } catch (err: any) {
+      toast({ title: "Signup failed", description: err?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
