@@ -554,25 +554,6 @@ const CreatorProfile = () => {
           </motion.div>
         )}
 
-        <Dialog open={!!buyingProduct} onOpenChange={() => setBuyingProduct(null)}>
-          <DialogContent className="rounded-2xl">
-            <DialogHeader><DialogTitle>{buyingProduct?.name}</DialogTitle></DialogHeader>
-            {buyingProduct?.image_url && (
-              <img src={buyingProduct.image_url} alt={buyingProduct.name} className="w-full h-48 object-cover rounded-xl" />
-            )}
-            <p className="text-sm text-muted-foreground">{buyingProduct?.description || "No description"}</p>
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-2xl font-display font-bold">{buyingProduct?.price === 0 ? "Free" : `$${buyingProduct?.price}`}</span>
-              <Button
-                onClick={() => handleBuyProduct(buyingProduct)}
-                disabled={checkoutLoading}
-                className="gap-2 rounded-xl"
-              >
-                {checkoutLoading ? "Loading..." : buyingProduct?.price === 0 ? "Download Free" : `Buy for $${buyingProduct?.price}`}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
 
 
