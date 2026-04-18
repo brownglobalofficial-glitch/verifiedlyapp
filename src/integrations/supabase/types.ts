@@ -535,6 +535,7 @@ export type Database = {
           is_featured: boolean | null
           is_pro: boolean | null
           is_verified: boolean | null
+          link_layout: string
           onboarding_completed: boolean | null
           paypal_email: string | null
           referral_code: string | null
@@ -560,6 +561,7 @@ export type Database = {
           is_featured?: boolean | null
           is_pro?: boolean | null
           is_verified?: boolean | null
+          link_layout?: string
           onboarding_completed?: boolean | null
           paypal_email?: string | null
           referral_code?: string | null
@@ -585,6 +587,7 @@ export type Database = {
           is_featured?: boolean | null
           is_pro?: boolean | null
           is_verified?: boolean | null
+          link_layout?: string
           onboarding_completed?: boolean | null
           paypal_email?: string | null
           referral_code?: string | null
