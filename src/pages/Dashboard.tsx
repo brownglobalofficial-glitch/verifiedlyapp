@@ -10,7 +10,7 @@ import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
-import { PageSkeleton } from "@/components/PageSkeleton";
+import PageSkeleton from "@/components/PageSkeleton";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
