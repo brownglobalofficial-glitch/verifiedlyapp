@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Eye, Share2 } from "lucide-react";
+import { ArrowLeft, DollarSign, Users, Eye, Share2, MousePointerClick, LinkIcon } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, LineChart, Line } from "recharts";
