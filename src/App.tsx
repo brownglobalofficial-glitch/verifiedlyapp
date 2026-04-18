@@ -27,6 +27,7 @@ import Privacy from "./pages/Privacy";
 import Admin from "./pages/Admin";
 import ManageContent from "./pages/ManageContent";
 import Membership from "./pages/Membership";
+import Product from "./pages/Product";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => (
           <Route path="/explore" element={<Explore />} />
           <Route path="/:username" element={<CreatorProfile />} />
           <Route path="/:username/membership" element={<Membership />} />
+          <Route path="/:username/p/:productId" element={<Product />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
