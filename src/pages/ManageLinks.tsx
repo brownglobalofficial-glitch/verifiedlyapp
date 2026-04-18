@@ -167,6 +167,7 @@ const ManageLinks = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [linkLayout, setLinkLayout] = useState<"compact" | "cards">("compact");
   const [saving, setSaving] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -190,13 +191,21 @@ const ManageLinks = () => {
       setUserId(session.user.id);
       const { data: prof } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, link_layout")
         .eq("id", session.user.id)
         .maybeSingle();
       if (prof?.username) setUsername(prof.username);
+      if (prof && (prof as any).link_layout) setLinkLayout((prof as any).link_layout);
       fetchLinks(session.user.id);
     });
   }, [navigate]);
+
+  const handleLayoutChange = async (layout: "compact" | "cards") => {
+    if (!userId) return;
+    setLinkLayout(layout);
+    await supabase.from("profiles").update({ link_layout: layout } as any).eq("id", userId);
+    setPreviewKey((k) => k + 1);
+  };
 
   const fetchLinks = async (uid: string) => {
     const { data } = await supabase
@@ -377,6 +386,34 @@ const ManageLinks = () => {
                 <Button onClick={handleAdd} disabled={saving || !newTitle.trim() || !newUrl.trim()} className="w-full">
                   {saving ? "Adding..." : "Add Link"}
                 </Button>
+              </div>
+            </Card>
+
+            {/* Layout selector */}
+            <Card className="p-4 mb-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-sm">Link layout</p>
+                  <p className="text-xs text-muted-foreground">How links appear on your public profile</p>
+                </div>
+                <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg">
+                  <button
+                    onClick={() => handleLayoutChange("compact")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      linkLayout === "compact" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Compact
+                  </button>
+                  <button
+                    onClick={() => handleLayoutChange("cards")}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      linkLayout === "cards" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Cards
+                  </button>
+                </div>
               </div>
             </Card>
 

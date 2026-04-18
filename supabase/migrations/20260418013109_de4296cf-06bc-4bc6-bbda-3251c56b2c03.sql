@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS link_layout text NOT NULL DEFAULT 'compact';

@@ -17,9 +17,19 @@ const chartConfig = {
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+type DateRange = "7" | "30" | "90" | "all";
+
+const RANGES: { value: DateRange; label: string }[] = [
+  { value: "7", label: "7 days" },
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+  { value: "all", label: "All time" },
+];
+
 const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [range, setRange] = useState<DateRange>("30");
   const [viewsData, setViewsData] = useState<any[]>([]);
   const [earningsData, setEarningsData] = useState<any[]>([]);
   const [subsData, setSubsData] = useState<any[]>([]);
@@ -33,73 +43,96 @@ const Analytics = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUserId(session.user.id);
-      fetchAnalytics(session.user.id);
+      fetchAnalytics(session.user.id, range);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
-  const fetchAnalytics = async (uid: string) => {
-    const [{ data: views }, { data: earnings }, { data: subs }, { data: social }, { data: bioLinks }] = await Promise.all([
-      supabase.from("page_views").select("created_at").eq("creator_id", uid),
-      supabase.from("earnings").select("amount, created_at, source").eq("creator_id", uid),
-      supabase.from("subscriber_events").select("event_type, created_at").eq("creator_id", uid),
+  useEffect(() => {
+    if (userId) fetchAnalytics(userId, range);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  const fetchAnalytics = async (uid: string, currentRange: DateRange) => {
+    setLoading(true);
+    const days = currentRange === "all" ? null : Number(currentRange);
+    const sinceIso = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString() : null;
+
+    const applyRange = <T extends { gte: (col: string, v: string) => T }>(q: T) =>
+      sinceIso ? q.gte("created_at", sinceIso) : q;
+
+    const [{ data: views }, { data: earnings }, { data: subs }, { data: social }, { data: bioLinks }, { data: linkClicks }] = await Promise.all([
+      applyRange(supabase.from("page_views").select("created_at").eq("creator_id", uid) as any),
+      applyRange(supabase.from("earnings").select("amount, created_at, source").eq("creator_id", uid) as any),
+      applyRange(supabase.from("subscriber_events").select("event_type, created_at").eq("creator_id", uid) as any),
       supabase.from("social_analytics").select("*").eq("creator_id", uid),
       supabase.from("bio_links").select("id, title, clicks").eq("creator_id", uid),
+      applyRange(supabase.from("link_clicks").select("link_id, created_at").eq("creator_id", uid) as any),
     ]);
 
-    // Per-link analytics
+    // Per-link analytics — use link_clicks within range when filtered, else fallback to total clicks
     const totalViews = (views || []).length;
+    const clickCountByLink: Record<string, number> = {};
+    if (sinceIso) {
+      (linkClicks || []).forEach((c: any) => {
+        clickCountByLink[c.link_id] = (clickCountByLink[c.link_id] || 0) + 1;
+      });
+    }
     const links = (bioLinks || [])
-      .map((l) => ({
-        id: l.id,
-        title: l.title,
-        clicks: l.clicks || 0,
-        ctr: totalViews > 0 ? ((l.clicks || 0) / totalViews) * 100 : 0,
-      }))
+      .map((l) => {
+        const clicks = sinceIso ? (clickCountByLink[l.id] || 0) : (l.clicks || 0);
+        return {
+          id: l.id,
+          title: l.title,
+          clicks,
+          ctr: totalViews > 0 ? (clicks / totalViews) * 100 : 0,
+        };
+      })
       .sort((a, b) => b.clicks - a.clicks);
     setLinkStats(links);
     setTotalLinkClicks(links.reduce((s, l) => s + l.clicks, 0));
 
-    // Aggregate by month
-    const now = new Date();
-    const monthlyViews: Record<string, number> = {};
-    const monthlyEarnings: Record<string, number> = {};
-    const monthlySubs: Record<string, number> = {};
+    // Decide bucketing: daily for short ranges, monthly for long
+    const useDaily = days !== null && days <= 30;
+    const buckets: Record<string, number> = {};
+    const earnBuckets: Record<string, number> = {};
+    const subBuckets: Record<string, number> = {};
+    const labels: string[] = [];
 
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      monthlyViews[key] = 0;
-      monthlyEarnings[key] = 0;
-      monthlySubs[key] = 0;
+    if (useDaily) {
+      for (let i = days! - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        const key = d.toISOString().slice(0, 10);
+        buckets[key] = 0; earnBuckets[key] = 0; subBuckets[key] = 0;
+        labels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+      }
+    } else {
+      const monthsBack = days ? Math.max(1, Math.ceil(days / 30)) : 12;
+      const now = new Date();
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        buckets[key] = 0; earnBuckets[key] = 0; subBuckets[key] = 0;
+        labels.push(months[d.getMonth()]);
+      }
     }
 
-    (views || []).forEach(v => {
-      const d = new Date(v.created_at);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (key in monthlyViews) monthlyViews[key]++;
-    });
+    const keyOf = (iso: string) => {
+      const d = new Date(iso);
+      return useDaily ? d.toISOString().slice(0, 10) : `${d.getFullYear()}-${d.getMonth()}`;
+    };
 
-    (earnings || []).forEach(e => {
-      const d = new Date(e.created_at);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (key in monthlyEarnings) monthlyEarnings[key] += Number(e.amount);
-    });
+    (views || []).forEach((v: any) => { const k = keyOf(v.created_at); if (k in buckets) buckets[k]++; });
+    (earnings || []).forEach((e: any) => { const k = keyOf(e.created_at); if (k in earnBuckets) earnBuckets[k] += Number(e.amount); });
+    (subs || []).forEach((s: any) => { const k = keyOf(s.created_at); if (k in subBuckets) subBuckets[k] += s.event_type === "subscribe" ? 1 : -1; });
 
-    (subs || []).forEach(s => {
-      const d = new Date(s.created_at);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      if (key in monthlySubs) monthlySubs[key] += s.event_type === "subscribe" ? 1 : -1;
-    });
-
-    const chartData = Object.keys(monthlyViews).map(key => {
-      const [y, m] = key.split("-").map(Number);
-      return {
-        month: months[m],
-        views: monthlyViews[key],
-        earnings: monthlyEarnings[key],
-        subscribers: monthlySubs[key],
-      };
-    });
+    const orderedKeys = Object.keys(buckets);
+    const chartData = orderedKeys.map((key, i) => ({
+      month: labels[i],
+      views: buckets[key],
+      earnings: earnBuckets[key],
+      subscribers: subBuckets[key],
+    }));
 
     setViewsData(chartData);
     setEarningsData(chartData);
@@ -107,9 +140,9 @@ const Analytics = () => {
     setSocialStats(social || []);
 
     setTotals({
-      earnings: (earnings || []).reduce((s, e) => s + Number(e.amount), 0),
+      earnings: (earnings || []).reduce((s: number, e: any) => s + Number(e.amount), 0),
       views: (views || []).length,
-      subs: (subs || []).filter(s => s.event_type === "subscribe").length,
+      subs: (subs || []).filter((s: any) => s.event_type === "subscribe").length,
     });
 
     setLoading(false);
@@ -128,8 +161,25 @@ const Analytics = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
-        <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
-        <p className="text-muted-foreground mb-8">Track your growth and performance</p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
+            <p className="text-muted-foreground">Track your growth and performance</p>
+          </div>
+          <div className="flex items-center gap-1 p-1 bg-secondary rounded-lg w-fit">
+            {RANGES.map((r) => (
+              <button
+                key={r.value}
+                onClick={() => setRange(r.value)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  range === r.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card className="p-5">
