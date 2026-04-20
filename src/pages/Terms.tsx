@@ -50,7 +50,15 @@ const Terms = () => (
       </ul>
 
       <h2>10. Payments & Fees</h2>
-      <p>All payments are processed through our third-party payment processor (Stripe). Platform fees are deducted automatically from transactions based on your subscription tier. BrownGlobal Holdings LLC is not responsible for payment processor outages or delays.</p>
+      <p>All payments are processed through Stripe, Inc. and Stripe Connect. By using Verifiedly, creators and buyers also agree to the <a href="https://stripe.com/legal/connect-account" target="_blank" rel="noopener noreferrer">Stripe Connected Account Agreement</a> and the <a href="https://stripe.com/legal/ssa" target="_blank" rel="noopener noreferrer">Stripe Services Agreement</a>. Platform fees (10% Free / 5% Pro / 0% Elite) are deducted automatically as application fees on each transaction. BrownGlobal Holdings LLC is not the merchant of record for creator sales — creators are the merchants of record for their own products, subscriptions, and tips, and are solely responsible for fulfillment, customer service, applicable taxes, and any chargebacks or disputes on those sales.</p>
+
+      <h2>10a. Creator Payouts</h2>
+      <p>Payouts to creators are made directly by Stripe to the bank account connected via Stripe Connect Express, on Stripe's standard rolling payout schedule (typically every 2 business days for US accounts; varies by country). Verifiedly does not hold creator funds. Stripe may delay, reserve, or withhold payouts as described in the Stripe Connected Account Agreement, including for risk review, disputes, refunds, or compliance reasons. Creators are responsible for keeping their Stripe account, tax forms (e.g., W-9 / W-8BEN, 1099-K where applicable), and bank details up to date. Failure to complete Stripe identity verification will prevent payouts.</p>
+
+      <h2>10b. Refunds & Disputes</h2>
+      <p><strong>Subscription fees paid to Verifiedly</strong> (Pro / Elite) are non-refundable except where required by law. You may cancel at any time and will retain access until the end of the current billing period.</p>
+      <p><strong>Creator sales</strong> (digital products, fan subscriptions, tips): refunds are at the sole discretion of the selling creator. Buyers should contact the creator directly first. Verifiedly may, but is not obligated to, mediate disputes. Chargebacks initiated through your bank or card issuer may result in deduction of the disputed amount plus Stripe's dispute fee from the creator's balance. Tips are generally final and non-refundable.</p>
+      <p>To request a refund on a creator purchase, contact the creator via their profile contact email; for platform billing issues, contact <strong>support@verifiedly.app</strong>.</p>
 
       <h2>11. Intellectual Property</h2>
       <p>The Verifiedly name, logo, and Platform design are the exclusive property of BrownGlobal Holdings LLC. You may not use our trademarks, trade names, or branding without prior written permission.</p>
