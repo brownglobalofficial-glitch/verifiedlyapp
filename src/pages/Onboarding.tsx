@@ -72,6 +72,7 @@ const Onboarding = () => {
   // Step: Stripe Connect (for creators/businesses)
   const [stripeConnecting, setStripeConnecting] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
+  const [stripeAgreed, setStripeAgreed] = useState(false);
 
   const needsStripe = accountType === "creator" || accountType === "business";
   const steps = needsStripe ? ["Type", "Profile", "Links", "Payouts", "Theme"] : ["Type", "Profile", "Links", "Theme"];
@@ -216,6 +217,14 @@ const Onboarding = () => {
   };
 
   const handleStripeConnect = async () => {
+    if (!stripeAgreed) {
+      toast({
+        title: "Please accept the agreements",
+        description: "You must agree to the Stripe Connected Account Agreement and our Terms before connecting.",
+        variant: "destructive",
+      });
+      return;
+    }
     setStripeConnecting(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-connect-account", {
@@ -439,9 +448,46 @@ const Onboarding = () => {
                         </li>
                       </ul>
                     </div>
+                    <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={stripeAgreed}
+                        onChange={(e) => setStripeAgreed(e.target.checked)}
+                        className="mt-1 w-4 h-4 accent-primary cursor-pointer"
+                      />
+                      <span className="text-xs leading-relaxed text-muted-foreground">
+                        I agree to the{" "}
+                        <a
+                          href="https://stripe.com/legal/connect-account"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-foreground hover:opacity-70"
+                        >
+                          Stripe Connected Account Agreement
+                        </a>{" "}
+                        and{" "}
+                        <a
+                          href="https://stripe.com/legal/ssa"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-foreground hover:opacity-70"
+                        >
+                          Stripe Services Agreement
+                        </a>
+                        , and to Verifiedly's{" "}
+                        <a href="/terms" target="_blank" className="underline text-foreground hover:opacity-70">
+                          Terms
+                        </a>{" "}
+                        and{" "}
+                        <a href="/refunds" target="_blank" className="underline text-foreground hover:opacity-70">
+                          Refund Policy
+                        </a>
+                        . I understand I am the merchant of record for my sales.
+                      </span>
+                    </label>
                     <Button
                       onClick={handleStripeConnect}
-                      disabled={stripeConnecting}
+                      disabled={stripeConnecting || !stripeAgreed}
                       className="w-full"
                       size="lg"
                     >

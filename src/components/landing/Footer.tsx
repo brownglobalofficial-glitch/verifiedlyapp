@@ -15,6 +15,7 @@ const Footer = () => {
             <Link to="/explore" className="hover:text-foreground transition-colors">Explore</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
           </div>
           <p className="text-sm text-muted-foreground">
             © 2026 BrownGlobal Holdings LLC. All rights reserved.
