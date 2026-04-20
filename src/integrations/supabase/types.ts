@@ -526,7 +526,6 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           category: string | null
-          contact_email: string | null
           created_at: string
           display_name: string | null
           follower_count: number | null
@@ -537,11 +536,9 @@ export type Database = {
           is_verified: boolean | null
           link_layout: string
           onboarding_completed: boolean | null
-          paypal_email: string | null
           referral_code: string | null
           referred_by: string | null
           social_links: Json | null
-          stripe_connect_account_id: string | null
           theme_color: string | null
           updated_at: string
           username: string
@@ -552,7 +549,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
-          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           follower_count?: number | null
@@ -563,11 +559,9 @@ export type Database = {
           is_verified?: boolean | null
           link_layout?: string
           onboarding_completed?: boolean | null
-          paypal_email?: string | null
           referral_code?: string | null
           referred_by?: string | null
           social_links?: Json | null
-          stripe_connect_account_id?: string | null
           theme_color?: string | null
           updated_at?: string
           username: string
@@ -578,7 +572,6 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
-          contact_email?: string | null
           created_at?: string
           display_name?: string | null
           follower_count?: number | null
@@ -589,11 +582,9 @@ export type Database = {
           is_verified?: boolean | null
           link_layout?: string
           onboarding_completed?: boolean | null
-          paypal_email?: string | null
           referral_code?: string | null
           referred_by?: string | null
           social_links?: Json | null
-          stripe_connect_account_id?: string | null
           theme_color?: string | null
           updated_at?: string
           username?: string
