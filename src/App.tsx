@@ -27,6 +27,7 @@ const ManageLinks = lazy(routeLoaders["/dashboard/links"]);
 const Onboarding = lazy(routeLoaders["/onboarding"]);
 const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
+const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const ManageContent = lazy(routeLoaders["/dashboard/content"]);
 const Membership = lazy(routeLoaders["/membership"]);
@@ -138,6 +139,7 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refunds" element={<Refunds />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
