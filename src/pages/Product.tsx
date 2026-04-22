@@ -199,6 +199,16 @@ const Product = () => {
               </div>
             </div>
 
+            {!isFree && (
+              <p className="text-xs text-muted-foreground text-center">
+                By purchasing you agree to our{" "}
+                <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}
+                and{" "}
+                <Link to="/refunds" className="underline hover:text-foreground">Refund Policy</Link>.
+                The creator is the merchant of record for this sale.
+              </p>
+            )}
+
             {/* Description */}
             {product.description && (
               <div className="pt-4 border-t border-border/60">

@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Plus, Trash2, GripVertical, MousePointerClick, Check } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { recordStripeAgreement } from "@/lib/stripe-agreement";
 import {
   DndContext,
   closestCenter,
@@ -206,6 +208,7 @@ const ProfileSettings = () => {
   const [facebook, setFacebook] = useState("");
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeAgreed, setStripeAgreed] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
 
@@ -416,29 +419,67 @@ const ProfileSettings = () => {
                   <span className="text-sm font-medium">Stripe account connected — payouts enabled</span>
                 </div>
               ) : (
-                <Button
-                  onClick={async () => {
-                    setStripeLoading(true);
-                    try {
-                      const { data, error } = await supabase.functions.invoke("create-connect-account");
-                      if (error) throw error;
-                      if (data.onboarded) {
-                        setStripeConnected(true);
-                        toast({ title: "Already connected!", description: "Your Stripe account is set up." });
-                      } else if (data.url) {
-                        window.open(data.url, "_blank");
+                <div className="space-y-3">
+                  <label className="flex items-start gap-2.5 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer">
+                    <Checkbox
+                      checked={stripeAgreed}
+                      onCheckedChange={(v) => setStripeAgreed(v === true)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-xs text-muted-foreground leading-relaxed">
+                      I agree to the{" "}
+                      <a href="https://stripe.com/connect-account/legal" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:opacity-70">
+                        Stripe Connected Account Agreement
+                      </a>
+                      , the{" "}
+                      <a href="https://stripe.com/legal/ssa" target="_blank" rel="noopener noreferrer" className="underline text-foreground hover:opacity-70">
+                        Stripe Services Agreement
+                      </a>
+                      , and Verifiedly's{" "}
+                      <Link to="/terms" className="underline text-foreground hover:opacity-70">Terms</Link>{" "}
+                      and{" "}
+                      <Link to="/refunds" className="underline text-foreground hover:opacity-70">Refund Policy</Link>.
+                      I understand I am the merchant of record for my own sales.
+                    </span>
+                  </label>
+                  <Button
+                    onClick={async () => {
+                      if (!stripeAgreed) {
+                        toast({
+                          title: "Please accept the agreements",
+                          description: "You must agree before connecting Stripe.",
+                          variant: "destructive",
+                        });
+                        return;
                       }
-                    } catch (err: any) {
-                      toast({ title: "Error", description: err.message, variant: "destructive" });
-                    } finally {
-                      setStripeLoading(false);
-                    }
-                  }}
-                  disabled={stripeLoading}
-                  className="w-full"
-                >
-                  {stripeLoading ? "Setting up..." : "Connect Stripe Account"}
-                </Button>
+                      setStripeLoading(true);
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session) {
+                          await recordStripeAgreement(session.user.id, "settings").catch((e) =>
+                            console.warn("Failed to record stripe agreement:", e)
+                          );
+                        }
+                        const { data, error } = await supabase.functions.invoke("create-connect-account");
+                        if (error) throw error;
+                        if (data.onboarded) {
+                          setStripeConnected(true);
+                          toast({ title: "Already connected!", description: "Your Stripe account is set up." });
+                        } else if (data.url) {
+                          window.open(data.url, "_blank");
+                        }
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                      } finally {
+                        setStripeLoading(false);
+                      }
+                    }}
+                    disabled={stripeLoading || !stripeAgreed}
+                    className="w-full"
+                  >
+                    {stripeLoading ? "Setting up..." : "Connect Stripe Account"}
+                  </Button>
+                </div>
               )}
             </div>
 
