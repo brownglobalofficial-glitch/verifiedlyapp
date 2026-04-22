@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
+import { recordStripeAgreement } from "@/lib/stripe-agreement";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
@@ -227,6 +228,10 @@ const Onboarding = () => {
     }
     setStripeConnecting(true);
     try {
+      // Record agreement acceptance for audit trail (timestamp + IP + UA)
+      await recordStripeAgreement(userId, "onboarding").catch((e) =>
+        console.warn("Failed to record stripe agreement:", e)
+      );
       const { data, error } = await supabase.functions.invoke("create-connect-account", {
         body: {
           return_url: `${window.location.origin}/onboarding?stripe_onboarded=true`,
