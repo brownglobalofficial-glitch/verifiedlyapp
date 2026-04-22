@@ -165,6 +165,13 @@ const Membership = () => {
           Cancel anytime. Annual plan saves you 2 months. Powered by{" "}
           <Link to="/" className="hover:text-foreground transition-colors">Verifiedly</Link>.
         </p>
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          By subscribing you agree to our{" "}
+          <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}
+          and{" "}
+          <Link to="/refunds" className="underline hover:text-foreground">Refund Policy</Link>.
+          The creator is the merchant of record for memberships.
+        </p>
       </div>
     </div>
   );
