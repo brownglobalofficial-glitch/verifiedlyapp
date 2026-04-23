@@ -178,7 +178,10 @@ const Onboarding = () => {
 
     setSaving(true);
     try {
-      const { error: profileErr } = await supabase.from("profiles").update({
+      // Use upsert so this works even if the profile row is missing
+      // (e.g. trigger failed silently or user signed up before trigger fix).
+      const { error: profileErr } = await supabase.from("profiles").upsert({
+        id: userId,
         username: username.toLowerCase(),
         display_name: displayName,
         bio,
@@ -187,7 +190,7 @@ const Onboarding = () => {
         social_links: { instagram, twitter, youtube, tiktok },
         theme_color: theme,
         onboarding_completed: true,
-      }).eq("id", userId);
+      }, { onConflict: "id" });
       if (profileErr) throw profileErr;
 
       if (links.length > 0) {
