@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const NAME_COM_API = "https://api.dev.name.com";
+// Production Name.com API. The dev sandbox returns fake results.
+const NAME_COM_API = "https://api.name.com";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

@@ -86,6 +86,18 @@ serve(async (req) => {
 
     log("Event received", { type: event.type, id: event.id });
 
+    // Persist a lightweight record of the event for the admin diagnostics banner
+    try {
+      await supabase.from("webhook_events").insert({
+        stripe_event_id: event.id,
+        event_type: event.type,
+        livemode: (event as any).livemode ?? null,
+        payload_preview: { id: event.id, type: event.type, created: event.created },
+      });
+    } catch (e) {
+      log("Failed to log webhook event", { error: String(e) });
+    }
+
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata || {};

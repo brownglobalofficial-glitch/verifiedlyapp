@@ -71,21 +71,27 @@ serve(async (req) => {
       if (customers.data.length > 0) customerId = customers.data[0].id;
     }
 
+    // Prefer the synced Stripe Price (so the sale appears under the product in Stripe Dashboard).
+    // Fall back to inline price_data if no synced price exists yet.
+    const lineItem: any = product.stripe_price_id
+      ? { price: product.stripe_price_id, quantity: 1 }
+      : {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: product.name,
+              description: product.description || `Digital product by ${creator.display_name || creator.username}`,
+              ...(product.image_url ? { images: [product.image_url] } : {}),
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        };
+
     const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : customerEmail,
-      line_items: [{
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: product.name,
-            description: product.description || `Digital product by ${creator.display_name || creator.username}`,
-            ...(product.image_url ? { images: [product.image_url] } : {}),
-          },
-          unit_amount: amountCents,
-        },
-        quantity: 1,
-      }],
+      line_items: [lineItem],
       mode: "payment",
       success_url: `${req.headers.get("origin")}/${creator.username}?purchase=success&product=${productId}`,
       cancel_url: `${req.headers.get("origin")}/${creator.username}`,
