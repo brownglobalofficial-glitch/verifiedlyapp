@@ -88,13 +88,21 @@ const RouteOptimizer = () => {
           "/dashboard/products",
         ]);
         const provider = session.user.app_metadata?.provider;
-        if (provider && provider !== "email") {
+        // Only force onboarding redirect on first sign-in (not every page load),
+        // and never if the user is already on /onboarding (would cause a loop).
+        if (
+          event === "SIGNED_IN" &&
+          provider && provider !== "email" &&
+          window.location.pathname !== "/onboarding"
+        ) {
           const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed, username")
             .eq("id", session.user.id)
             .maybeSingle();
-          if (!profile?.onboarding_completed) {
+          // Only redirect when profile exists AND onboarding is explicitly false.
+          // If profile is missing, the trigger will create it; don't bounce the user.
+          if (profile && profile.onboarding_completed === false) {
             navigate("/onboarding");
             return;
           }
