@@ -480,6 +480,8 @@ export type Database = {
           name: string
           price: number
           product_type: string
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -494,6 +496,8 @@ export type Database = {
           name: string
           price?: number
           product_type?: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -508,6 +512,8 @@ export type Database = {
           name?: string
           price?: number
           product_type?: string
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -812,6 +818,9 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          stripe_price_month_id: string | null
+          stripe_price_year_id: string | null
+          stripe_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -823,6 +832,9 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price?: number
+          stripe_price_month_id?: string | null
+          stripe_price_year_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -834,6 +846,9 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          stripe_price_month_id?: string | null
+          stripe_price_year_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -888,6 +903,33 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_events: {
+        Row: {
+          event_type: string
+          id: string
+          livemode: boolean | null
+          payload_preview: Json | null
+          received_at: string
+          stripe_event_id: string | null
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          livemode?: boolean | null
+          payload_preview?: Json | null
+          received_at?: string
+          stripe_event_id?: string | null
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          livemode?: boolean | null
+          payload_preview?: Json | null
+          received_at?: string
+          stripe_event_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -934,6 +976,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      record_stripe_agreement: {
+        Args: { _context: string; _ip: string; _user_agent: string }
+        Returns: string
       }
     }
     Enums: {

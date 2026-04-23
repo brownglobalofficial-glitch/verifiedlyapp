@@ -67,19 +67,24 @@ const ManageSubscriptions = () => {
     }
     setSaving(true);
     const featuresArr = features.split("\n").map(f => f.trim()).filter(Boolean);
-    const { error } = await supabase.from("subscriptions").insert({
+    const { data, error } = await supabase.from("subscriptions").insert({
       creator_id: userId,
       name,
       description,
       price: parseFloat(price),
       features: featuresArr.length > 0 ? featuresArr : null,
       is_active: true,
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Subscription tier created!" });
+      // Sync to Stripe so the tier appears in the Stripe Dashboard (non-fatal)
+      if (data?.id) {
+        supabase.functions.invoke("sync-stripe-product", { body: { kind: "subscription", id: data.id } })
+          .catch((e) => console.warn("Stripe sync failed:", e));
+      }
       setName(""); setDescription(""); setPrice(""); setFeatures(""); setOpen(false);
       fetchSubs(userId);
     }

@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Download, ShoppingBag, Image as ImageIcon, ShieldCheck, Zap, Star, Check } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
+import RefundsSummary from "@/components/RefundsSummary";
 
 const Product = () => {
   const { username, productId } = useParams<{ username: string; productId: string }>();
@@ -167,6 +168,13 @@ const Product = () => {
               {!isFree && <span className="text-sm text-muted-foreground">USD · one-time</span>}
             </div>
 
+            {/* Refund summary above Pay button (paid items only) */}
+            {!isFree && (
+              <div className="hidden md:block">
+                <RefundsSummary type="product" />
+              </div>
+            )}
+
             {/* CTA — desktop / inline */}
             <div className="hidden md:block">
               <Button
@@ -202,9 +210,7 @@ const Product = () => {
             {!isFree && (
               <p className="text-xs text-muted-foreground text-center">
                 By purchasing you agree to our{" "}
-                <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}
-                and{" "}
-                <Link to="/refunds" className="underline hover:text-foreground">Refund Policy</Link>.
+                <Link to="/terms" className="underline hover:text-foreground">Terms</Link>.
                 The creator is the merchant of record for this sale.
               </p>
             )}

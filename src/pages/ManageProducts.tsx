@@ -128,16 +128,24 @@ const ManageProducts = () => {
     };
 
     let error;
+    let savedId = editingId;
     if (editingId) {
       ({ error } = await supabase.from("products").update(payload).eq("id", editingId));
     } else {
-      ({ error } = await supabase.from("products").insert({ ...payload, creator_id: userId }));
+      const { data, error: insErr } = await supabase.from("products").insert({ ...payload, creator_id: userId }).select("id").single();
+      error = insErr;
+      savedId = data?.id || null;
     }
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: editingId ? "Product updated!" : "Product created!" });
+      // Sync to Stripe so it appears in the Stripe Dashboard (non-fatal)
+      if (savedId) {
+        supabase.functions.invoke("sync-stripe-product", { body: { kind: "product", id: savedId } })
+          .catch((e) => console.warn("Stripe sync failed:", e));
+      }
       resetForm();
       setOpen(false);
       fetchProducts(userId);
@@ -163,6 +171,9 @@ const ManageProducts = () => {
     }
     await supabase.from("products").update({ is_published: published }).eq("id", id);
     setProducts(products.map(p => p.id === id ? { ...p, is_published: published } : p));
+    // Re-sync the active flag to Stripe
+    supabase.functions.invoke("sync-stripe-product", { body: { kind: "product", id } })
+      .catch((e) => console.warn("Stripe sync failed:", e));
   };
 
   const handleDelete = async (id: string) => {

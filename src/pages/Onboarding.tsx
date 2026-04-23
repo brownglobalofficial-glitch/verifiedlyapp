@@ -227,6 +227,8 @@ const Onboarding = () => {
       return;
     }
     setStripeConnecting(true);
+    // Safety: if Stripe takes too long, re-enable the button so it never hangs
+    const safety = setTimeout(() => setStripeConnecting(false), 15000);
     try {
       // Record agreement acceptance for audit trail (timestamp + IP + UA)
       await recordStripeAgreement(userId, "onboarding").catch((e) =>
@@ -239,15 +241,21 @@ const Onboarding = () => {
         },
       });
       if (error) throw error;
+      if (!data) throw new Error("No response from Stripe — please try again.");
       if (data.onboarded) {
         setStripeConnected(true);
         toast({ title: "Stripe connected! 🎉", description: "You're ready to receive payouts." });
       } else if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error("Stripe didn't return an onboarding link. Please try again.");
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Stripe connect failed", description: err?.message || "Unknown error", variant: "destructive" });
     } finally {
+      clearTimeout(safety);
       setStripeConnecting(false);
     }
   };

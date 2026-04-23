@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
 import PageSkeleton from "@/components/PageSkeleton";
+import AdminStripeDiagnostics from "@/components/AdminStripeDiagnostics";
+import StripeAgreementStatus from "@/components/StripeAgreementStatus";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -185,6 +187,14 @@ const Dashboard = () => {
             </div>
           </Card>
         )}
+
+        {/* Stripe agreement status — re-prompts if missing or outdated */}
+        {user && profile?.account_type !== "fan" && (
+          <StripeAgreementStatus userId={user.id} />
+        )}
+
+        {/* Admin-only Stripe diagnostics */}
+        {isAdmin && <AdminStripeDiagnostics />}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[

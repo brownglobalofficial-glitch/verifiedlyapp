@@ -77,21 +77,27 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://verifiedlyapp.lovable.app";
 
+    // Prefer the synced Stripe price ID (so memberships show up under the same Stripe product).
+    const syncedPriceId = billingInterval === "year" ? (sub as any).stripe_price_year_id : (sub as any).stripe_price_month_id;
+    const lineItem: any = syncedPriceId
+      ? { price: syncedPriceId, quantity: 1 }
+      : {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${sub.name} — ${creator.display_name || creator.username}`,
+              description: sub.description || `${billingInterval === "year" ? "Annual" : "Monthly"} subscription to ${creator.display_name || creator.username}`,
+            },
+            unit_amount: amountCents,
+            recurring: { interval: billingInterval },
+          },
+          quantity: 1,
+        };
+
     const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : customerEmail,
-      line_items: [{
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: `${sub.name} — ${creator.display_name || creator.username}`,
-            description: sub.description || `${billingInterval === "year" ? "Annual" : "Monthly"} subscription to ${creator.display_name || creator.username}`,
-          },
-          unit_amount: amountCents,
-          recurring: { interval: billingInterval },
-        },
-        quantity: 1,
-      }],
+      line_items: [lineItem],
       mode: "subscription",
       success_url: `${origin}/${creator.username}?subscribed=true`,
       cancel_url: `${origin}/${creator.username}`,
