@@ -8,6 +8,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import MembershipTiers, { Tier, Perk } from "@/components/MembershipTiers";
+import RefundsSummary from "@/components/RefundsSummary";
 
 const Membership = () => {
   const { username } = useParams<{ username: string }>();
@@ -151,14 +152,19 @@ const Membership = () => {
             </Link>
           </div>
         ) : (
-          <MembershipTiers
-            tiers={tiers}
-            perks={perks}
-            memberCounts={memberCounts}
-            onSubscribe={handleSubscribe}
-            loadingTierId={loadingTierId}
-            variant="full"
-          />
+          <>
+            <div className="max-w-xl mx-auto mb-6">
+              <RefundsSummary type="membership" />
+            </div>
+            <MembershipTiers
+              tiers={tiers}
+              perks={perks}
+              memberCounts={memberCounts}
+              onSubscribe={handleSubscribe}
+              loadingTierId={loadingTierId}
+              variant="full"
+            />
+          </>
         )}
 
         <p className="text-center text-xs text-muted-foreground mt-12">
