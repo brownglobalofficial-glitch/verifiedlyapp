@@ -23,26 +23,32 @@ serve(async (req) => {
     let body: Record<string, any> = {};
     try { body = await req.json(); } catch { /* no body is fine */ }
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Missing Authorization header — please sign in again.");
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) throw new Error("Not authenticated");
     const user = userData.user;
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not configured");
+    if (stripeKey.startsWith("rk_")) {
+      throw new Error("Stripe key is a restricted key (rk_). A standard secret key (sk_live_ or sk_test_) is required for Connect onboarding.");
+    }
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Check if user already has a connect account (from private data table)
     const { data: profile } = await supabase
       .from("profiles")
       .select("display_name, username")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     const { data: privateData } = await supabase
       .from("creator_private_data")
       .select("stripe_connect_account_id")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     let accountId = privateData?.stripe_connect_account_id;
 
@@ -62,15 +68,13 @@ serve(async (req) => {
       accountId = account.id;
 
       // Store in private data table
-      await supabase
+      const { error: privErr } = await supabase
         .from("creator_private_data")
         .upsert({ id: user.id, stripe_connect_account_id: accountId }, { onConflict: "id" });
-
-      // Also update profiles for backward compatibility (will be removed later)
-      await supabase
-        .from("profiles")
-        .update({ stripe_connect_account_id: accountId })
-        .eq("id", user.id);
+      if (privErr) {
+        console.error("[CREATE-CONNECT-ACCOUNT] Failed to save account id", privErr);
+        throw new Error(`Failed to save Stripe account id: ${privErr.message}`);
+      }
     }
 
     // Check if onboarding is complete
