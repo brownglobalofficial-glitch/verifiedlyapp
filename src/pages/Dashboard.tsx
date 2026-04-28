@@ -13,6 +13,7 @@ import { Shield } from "lucide-react";
 import PageSkeleton from "@/components/PageSkeleton";
 import AdminStripeDiagnostics from "@/components/AdminStripeDiagnostics";
 import StripeAgreementStatus from "@/components/StripeAgreementStatus";
+import PayoutsChecklist from "@/components/payouts/PayoutsChecklist";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -191,6 +192,16 @@ const Dashboard = () => {
         {/* Stripe agreement status — re-prompts if missing or outdated */}
         {user && profile?.account_type !== "fan" && (
           <StripeAgreementStatus userId={user.id} />
+        )}
+
+        {/* Compact payouts checklist with link to full page */}
+        {user && profile?.account_type !== "fan" && (
+          <div className="mb-6 space-y-2">
+            <PayoutsChecklist userId={user.id} variant="compact" />
+            <Link to="/dashboard/payouts" className="text-xs text-muted-foreground hover:text-foreground underline">
+              View full payouts checklist →
+            </Link>
+          </div>
         )}
 
         {/* Admin-only Stripe diagnostics */}

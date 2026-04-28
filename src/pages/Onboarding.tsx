@@ -12,6 +12,7 @@ import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-r
 import logo from "@/assets/verifiedly-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { recordStripeAgreement } from "@/lib/stripe-agreement";
+import PayoutsChecklist from "@/components/payouts/PayoutsChecklist";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
@@ -444,6 +445,7 @@ const Onboarding = () => {
                     <p className="text-sm text-muted-foreground">
                       Your payout account is set up. You'll receive payments directly to your bank account.
                     </p>
+                    {userId && <div className="mt-4 text-left"><PayoutsChecklist userId={userId} variant="compact" /></div>}
                   </Card>
                 ) : (
                   <Card className="p-6 space-y-4">
