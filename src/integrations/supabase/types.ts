@@ -232,7 +232,14 @@ export type Database = {
           created_at: string
           id: string
           paypal_email: string | null
+          stripe_charges_enabled: boolean
           stripe_connect_account_id: string | null
+          stripe_details_submitted: boolean
+          stripe_disabled_reason: string | null
+          stripe_payouts_enabled: boolean
+          stripe_requirements_currently_due: Json
+          stripe_requirements_past_due: Json
+          stripe_status_synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -240,7 +247,14 @@ export type Database = {
           created_at?: string
           id: string
           paypal_email?: string | null
+          stripe_charges_enabled?: boolean
           stripe_connect_account_id?: string | null
+          stripe_details_submitted?: boolean
+          stripe_disabled_reason?: string | null
+          stripe_payouts_enabled?: boolean
+          stripe_requirements_currently_due?: Json
+          stripe_requirements_past_due?: Json
+          stripe_status_synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -248,7 +262,14 @@ export type Database = {
           created_at?: string
           id?: string
           paypal_email?: string | null
+          stripe_charges_enabled?: boolean
           stripe_connect_account_id?: string | null
+          stripe_details_submitted?: boolean
+          stripe_disabled_reason?: string | null
+          stripe_payouts_enabled?: boolean
+          stripe_requirements_currently_due?: Json
+          stripe_requirements_past_due?: Json
+          stripe_status_synced_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -932,7 +953,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      creator_payout_status: {
+        Row: {
+          creator_id: string | null
+          has_account: boolean | null
+          has_past_due: boolean | null
+          stripe_charges_enabled: boolean | null
+          stripe_details_submitted: boolean | null
+          stripe_payouts_enabled: boolean | null
+          stripe_status_synced_at: string | null
+        }
+        Insert: {
+          creator_id?: string | null
+          has_account?: never
+          has_past_due?: never
+          stripe_charges_enabled?: boolean | null
+          stripe_details_submitted?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          stripe_status_synced_at?: string | null
+        }
+        Update: {
+          creator_id?: string | null
+          has_account?: never
+          has_past_due?: never
+          stripe_charges_enabled?: boolean | null
+          stripe_details_submitted?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          stripe_status_synced_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
