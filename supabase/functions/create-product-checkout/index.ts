@@ -30,19 +30,19 @@ serve(async (req) => {
 
     // Get product details
     const { data: product, error: prodErr } = await supabaseClient
-      .from("products").select("*").eq("id", productId).eq("is_published", true).single();
+      .from("products").select("*").eq("id", productId).eq("is_published", true).maybeSingle();
     if (prodErr || !product) throw new Error("Product not found or not published");
     if (product.price <= 0) throw new Error("This product is free - no checkout needed");
     logStep("Product found", { name: product.name, price: product.price });
 
     // Get creator profile for fee calculation
     const { data: creator } = await supabaseClient
-      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).maybeSingle();
     if (!creator) throw new Error("Creator not found");
 
     // Get stripe connect account from private data
     const { data: privateData } = await supabaseClient
-      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).maybeSingle();
     const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
     let feePercent = 10;
