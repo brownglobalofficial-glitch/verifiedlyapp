@@ -98,6 +98,56 @@ serve(async (req) => {
       log("Failed to log webhook event", { error: String(e) });
     }
 
+    // ── Stripe Connect account.updated → cache payout status on creator_private_data ──
+    if (event.type === "account.updated") {
+      const acct = event.data.object as Stripe.Account;
+      log("Connect account updated", {
+        acct: acct.id,
+        charges: acct.charges_enabled,
+        payouts: acct.payouts_enabled,
+        details_submitted: acct.details_submitted,
+      });
+      const reqs = acct.requirements || ({} as any);
+      const { error: updErr } = await supabase
+        .from("creator_private_data")
+        .update({
+          stripe_charges_enabled: !!acct.charges_enabled,
+          stripe_payouts_enabled: !!acct.payouts_enabled,
+          stripe_details_submitted: !!acct.details_submitted,
+          stripe_requirements_currently_due: reqs.currently_due ?? [],
+          stripe_requirements_past_due: reqs.past_due ?? [],
+          stripe_disabled_reason: reqs.disabled_reason ?? null,
+          stripe_status_synced_at: new Date().toISOString(),
+        })
+        .eq("stripe_connect_account_id", acct.id);
+      if (updErr) log("Failed to cache account status", { error: updErr.message });
+
+      // Notify creator when payouts first go live or fall past due
+      try {
+        const { data: row } = await supabase
+          .from("creator_private_data")
+          .select("id")
+          .eq("stripe_connect_account_id", acct.id)
+          .maybeSingle();
+        const creatorId = row?.id;
+        if (creatorId) {
+          if (acct.charges_enabled && acct.payouts_enabled) {
+            await notifyCreator(supabase, creatorId,
+              "✅ Stripe payouts enabled",
+              `<p style="font-size:15px;color:#333;">Your Stripe account is fully verified and payouts are now enabled. You can start accepting payments.</p>`
+            );
+          } else if ((reqs.past_due ?? []).length > 0) {
+            await notifyCreator(supabase, creatorId,
+              "⚠️ Action required: Stripe payouts paused",
+              `<p style="font-size:15px;color:#333;">Stripe needs additional information from you to keep your payouts active. Please visit your dashboard to complete the required fields.</p>`
+            );
+          }
+        }
+      } catch (e) {
+        log("Notification step failed", { error: String(e) });
+      }
+    }
+
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata || {};
