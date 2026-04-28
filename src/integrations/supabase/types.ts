@@ -953,36 +953,7 @@ export type Database = {
       }
     }
     Views: {
-      creator_payout_status: {
-        Row: {
-          creator_id: string | null
-          has_account: boolean | null
-          has_past_due: boolean | null
-          stripe_charges_enabled: boolean | null
-          stripe_details_submitted: boolean | null
-          stripe_payouts_enabled: boolean | null
-          stripe_status_synced_at: string | null
-        }
-        Insert: {
-          creator_id?: string | null
-          has_account?: never
-          has_past_due?: never
-          stripe_charges_enabled?: boolean | null
-          stripe_details_submitted?: boolean | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_status_synced_at?: string | null
-        }
-        Update: {
-          creator_id?: string | null
-          has_account?: never
-          has_past_due?: never
-          stripe_charges_enabled?: boolean | null
-          stripe_details_submitted?: boolean | null
-          stripe_payouts_enabled?: boolean | null
-          stripe_status_synced_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
@@ -993,6 +964,16 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_creator_payout_status: {
+        Args: { _creator_id: string }
+        Returns: {
+          charges_enabled: boolean
+          details_submitted: boolean
+          has_account: boolean
+          has_past_due: boolean
+          payouts_enabled: boolean
+        }[]
       }
       get_my_private_data: {
         Args: never
