@@ -37,14 +37,14 @@ serve(async (req) => {
 
     // Get creator profile
     const { data: creator } = await supabase
-      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+      .from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).maybeSingle();
     if (!creator) throw new Error("Creator not found");
 
     // Get stripe connect account from private data
     const { data: privateData } = await supabase
-      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
+      .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).maybeSingle();
     const stripeConnectAccountId = privateData?.stripe_connect_account_id;
-    if (!stripeConnectAccountId) throw new Error("Creator has not set up payments");
+    if (!stripeConnectAccountId) throw new Error("This creator hasn't connected Stripe yet — they need to complete payouts setup.");
 
     // Calculate platform fee
     let feePercent = 10;
