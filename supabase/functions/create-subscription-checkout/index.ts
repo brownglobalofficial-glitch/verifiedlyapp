@@ -99,7 +99,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : customerEmail,
       line_items: [lineItem],
       mode: "subscription",
-      success_url: `${origin}/${creator.username}?subscribed=true`,
+      success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/${creator.username}`,
       metadata: {
         creator_id: creatorId,

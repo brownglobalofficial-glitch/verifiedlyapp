@@ -232,7 +232,14 @@ export type Database = {
           created_at: string
           id: string
           paypal_email: string | null
+          stripe_charges_enabled: boolean
           stripe_connect_account_id: string | null
+          stripe_details_submitted: boolean
+          stripe_disabled_reason: string | null
+          stripe_payouts_enabled: boolean
+          stripe_requirements_currently_due: Json
+          stripe_requirements_past_due: Json
+          stripe_status_synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -240,7 +247,14 @@ export type Database = {
           created_at?: string
           id: string
           paypal_email?: string | null
+          stripe_charges_enabled?: boolean
           stripe_connect_account_id?: string | null
+          stripe_details_submitted?: boolean
+          stripe_disabled_reason?: string | null
+          stripe_payouts_enabled?: boolean
+          stripe_requirements_currently_due?: Json
+          stripe_requirements_past_due?: Json
+          stripe_status_synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -248,7 +262,14 @@ export type Database = {
           created_at?: string
           id?: string
           paypal_email?: string | null
+          stripe_charges_enabled?: boolean
           stripe_connect_account_id?: string | null
+          stripe_details_submitted?: boolean
+          stripe_disabled_reason?: string | null
+          stripe_payouts_enabled?: boolean
+          stripe_requirements_currently_due?: Json
+          stripe_requirements_past_due?: Json
+          stripe_status_synced_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -943,6 +964,16 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_creator_payout_status: {
+        Args: { _creator_id: string }
+        Returns: {
+          charges_enabled: boolean
+          details_submitted: boolean
+          has_account: boolean
+          has_past_due: boolean
+          payouts_enabled: boolean
+        }[]
       }
       get_my_private_data: {
         Args: never
