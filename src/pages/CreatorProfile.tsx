@@ -26,6 +26,7 @@ import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import MembershipTiers from "@/components/MembershipTiers";
+import FeePreview from "@/components/FeePreview";
 
 type ThemeStyle = {
   bg: string;
@@ -166,6 +167,7 @@ const THEME_STYLES: Record<string, ThemeStyle> = {
 const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<any>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [perks, setPerks] = useState<Record<string, any[]>>({});
@@ -184,6 +186,9 @@ const CreatorProfile = () => {
 
   useEffect(() => {
     if (!username) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setViewerId(session?.user?.id ?? null);
+    });
     const fetchData = async () => {
       const { data: prof } = await supabase
         .from("profiles").select("*").eq("username", username.toLowerCase()).maybeSingle();
@@ -411,6 +416,16 @@ const CreatorProfile = () => {
       </div>
 
       <div className="max-w-md mx-auto px-4 pb-12 -mt-2">
+        {viewerId && profile?.id === viewerId && (products.length > 0 || subscriptions.length > 0 || profile?.stripe_connect_account_id) && (
+          <div className="mb-6">
+            <FeePreview
+              currentTier={profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free"}
+            />
+            <p className="text-[10px] text-muted-foreground mt-2 text-center">
+              Only you can see this preview.
+            </p>
+          </div>
+        )}
         {bioLinks.length > 0 && (
           <div className={`mb-6 ${profile?.link_layout === "cards" ? "grid grid-cols-1 gap-4" : "space-y-3"}`}>
             {bioLinks.map((link, i) => {

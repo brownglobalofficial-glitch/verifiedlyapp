@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageSkeleton from "@/components/PageSkeleton";
 import { routeLoaders, prefetchIdle } from "@/lib/route-prefetch";
+import AuthGuard from "@/components/AuthGuard";
 
 const Index = lazy(routeLoaders["/"]);
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -35,6 +36,7 @@ const Product = lazy(routeLoaders["/product"]);
 const Payouts = lazy(() => import("./pages/dashboard/Payouts"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const UpgradePro = lazy(() => import("./pages/UpgradePro"));
+const Billing = lazy(() => import("./pages/dashboard/Billing"));
 
 const queryClient = new QueryClient();
 
@@ -163,8 +165,9 @@ const App = () => (
             <Route path="/dashboard/content" element={<ManageContent />} />
             <Route path="/dashboard/admin" element={<Admin />} />
             <Route path="/dashboard/payouts" element={<Payouts />} />
-            <Route path="/dashboard/upgrade" element={<UpgradePro />} />
-            <Route path="/pro" element={<UpgradePro />} />
+            <Route path="/dashboard/upgrade" element={<AuthGuard><UpgradePro /></AuthGuard>} />
+            <Route path="/dashboard/billing" element={<AuthGuard><Billing /></AuthGuard>} />
+            <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/fan" element={<FanDashboard />} />
             <Route path="/explore" element={<Explore />} />
