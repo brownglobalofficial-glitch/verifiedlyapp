@@ -21,6 +21,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const isPending = searchParams.get("confirmed") === "pending";
   const pendingEmail = searchParams.get("email") || "";
+  const nextPath = searchParams.get("next");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +49,10 @@ const Login = () => {
       } catch {
         // ignore — fall back to default route
       }
-      navigate(accountType === "fan" ? "/fan" : "/dashboard", { replace: true });
+      const dest = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+        ? nextPath
+        : (accountType === "fan" ? "/fan" : "/dashboard");
+      navigate(dest, { replace: true });
     } catch (err: any) {
       toast({ title: "Login failed", description: err?.message ?? "Unknown error", variant: "destructive" });
       setLoading(false);
