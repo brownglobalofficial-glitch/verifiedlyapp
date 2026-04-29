@@ -34,6 +34,7 @@ const Membership = lazy(routeLoaders["/membership"]);
 const Product = lazy(routeLoaders["/product"]);
 const Payouts = lazy(() => import("./pages/dashboard/Payouts"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const UpgradePro = lazy(() => import("./pages/UpgradePro"));
 
 const queryClient = new QueryClient();
 
@@ -162,6 +163,8 @@ const App = () => (
             <Route path="/dashboard/content" element={<ManageContent />} />
             <Route path="/dashboard/admin" element={<Admin />} />
             <Route path="/dashboard/payouts" element={<Payouts />} />
+            <Route path="/dashboard/upgrade" element={<UpgradePro />} />
+            <Route path="/pro" element={<UpgradePro />} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/fan" element={<FanDashboard />} />
             <Route path="/explore" element={<Explore />} />
