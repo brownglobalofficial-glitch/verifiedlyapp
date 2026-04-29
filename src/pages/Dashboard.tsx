@@ -14,6 +14,8 @@ import PageSkeleton from "@/components/PageSkeleton";
 import AdminStripeDiagnostics from "@/components/AdminStripeDiagnostics";
 import StripeAgreementStatus from "@/components/StripeAgreementStatus";
 import PayoutsChecklist from "@/components/payouts/PayoutsChecklist";
+import TierUpgradeCelebration from "@/components/TierUpgradeCelebration";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -95,6 +97,13 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {user && (
+        <TierUpgradeCelebration
+          userId={user.id}
+          initialTier={currentTier as "free" | "pro" | "elite"}
+          onTierChange={() => fetchProfile(user.id)}
+        />
+      )}
       <nav className="border-b border-border h-16 flex items-center px-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -158,6 +167,30 @@ const Dashboard = () => {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Upgrade banner — only when not Pro/Elite */}
+        {currentTier === "free" && profile?.account_type !== "fan" && (
+          <Link to="/dashboard/upgrade" className="block mb-6 group">
+            <Card className="p-4 border-2 border-foreground bg-gradient-to-r from-background via-background to-muted/40 hover:to-muted/60 transition-colors">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-sm">Upgrade to Verifiedly Pro</p>
+                    <p className="text-xs text-muted-foreground">
+                      Get the verified badge and drop your platform fee from 10% to 5% (or 0% on Elite).
+                    </p>
+                  </div>
+                </div>
+                <Button size="sm" className="gap-2 shrink-0">
+                  Upgrade <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                </Button>
+              </div>
+            </Card>
+          </Link>
         )}
 
         {/* Stripe Connect Status */}
