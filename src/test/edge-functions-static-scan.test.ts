@@ -40,12 +40,18 @@ describe("edge functions static scan", () => {
     for (const { name, file } of fns) {
       const src = readFileSync(file, "utf8");
       for (const [table, dropped] of Object.entries(KNOWN_DROPPED_COLUMNS)) {
-        const tableUsed = new RegExp(`\\.from\\(["']${table}["']\\)`).test(src);
-        if (!tableUsed) continue;
-        for (const col of dropped) {
-          // Only flag .update({ col: ... }) or .upsert({ col: ... }) — not reads.
-          const writeRe = new RegExp(`\\.(update|upsert|insert)\\([^)]*${col}\\s*:`, "s");
-          if (writeRe.test(src)) offenders.push({ fn: name, table, col });
+        // Find each `.from("table")…` chain and only inspect up to the next
+        // `.from(` or end-of-statement (`;`). This prevents false positives
+        // where an unrelated later `.upsert` on a different table contains the
+        // dropped column name.
+        const chainRe = new RegExp(`\\.from\\(["']${table}["']\\)([\\s\\S]*?)(?=\\.from\\(|;|$)`, "g");
+        let match: RegExpExecArray | null;
+        while ((match = chainRe.exec(src)) !== null) {
+          const chain = match[1];
+          for (const col of dropped) {
+            const writeRe = new RegExp(`\\.(update|upsert|insert)\\([^)]*${col}\\s*:`, "s");
+            if (writeRe.test(chain)) offenders.push({ fn: name, table, col });
+          }
         }
       }
     }
