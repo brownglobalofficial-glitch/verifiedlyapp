@@ -21,7 +21,8 @@ serve(async (req) => {
   );
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Missing Authorization header — please sign in again.");
     const userToken = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(userToken);
     if (userError || !userData.user) throw new Error("Not authenticated");
