@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video, CreditCard } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
@@ -313,6 +313,13 @@ const Dashboard = () => {
               <Settings className="w-8 h-8 mb-3" />
               <h3 className="font-display font-semibold text-lg">Profile Settings</h3>
               <p className="text-sm text-muted-foreground">Edit your bio, links, and profile</p>
+            </Card>
+          </Link>
+          <Link to="/dashboard/billing">
+            <Card className="p-6 card-hover cursor-pointer h-full">
+              <CreditCard className="w-8 h-8 mb-3" />
+              <h3 className="font-display font-semibold text-lg">Billing</h3>
+              <p className="text-sm text-muted-foreground">Plan, renewal date & payout requirements</p>
             </Card>
           </Link>
           <UpgradePrompt currentTier={currentTier as "free" | "pro" | "elite"} />
