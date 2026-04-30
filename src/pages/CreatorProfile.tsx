@@ -420,6 +420,8 @@ const CreatorProfile = () => {
           <div className="mb-6">
             <FeePreview
               currentTier={profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free"}
+              ownerId={profile?.id}
+              viewerId={viewerId}
             />
             <p className="text-[10px] text-muted-foreground mt-2 text-center">
               Only you can see this preview.
