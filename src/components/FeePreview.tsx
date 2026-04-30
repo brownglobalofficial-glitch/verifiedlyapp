@@ -1,21 +1,61 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, ArrowRight } from "lucide-react";
+import { TrendingUp, ArrowRight, Coins, ShoppingBag } from "lucide-react";
 import { STRIPE_TIERS } from "@/lib/stripe-config";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   currentTier: "free" | "pro" | "elite";
+  /** Profile being viewed. FeePreview will only render if viewerId === ownerId. */
+  ownerId: string;
+  viewerId: string | null;
 }
 
+type Item = {
+  id: string;
+  name: string;
+  price: number;
+  kind: "tip" | "product";
+};
+
 /**
- * Live calculator that shows exactly how much a creator nets per sale or tip
- * under each plan. Helps justify the upgrade by quantifying the fee difference.
+ * Owner-only fee calculator. Lets the creator pick one of their published items
+ * (or a tip amount) and shows the exact platform fee + net earnings under each
+ * plan tier. Hardened so it never renders for anyone except the profile owner.
  */
-const FeePreview = ({ currentTier }: Props) => {
-  const [amount, setAmount] = useState(50);
+const FeePreview = ({ currentTier, ownerId, viewerId }: Props) => {
+  // HARD GUARD — never expose this calculator to non-owners, even if a parent forgets to gate it.
+  const isOwner = !!viewerId && viewerId === ownerId;
+
+  const [items, setItems] = useState<Item[]>([{ id: "tip", name: "Custom tip", price: 5, kind: "tip" }]);
+  const [selectedId, setSelectedId] = useState<string>("tip");
+  const [tipAmount, setTipAmount] = useState(50);
+
+  useEffect(() => {
+    if (!isOwner) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, price")
+        .eq("creator_id", ownerId)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      if (!active) return;
+      const productItems: Item[] = (data || [])
+        .filter((p: any) => Number(p.price) > 0)
+        .map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price), kind: "product" as const }));
+      setItems([{ id: "tip", name: "Custom tip", price: 5, kind: "tip" }, ...productItems]);
+    })();
+    return () => { active = false; };
+  }, [isOwner, ownerId]);
+
+  const selected = items.find(i => i.id === selectedId) || items[0];
+  const amount = selected?.kind === "tip" ? tipAmount : (selected?.price ?? 0);
 
   const rows = useMemo(() => {
     return (["free", "pro", "elite"] as const).map((id) => {
@@ -29,6 +69,8 @@ const FeePreview = ({ currentTier }: Props) => {
   const proSavings = rows[0].platformCut - rows[1].platformCut;
   const eliteSavings = rows[0].platformCut - rows[2].platformCut;
 
+  if (!isOwner) return null;
+
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between mb-4">
@@ -37,7 +79,7 @@ const FeePreview = ({ currentTier }: Props) => {
             <TrendingUp className="w-4 h-4" /> Fee preview
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            See exactly what you'd keep on a ${amount} sale or tip.
+            Pick an item or tip amount to see your exact platform fee and take-home.
           </p>
         </div>
         <span className="text-xs px-2 py-0.5 rounded-full bg-muted capitalize">
@@ -45,20 +87,51 @@ const FeePreview = ({ currentTier }: Props) => {
         </span>
       </div>
 
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-2 text-sm">
-          <span className="text-muted-foreground">Sale amount</span>
-          <span className="font-display font-bold">${amount}</span>
-        </div>
-        <Slider
-          value={[amount]}
-          min={1}
-          max={500}
-          step={1}
-          onValueChange={(v) => setAmount(v[0])}
-          aria-label="Sale amount"
-        />
+      <div className="mb-4">
+        <label className="text-xs text-muted-foreground mb-1.5 block">Item</label>
+        <Select value={selectedId} onValueChange={setSelectedId}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {items.map(item => (
+              <SelectItem key={item.id} value={item.id}>
+                <span className="inline-flex items-center gap-2">
+                  {item.kind === "tip"
+                    ? <Coins className="w-3.5 h-3.5" />
+                    : <ShoppingBag className="w-3.5 h-3.5" />}
+                  <span className="truncate">{item.name}</span>
+                  {item.kind === "product" && (
+                    <span className="text-muted-foreground text-xs">· ${item.price.toFixed(2)}</span>
+                  )}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {selected?.kind === "tip" ? (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2 text-sm">
+            <span className="text-muted-foreground">Tip amount</span>
+            <span className="font-display font-bold">${tipAmount}</span>
+          </div>
+          <Slider
+            value={[tipAmount]}
+            min={1}
+            max={500}
+            step={1}
+            onValueChange={(v) => setTipAmount(v[0])}
+            aria-label="Tip amount"
+          />
+        </div>
+      ) : (
+        <div className="mb-5 flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Listed price</span>
+          <span className="font-display font-bold">${amount.toFixed(2)}</span>
+        </div>
+      )}
 
       <div className="space-y-2">
         {rows.map((r) => {
@@ -70,20 +143,23 @@ const FeePreview = ({ currentTier }: Props) => {
                 isCurrent ? "border-primary bg-primary/5" : "border-border"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{r.name}</span>
-                <span className="text-xs text-muted-foreground">{r.fee}% fee</span>
-                {isCurrent && (
-                  <span className="text-[10px] uppercase font-bold tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
-                    you
-                  </span>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="font-display font-bold text-sm">${r.net.toFixed(2)}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  −${r.platformCut.toFixed(2)} fee
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">{r.name}</span>
+                  <span className="text-xs text-muted-foreground">{r.fee}% fee</span>
+                  {isCurrent && (
+                    <span className="text-[10px] uppercase font-bold tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                      you
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Buyer pays ${amount.toFixed(2)} · Verifiedly fee ${r.platformCut.toFixed(2)}
                 </p>
+              </div>
+              <div className="text-right pl-3 shrink-0">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">You net</p>
+                <p className="font-display font-bold text-sm">${r.net.toFixed(2)}</p>
               </div>
             </div>
           );
@@ -93,7 +169,8 @@ const FeePreview = ({ currentTier }: Props) => {
       {currentTier === "free" && (proSavings > 0 || eliteSavings > 0) && (
         <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground mb-2">
-            On this sale you'd save <span className="font-semibold text-foreground">${proSavings.toFixed(2)}</span> with Pro
+            On this {selected?.kind === "tip" ? "tip" : "sale"} you'd keep an extra
+            {" "}<span className="font-semibold text-foreground">${proSavings.toFixed(2)}</span> with Pro
             {" "}or <span className="font-semibold text-foreground">${eliteSavings.toFixed(2)}</span> with Elite.
           </p>
           <Link to="/dashboard/upgrade">
