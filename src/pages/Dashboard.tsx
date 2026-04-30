@@ -35,29 +35,27 @@ const Dashboard = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUser(session.user);
+      // Fire profile + private data + role + stats fully in parallel; unblock UI on profile only.
       fetchProfile(session.user.id);
       fetchStats(session.user.id);
-      supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "admin").then(({ data }) => {
-        if (data && data.length > 0) setIsAdmin(true);
-      });
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-    // referral_code and stripe_connect_account_id are no longer readable from profiles publicly.
-    // Fetch them via the secure owner-only paths.
-    const [{ data: refCode }, { data: priv }] = await Promise.all([
+    const [profileRes, refRes, privRes, rolesRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       (supabase.rpc as any)("get_my_referral_code"),
       (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", userId).maybeSingle() as any),
+      supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin"),
     ]);
     setProfile({
-      ...(data || {}),
-      referral_code: refCode ?? null,
-      stripe_connect_account_id: priv?.stripe_connect_account_id ?? null,
+      ...(profileRes.data || {}),
+      referral_code: refRes?.data ?? null,
+      stripe_connect_account_id: privRes?.data?.stripe_connect_account_id ?? null,
     });
+    if (rolesRes.data && rolesRes.data.length > 0) setIsAdmin(true);
     setLoading(false);
   };
 
