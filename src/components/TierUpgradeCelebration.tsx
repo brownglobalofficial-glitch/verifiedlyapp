@@ -9,6 +9,10 @@ interface Props {
   initialTier: "free" | "pro" | "elite";
   /** Called when tier changes so parent can refresh state. */
   onTierChange?: (tier: "free" | "pro" | "elite") => void;
+  /** Called once when tier transitions UP from free→pro/elite (or pro→elite). */
+  onActivated?: (tier: "pro" | "elite") => void;
+  /** When false, suppresses the full-screen celebration overlay (still fires onActivated). */
+  showOverlay?: boolean;
 }
 
 const tierRank = { free: 0, pro: 1, elite: 2 } as const;
@@ -18,7 +22,7 @@ const tierRank = { free: 0, pro: 1, elite: 2 } as const;
  * Stripe confirms payment). When the tier upgrades, shows a celebratory badge
  * animation overlay.
  */
-const TierUpgradeCelebration = ({ userId, initialTier, onTierChange }: Props) => {
+const TierUpgradeCelebration = ({ userId, initialTier, onTierChange, onActivated, showOverlay = true }: Props) => {
   const [show, setShow] = useState<null | "pro" | "elite">(null);
   const lastTier = useRef(initialTier);
 
@@ -41,8 +45,11 @@ const TierUpgradeCelebration = ({ userId, initialTier, onTierChange }: Props) =>
             : "free";
           const prev = lastTier.current;
           if (tierRank[next] > tierRank[prev] && next !== "free") {
-            setShow(next);
-            setTimeout(() => setShow(null), 5500);
+            if (showOverlay) {
+              setShow(next);
+              setTimeout(() => setShow(null), 5500);
+            }
+            onActivated?.(next);
           }
           lastTier.current = next;
           onTierChange?.(next);
@@ -53,7 +60,7 @@ const TierUpgradeCelebration = ({ userId, initialTier, onTierChange }: Props) =>
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, onTierChange]);
+  }, [userId, onTierChange, onActivated, showOverlay]);
 
   return (
     <AnimatePresence>
