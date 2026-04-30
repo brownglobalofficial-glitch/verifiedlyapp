@@ -27,6 +27,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton";
 import MembershipTiers from "@/components/MembershipTiers";
 import FeePreview from "@/components/FeePreview";
+import TierUpgradeCelebration from "@/components/TierUpgradeCelebration";
+import { ToastAction } from "@/components/ui/toast";
 
 type ThemeStyle = {
   bg: string;
@@ -420,11 +422,37 @@ const CreatorProfile = () => {
           <div className="mb-6">
             <FeePreview
               currentTier={profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free"}
+              ownerId={profile?.id}
+              viewerId={viewerId}
             />
             <p className="text-[10px] text-muted-foreground mt-2 text-center">
               Only you can see this preview.
             </p>
           </div>
+        )}
+        {viewerId && profile?.id === viewerId && (
+          <TierUpgradeCelebration
+            userId={viewerId}
+            initialTier={profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free"}
+            showOverlay={false}
+            onTierChange={(t) => {
+              setProfile((p: any) => p ? { ...p, is_pro: t !== "free", is_elite: t === "elite" } : p);
+            }}
+            onActivated={(t) => {
+              toast({
+                title: t === "elite" ? "You're now Verifiedly Elite 👑" : "You're now Verifiedly Pro ✓",
+                description:
+                  t === "elite"
+                    ? "0% platform fee is active. View your plan and renewal date."
+                    : "Your verified badge is live and your fee just dropped to 5%.",
+                action: (
+                  <ToastAction altText="Open billing" onClick={() => navigate("/dashboard/billing")}>
+                    View billing
+                  </ToastAction>
+                ),
+              });
+            }}
+          />
         )}
         {bioLinks.length > 0 && (
           <div className={`mb-6 ${profile?.link_layout === "cards" ? "grid grid-cols-1 gap-4" : "space-y-3"}`}>
