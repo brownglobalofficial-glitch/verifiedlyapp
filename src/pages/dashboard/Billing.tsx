@@ -11,6 +11,10 @@ import {
   Loader2,
   ExternalLink,
   Crown,
+  Banknote,
+  IdCard,
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
@@ -43,6 +47,7 @@ const Billing = () => {
   const [info, setInfo] = useState<SubInfo>({ subscribed: false });
   const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -94,6 +99,42 @@ const Billing = () => {
       toast({ title: "Could not open billing portal", description: e?.message || "Try again", variant: "destructive" });
     }
     setPortalLoading(false);
+  };
+
+  const openStripeOnboarding = async (action: string) => {
+    setActionLoading(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-connect-account", {
+        body: { return_url: `${window.location.origin}/dashboard/billing` },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+      else throw new Error("No onboarding URL returned");
+    } catch (e: any) {
+      toast({ title: "Could not open Stripe", description: e?.message || "Try again", variant: "destructive" });
+    }
+    setActionLoading(null);
+  };
+
+  const retryVerification = async () => {
+    setActionLoading("retry");
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-connect-status", { body: {} });
+      if (error) throw error;
+      setPayouts({
+        has_account: !!data?.has_account,
+        charges_enabled: !!data?.charges_enabled,
+        payouts_enabled: !!data?.payouts_enabled,
+        details_submitted: !!data?.details_submitted,
+        currently_due: data?.currently_due ?? [],
+        past_due: data?.past_due ?? [],
+        disabled_reason: data?.disabled_reason ?? null,
+      });
+      toast({ title: "Verification re-checked", description: "Your latest Stripe status is now in sync." });
+    } catch (e: any) {
+      toast({ title: "Re-check failed", description: e?.message || "Try again", variant: "destructive" });
+    }
+    setActionLoading(null);
   };
 
   if (loading) return <PageSkeleton />;
@@ -189,34 +230,14 @@ const Billing = () => {
             </div>
 
             {(hasPastDue || hasCurrentlyDue || payouts.disabled_reason) && (
-              <div className={`mt-4 rounded-lg border p-4 ${hasPastDue ? "border-destructive/40 bg-destructive/5" : "border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800"}`}>
-                <div className="flex gap-3">
-                  <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${hasPastDue ? "text-destructive" : "text-orange-500"}`} />
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm">
-                      {hasPastDue ? "Action required — past due" : "Information requested"}
-                    </p>
-                    {payouts.disabled_reason && (
-                      <p className="text-xs text-muted-foreground mt-1">Reason: {payouts.disabled_reason}</p>
-                    )}
-                    {(payouts.past_due?.length || payouts.currently_due?.length) ? (
-                      <ul className="text-xs mt-2 space-y-1 list-disc list-inside text-muted-foreground">
-                        {[...(payouts.past_due || []), ...(payouts.currently_due || [])]
-                          .slice(0, 8)
-                          .map((r) => <li key={r}>{r.replace(/_/g, " ")}</li>)}
-                      </ul>
-                    ) : null}
-                    <div className="mt-3 flex gap-2 flex-wrap">
-                      <Link to="/dashboard/payouts">
-                        <Button size="sm" variant="outline">Open payouts checklist</Button>
-                      </Link>
-                      <Link to="/dashboard/settings">
-                        <Button size="sm">Complete in Stripe</Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <RequirementsChecklist
+                pastDue={payouts.past_due || []}
+                currentlyDue={payouts.currently_due || []}
+                disabledReason={payouts.disabled_reason ?? null}
+                actionLoading={actionLoading}
+                onUpdate={openStripeOnboarding}
+                onRetry={retryVerification}
+              />
             )}
 
             {payouts.has_account && payouts.payouts_enabled && payouts.charges_enabled && !hasPastDue && !hasCurrentlyDue && (
@@ -251,3 +272,163 @@ const Check = ({ label, ok }: { label: string; ok: boolean }) => (
 );
 
 export default Billing;
+
+/**
+ * Maps raw Stripe requirement keys to a human label, an icon, and a
+ * recommended one-click action.
+ */
+function classifyRequirement(key: string): {
+  label: string;
+  category: "bank" | "identity" | "tax" | "business" | "tos" | "other";
+} {
+  const k = key.toLowerCase();
+  if (k.includes("external_account") || k.includes("bank") || k.includes("routing") || k.includes("account_number")) {
+    return { label: humanize(key), category: "bank" };
+  }
+  if (k.includes("ssn") || k.includes("id_number") || k.includes("verification") || k.includes("dob") || k.includes("document") || k.includes("address")) {
+    return { label: humanize(key), category: "identity" };
+  }
+  if (k.includes("tax") || k.includes("ein") || k.includes("vat")) {
+    return { label: humanize(key), category: "tax" };
+  }
+  if (k.includes("business") || k.includes("company") || k.includes("mcc") || k.includes("url")) {
+    return { label: humanize(key), category: "business" };
+  }
+  if (k.includes("tos") || k.includes("terms")) {
+    return { label: humanize(key), category: "tos" };
+  }
+  return { label: humanize(key), category: "other" };
+}
+
+function humanize(key: string) {
+  return key
+    .replace(/^individual\./, "")
+    .replace(/^business_profile\./, "")
+    .replace(/^company\./, "")
+    .replace(/_/g, " ");
+}
+
+const CATEGORY_META: Record<string, { title: string; icon: any; cta: string }> = {
+  bank:     { title: "Update bank account",       icon: Banknote,    cta: "Update bank" },
+  identity: { title: "Verify your identity",      icon: IdCard,      cta: "Verify identity" },
+  tax:      { title: "Add tax information",       icon: ShieldCheck, cta: "Add tax info" },
+  business: { title: "Complete business details", icon: ShieldCheck, cta: "Update details" },
+  tos:      { title: "Accept Stripe terms",       icon: ShieldCheck, cta: "Accept terms" },
+  other:    { title: "Additional information",    icon: AlertTriangle, cta: "Open Stripe" },
+};
+
+const RequirementsChecklist = ({
+  pastDue,
+  currentlyDue,
+  disabledReason,
+  actionLoading,
+  onUpdate,
+  onRetry,
+}: {
+  pastDue: string[];
+  currentlyDue: string[];
+  disabledReason: string | null;
+  actionLoading: string | null;
+  onUpdate: (action: string) => void;
+  onRetry: () => void;
+}) => {
+  // Group requirements by category, marking past-due as severe.
+  const groups = new Map<string, { items: string[]; severe: boolean }>();
+  pastDue.forEach((k) => {
+    const c = classifyRequirement(k).category;
+    const g = groups.get(c) || { items: [], severe: true };
+    g.items.push(k); g.severe = true;
+    groups.set(c, g);
+  });
+  currentlyDue.forEach((k) => {
+    const c = classifyRequirement(k).category;
+    const g = groups.get(c) || { items: [], severe: false };
+    if (!g.items.includes(k)) g.items.push(k);
+    groups.set(c, g);
+  });
+
+  const hasPastDue = pastDue.length > 0;
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className={`rounded-lg border p-4 ${hasPastDue ? "border-destructive/40 bg-destructive/5" : "border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800"}`}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex gap-3 min-w-0">
+            <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${hasPastDue ? "text-destructive" : "text-orange-500"}`} />
+            <div className="min-w-0">
+              <p className="font-semibold text-sm">
+                {hasPastDue ? "Action required — payouts on hold" : "Stripe needs more information"}
+              </p>
+              {disabledReason && (
+                <p className="text-xs text-muted-foreground mt-1">Reason: {disabledReason.replace(/_/g, " ")}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Complete each item below — Stripe re-verifies in real time and your status will update automatically.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onRetry}
+            disabled={actionLoading === "retry"}
+            className="gap-1.5 shrink-0"
+          >
+            {actionLoading === "retry"
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <RefreshCw className="w-3 h-3" />}
+            Retry verification
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {[...groups.entries()].map(([category, g]) => {
+          const meta = CATEGORY_META[category] || CATEGORY_META.other;
+          const Icon = meta.icon;
+          return (
+            <div
+              key={category}
+              className={`rounded-lg border p-3 flex items-start justify-between gap-3 flex-wrap ${
+                g.severe ? "border-destructive/30" : "border-border"
+              }`}
+            >
+              <div className="flex gap-3 min-w-0">
+                <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${
+                  g.severe ? "bg-destructive/10 text-destructive" : "bg-muted text-foreground"
+                }`}>
+                  <Icon className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{meta.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                    {g.items.map((k) => classifyRequirement(k).label).slice(0, 3).join(" · ")}
+                    {g.items.length > 3 ? ` · +${g.items.length - 3} more` : ""}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => onUpdate(category)}
+                disabled={actionLoading === category}
+                className="gap-1.5 shrink-0"
+                variant={g.severe ? "default" : "outline"}
+              >
+                {actionLoading === category
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <ExternalLink className="w-3 h-3" />}
+                {meta.cta}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Link to="/dashboard/payouts">
+          <Button size="sm" variant="outline">Full payouts checklist</Button>
+        </Link>
+      </div>
+    </div>
+  );
+};
