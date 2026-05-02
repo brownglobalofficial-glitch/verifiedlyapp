@@ -85,8 +85,6 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return <PageSkeleton />;
-
   const username = profile?.username || user?.user_metadata?.username || "creator";
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
   const currentTier: "free" | "pro" | "elite" = profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free";
