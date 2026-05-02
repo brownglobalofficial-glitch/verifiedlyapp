@@ -100,7 +100,7 @@ const Dashboard = () => {
           onTierChange={() => fetchProfile(user.id)}
         />
       )}
-      <nav className="border-b border-border h-16 flex items-center px-4">
+      <nav className="sticky top-0 z-40 border-b border-border h-16 flex items-center px-4 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/dashboard"><img src={logo} alt="Verifiedly" className="h-7" /></Link>
@@ -124,25 +124,42 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-display font-bold flex items-center gap-2">
-              Welcome, {profile?.display_name || "Creator"}
-              {isVerified && <VerifiedBadge className="w-6 h-6" />}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              verifiedly.app/{username}
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                {tierLabel}
-              </span>
-            </p>
+        {/* Premium hero card */}
+        <Card className="p-6 md:p-8 mb-6 border-border bg-gradient-to-br from-secondary/40 via-background to-background">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Welcome back</p>
+              <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight flex items-center gap-2">
+                {displayName}
+                {isVerified && <VerifiedBadge className="w-6 h-6" />}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Link to={`/${username}`} target="_blank" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+                  verifiedly.app/{username} <ExternalLink className="w-3 h-3" />
+                </Link>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  currentTier === "elite" ? "bg-foreground text-background" :
+                  currentTier === "pro" ? "badge-pro" :
+                  "bg-secondary text-secondary-foreground"
+                }`}>
+                  {tierLabel}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {profile?.referral_code && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={copyReferralLink}>
+                  <Share2 className="w-3 h-3" /> Share referral
+                </Button>
+              )}
+              <Link to="/dashboard/settings">
+                <Button size="sm" className="gap-2">
+                  Edit profile <ArrowRight className="w-3 h-3" />
+                </Button>
+              </Link>
+            </div>
           </div>
-          {profile?.referral_code && (
-            <Button variant="outline" size="sm" className="gap-2" onClick={copyReferralLink}>
-              <Share2 className="w-3 h-3" /> Share Referral
-            </Button>
-          )}
-        </div>
+        </Card>
 
         {profile?.referral_code && (
           <Card className="p-4 mb-6 bg-secondary">
