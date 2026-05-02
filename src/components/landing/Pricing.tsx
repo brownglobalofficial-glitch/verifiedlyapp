@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -15,8 +15,11 @@ const Pricing = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simple pricing</h2>
-          <p className="text-lg text-muted-foreground">Start free. Upgrade when you're ready.</p>
+          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Keep more of what you earn</h2>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+            Free forever. Pay nothing until you're earning. Upgrade to drop your platform fee from 10% all the way to 0%.
+          </p>
         </motion.div>
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {/* Free */}
@@ -115,6 +118,94 @@ const Pricing = () => {
             </Link>
           </motion.div>
         </div>
+
+        {/* Fee comparison table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-16 max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-8">
+            <h3 className="text-2xl md:text-3xl font-display font-bold mb-2">Compare plans</h3>
+            <p className="text-sm text-muted-foreground">See exactly what changes when you upgrade.</p>
+          </div>
+          <div className="rounded-2xl border border-border overflow-hidden bg-background">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-secondary border-b border-border">
+                    <th className="text-left font-display font-semibold p-4 w-2/5">Feature</th>
+                    <th className="text-center font-display font-semibold p-4">Free</th>
+                    <th className="text-center font-display font-semibold p-4">
+                      <span className="inline-flex items-center gap-1">Pro <VerifiedBadge className="w-3.5 h-3.5" /></span>
+                    </th>
+                    <th className="text-center font-display font-semibold p-4">
+                      <span className="inline-flex items-center gap-1">Elite <Crown className="w-3.5 h-3.5" /></span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="[&>tr]:border-b [&>tr]:border-border [&>tr:last-child]:border-0">
+                  <tr>
+                    <td className="p-4 font-medium">Monthly price</td>
+                    <td className="p-4 text-center">$0</td>
+                    <td className="p-4 text-center">$4.99</td>
+                    <td className="p-4 text-center">$19.99</td>
+                  </tr>
+                  <tr className="bg-secondary/40">
+                    <td className="p-4 font-medium">Platform fee on earnings</td>
+                    <td className="p-4 text-center font-semibold">10%</td>
+                    <td className="p-4 text-center font-semibold">5%</td>
+                    <td className="p-4 text-center font-semibold">0%</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-medium text-muted-foreground">You keep on a $100 sale</td>
+                    <td className="p-4 text-center text-muted-foreground">$90.00</td>
+                    <td className="p-4 text-center text-muted-foreground">$95.00</td>
+                    <td className="p-4 text-center text-muted-foreground">$100.00</td>
+                  </tr>
+                  {[
+                    { f: "Custom profile & link-in-bio", free: true, pro: true, elite: true },
+                    { f: "Sell digital products", free: true, pro: true, elite: true },
+                    { f: "Tips & donations", free: true, pro: true, elite: true },
+                    { f: "Verification badge", free: false, pro: true, elite: true },
+                    { f: "Subscription tiers & exclusive content", free: false, pro: true, elite: true },
+                    { f: "Sponsorship & affiliate marketplace", free: false, pro: true, elite: true },
+                    { f: "Advanced analytics", free: false, pro: true, elite: true },
+                    { f: "Featured placement & priority listings", free: false, pro: false, elite: true },
+                    { f: "Custom profile themes", free: false, pro: false, elite: true },
+                    { f: "Dedicated support", free: false, pro: false, elite: true },
+                  ].map((row, i) => (
+                    <tr key={row.f} className={i % 2 === 0 ? "" : "bg-secondary/40"}>
+                      <td className="p-4">{row.f}</td>
+                      <td className="p-4 text-center">{row.free ? <Check className="w-4 h-4 inline text-foreground" /> : <X className="w-4 h-4 inline text-muted-foreground/40" />}</td>
+                      <td className="p-4 text-center">{row.pro ? <Check className="w-4 h-4 inline text-foreground" /> : <X className="w-4 h-4 inline text-muted-foreground/40" />}</td>
+                      <td className="p-4 text-center">{row.elite ? <Check className="w-4 h-4 inline text-foreground" /> : <X className="w-4 h-4 inline text-muted-foreground/40" />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-secondary border-t border-border">
+                    <td className="p-4"></td>
+                    <td className="p-4 text-center">
+                      <Link to="/signup"><Button variant="outline" size="sm" className="w-full">Start free</Button></Link>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Link to="/signup"><Button size="sm" className="w-full">Go Pro</Button></Link>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Link to="/signup"><Button size="sm" className="w-full bg-foreground text-background hover:bg-foreground/90">Go Elite</Button></Link>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            Payments processed securely via Stripe. Standard Stripe processing fees apply on all plans.
+          </p>
+        </motion.div>
       </div>
     </section>
   );
