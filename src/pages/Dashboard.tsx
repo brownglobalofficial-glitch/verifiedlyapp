@@ -253,53 +253,58 @@ const Dashboard = () => {
         {/* Admin-only Stripe diagnostics */}
         {isAdmin && <AdminStripeDiagnostics />}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Earnings", value: `$${stats.earnings.toLocaleString()}`, icon: DollarSign },
-            { label: "Subscribers", value: stats.subs.toLocaleString(), icon: Users },
-            { label: "Products", value: stats.products.toLocaleString(), icon: ShoppingBag },
-            { label: "Profile Views", value: stats.views.toLocaleString(), icon: ExternalLink },
-          ].map(stat => (
-            <Card key={stat.label} className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <stat.icon className="w-4 h-4" />
-                <span className="text-xs">{stat.label}</span>
-              </div>
-              <p className="text-2xl font-display font-bold">{stat.value}</p>
-            </Card>
-          ))}
+        {/* Overview stats */}
+        <div className="mb-10">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Overview</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "Total earnings", value: `$${stats.earnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign },
+              { label: "Subscribers", value: stats.subs.toLocaleString(), icon: Users },
+              { label: "Products", value: stats.products.toLocaleString(), icon: ShoppingBag },
+              { label: "Profile views", value: stats.views.toLocaleString(), icon: Eye },
+            ].map(stat => (
+              <Card key={stat.label} className="p-5 border-border hover:border-foreground/20 transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs text-muted-foreground font-medium">{stat.label}</span>
+                  <stat.icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-2xl md:text-3xl font-display font-bold tracking-tight">{stat.value}</p>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Earn */}
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Earn</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
           <Link to="/dashboard/products">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <ShoppingBag className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Digital Products</h3>
-              <p className="text-sm text-muted-foreground">Create and manage your digital products</p>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Digital products</h3>
+              <p className="text-sm text-muted-foreground">Sell e-books, presets, courses & more</p>
             </Card>
           </Link>
           <Link to="/dashboard/subscriptions">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <Users className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Subscriptions</h3>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Subscriptions</h3>
               <p className="text-sm text-muted-foreground">
-                {profile?.is_pro || profile?.is_elite ? "Manage your subscription tiers" : (
+                {profile?.is_pro || profile?.is_elite ? "Manage subscriber tiers" : (
                   <span>Pro/Elite feature — <span className="text-foreground underline">Upgrade</span></span>
                 )}
               </p>
             </Card>
           </Link>
-          <Link to="/dashboard/analytics">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <BarChart3 className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Analytics</h3>
-              <p className="text-sm text-muted-foreground">View earnings, views & growth charts</p>
-            </Card>
-          </Link>
           <Link to="/dashboard/marketplace">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <Megaphone className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Marketplace</h3>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <Megaphone className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Marketplace</h3>
               <p className="text-sm text-muted-foreground">
                 {profile?.account_type === "business"
                   ? "Post sponsorships & affiliate deals"
@@ -307,41 +312,70 @@ const Dashboard = () => {
               </p>
             </Card>
           </Link>
+        </div>
+
+        {/* Build */}
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Build your page</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
           <Link to="/dashboard/links">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <LinkIcon className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Manage Links</h3>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <LinkIcon className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Links</h3>
               <p className="text-sm text-muted-foreground">Edit your link-in-bio cards</p>
             </Card>
           </Link>
           <Link to="/dashboard/content">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <Video className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Content</h3>
-              <p className="text-sm text-muted-foreground">Upload videos, go live & manage subscriber content</p>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <Video className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Content</h3>
+              <p className="text-sm text-muted-foreground">Upload videos, go live & post exclusives</p>
             </Card>
           </Link>
           <Link to="/dashboard/settings">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <Settings className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Profile Settings</h3>
-              <p className="text-sm text-muted-foreground">Edit your bio, links, and profile</p>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <Settings className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Profile</h3>
+              <p className="text-sm text-muted-foreground">Edit bio, avatar & socials</p>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Manage */}
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Manage</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Link to="/dashboard/analytics">
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Analytics</h3>
+              <p className="text-sm text-muted-foreground">Earnings, views & growth charts</p>
             </Card>
           </Link>
           <Link to="/dashboard/billing">
-            <Card className="p-6 card-hover cursor-pointer h-full">
-              <CreditCard className="w-8 h-8 mb-3" />
-              <h3 className="font-display font-semibold text-lg">Billing</h3>
-              <p className="text-sm text-muted-foreground">Plan, renewal date & payout requirements</p>
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1">Billing</h3>
+              <p className="text-sm text-muted-foreground">Plan, renewal & payout requirements</p>
             </Card>
           </Link>
-          <UpgradePrompt currentTier={currentTier as "free" | "pro" | "elite"} />
+          <UpgradePrompt currentTier={currentTier} />
           {isAdmin && (
             <Link to="/dashboard/admin">
-              <Card className="p-6 card-hover cursor-pointer h-full border-2 border-primary">
-                <Shield className="w-8 h-8 mb-3" />
-                <h3 className="font-display font-semibold text-lg">Admin Panel</h3>
-                <p className="text-sm text-muted-foreground">Manage users, verification, & analytics</p>
+              <Card className="p-5 card-hover cursor-pointer h-full border-2 border-primary">
+                <div className="w-10 h-10 rounded-lg bg-foreground text-background flex items-center justify-center mb-3">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <h3 className="font-display font-semibold text-base mb-1">Admin panel</h3>
+                <p className="text-sm text-muted-foreground">Users, verification & platform analytics</p>
               </Card>
             </Link>
           )}
