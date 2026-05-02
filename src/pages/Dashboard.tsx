@@ -3,14 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video, CreditCard } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video, CreditCard, Eye } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 import { Shield } from "lucide-react";
-import PageSkeleton from "@/components/PageSkeleton";
 import AdminStripeDiagnostics from "@/components/AdminStripeDiagnostics";
 import StripeAgreementStatus from "@/components/StripeAgreementStatus";
 import PayoutsChecklist from "@/components/payouts/PayoutsChecklist";
@@ -90,8 +89,9 @@ const Dashboard = () => {
 
   const username = profile?.username || user?.user_metadata?.username || "creator";
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
-  const currentTier = profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free";
+  const currentTier: "free" | "pro" | "elite" = profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free";
   const tierLabel = profile?.is_elite ? "Elite" : profile?.is_pro ? "Pro" : "Free";
+  const displayName = profile?.display_name || user?.user_metadata?.display_name || "there";
 
   return (
     <div className="min-h-screen bg-background">
