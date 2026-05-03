@@ -60,12 +60,15 @@ serve(async (req) => {
       limit: 10,
     });
 
-    const PRO_PRODUCT = "prod_UExwyZUgIuGTha";
-    const ELITE_PRODUCT = "prod_UExxZm3eKY0170";
+    const PRO_PRODUCT = "prod_URi89hw7irIarX";
+    const ELITE_PRODUCT = "prod_URi8z4FUV491Gb";
 
     let tier = "free";
     let subscriptionEnd = null;
     let productId = null;
+    let status: string | null = null;
+    let cancelAtPeriodEnd = false;
+    let subscriptionId: string | null = null;
 
     if (subscriptions.data.length > 0) {
       for (const sub of subscriptions.data) {
@@ -74,12 +77,31 @@ serve(async (req) => {
           tier = "elite";
           productId = subProductId;
           subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+          status = sub.status;
+          cancelAtPeriodEnd = !!sub.cancel_at_period_end;
+          subscriptionId = sub.id;
           break;
         } else if (subProductId === PRO_PRODUCT) {
           tier = "pro";
           productId = subProductId;
           subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+          status = sub.status;
+          cancelAtPeriodEnd = !!sub.cancel_at_period_end;
+          subscriptionId = sub.id;
         }
+      }
+    } else {
+      // Also check past_due / unpaid so users see why payouts are at risk
+      const allSubs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 5 });
+      const live = allSubs.data.find(s => ["past_due","unpaid","incomplete"].includes(s.status));
+      if (live) {
+        const pid = live.items.data[0].price.product as string;
+        if (pid === ELITE_PRODUCT) tier = "elite";
+        else if (pid === PRO_PRODUCT) tier = "pro";
+        productId = pid;
+        status = live.status;
+        subscriptionEnd = new Date(live.current_period_end * 1000).toISOString();
+        subscriptionId = live.id;
       }
     }
 
@@ -97,6 +119,9 @@ serve(async (req) => {
       tier,
       product_id: productId,
       subscription_end: subscriptionEnd,
+      status,
+      cancel_at_period_end: cancelAtPeriodEnd,
+      subscription_id: subscriptionId,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
