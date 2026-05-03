@@ -236,6 +236,26 @@ serve(async (req) => {
           }).eq("id", metadata.user_id);
 
           log("Profile upgraded", { tier, userId: metadata.user_id });
+
+          // Referral commission: 10% to referrer on the first payment
+          const referrerId = metadata.referrer_id;
+          if (referrerId && referrerId !== metadata.user_id) {
+            const totalAmount = (session.amount_total || 0) / 100;
+            const commission = Math.round(totalAmount * 0.10 * 100) / 100;
+            if (commission > 0) {
+              await supabase.from("earnings").insert({
+                creator_id: referrerId,
+                amount: commission,
+                source: "referral",
+                description: `Referral commission — ${tier === "elite" ? "Elite" : "Pro"} signup`,
+              });
+              await notifyCreator(supabase, referrerId,
+                `🎉 Referral commission: $${commission.toFixed(2)}`,
+                `<p style="font-size:15px;color:#333;">Someone you referred just upgraded to <strong>Verifiedly ${tier === "elite" ? "Elite" : "Pro"}</strong>. You earned a <strong>$${commission.toFixed(2)}</strong> referral commission.</p>`
+              );
+              log("Referral commission credited", { referrerId, commission });
+            }
+          }
         }
       } else if (type === "creator_subscription") {
         log("Processing creator subscription", metadata);
