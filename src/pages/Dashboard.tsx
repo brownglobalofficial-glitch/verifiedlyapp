@@ -37,6 +37,18 @@ const Dashboard = () => {
       // Fire profile + private data + role + stats fully in parallel; unblock UI on profile only.
       fetchProfile(session.user.id);
       fetchStats(session.user.id);
+      // Live-sync Pro/Elite from Stripe so the upgrade banner hides instantly
+      // after a successful checkout (does not block initial paint).
+      supabase.functions.invoke("check-subscription").then(({ data }) => {
+        if (data && (data.tier === "pro" || data.tier === "elite")) {
+          setProfile((prev: any) => prev ? {
+            ...prev,
+            is_pro: data.tier === "pro" || data.tier === "elite",
+            is_elite: data.tier === "elite",
+            is_verified: true,
+          } : prev);
+        }
+      }).catch(() => {});
     });
 
     return () => subscription.unsubscribe();

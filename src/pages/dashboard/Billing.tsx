@@ -28,6 +28,9 @@ type SubInfo = {
   product_id?: string | null;
   subscription_end?: string | null;
   tier?: "free" | "pro" | "elite";
+  cancel_at_period_end?: boolean;
+  subscription_id?: string | null;
+  paused?: boolean;
 };
 
 type PayoutStatus = {
@@ -48,6 +51,7 @@ const Billing = () => {
   const [payouts, setPayouts] = useState<PayoutStatus | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [manageLoading, setManageLoading] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -72,6 +76,8 @@ const Billing = () => {
         product_id: sub.product_id,
         subscription_end: sub.subscription_end,
         tier,
+        cancel_at_period_end: !!sub.cancel_at_period_end,
+        subscription_id: sub.subscription_id || null,
       });
 
       if (priv) {
@@ -99,6 +105,31 @@ const Billing = () => {
       toast({ title: "Could not open billing portal", description: e?.message || "Try again", variant: "destructive" });
     }
     setPortalLoading(false);
+  };
+
+  const manage = async (action: "cancel" | "resume" | "pause" | "unpause") => {
+    setManageLoading(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-subscription", { body: { action } });
+      if (error) throw error;
+      setInfo((prev) => ({
+        ...prev,
+        status: data?.status || prev.status,
+        subscription_end: data?.current_period_end || prev.subscription_end,
+        cancel_at_period_end: !!data?.cancel_at_period_end,
+        paused: !!data?.paused,
+      }));
+      const labels: Record<string, string> = {
+        cancel: "Subscription set to cancel at the end of the period.",
+        resume: "Cancellation reverted — your subscription will renew.",
+        pause: "Billing paused — you won't be charged on the next renewal.",
+        unpause: "Billing resumed.",
+      };
+      toast({ title: "Done", description: labels[action] });
+    } catch (e: any) {
+      toast({ title: "Action failed", description: e?.message || "Try again", variant: "destructive" });
+    }
+    setManageLoading(null);
   };
 
   const openStripeOnboarding = async (action: string) => {
@@ -148,6 +179,7 @@ const Billing = () => {
   const hasPastDue = (payouts?.past_due?.length || 0) > 0;
   const hasCurrentlyDue = (payouts?.currently_due?.length || 0) > 0;
   const paymentIssue = info.status === "past_due" || info.status === "unpaid" || info.status === "incomplete";
+  const isPaid = tier === "pro" || tier === "elite";
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,6 +224,62 @@ const Billing = () => {
             <Stat label={info.status === "active" || !info.status ? "Renews" : "Status"} value={renewalDate || (info.status || "—")} />
             <Stat label="Subscription status" value={info.status || (tier === "free" ? "free plan" : "—")} />
           </div>
+
+          {isPaid && info.cancel_at_period_end && (
+            <div className="mt-4 rounded-lg border border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 p-4 flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex gap-3 min-w-0">
+                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold">Subscription set to cancel</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Your {t.name} perks remain active until {renewalDate || "the end of the period"}.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => manage("resume")} disabled={manageLoading === "resume"}>
+                {manageLoading === "resume" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Keep my plan"}
+              </Button>
+            </div>
+          )}
+
+          {isPaid && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Link to="/dashboard/upgrade">
+                <Button size="sm" variant="outline">Change plan</Button>
+              </Link>
+              {!info.cancel_at_period_end && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => manage("cancel")}
+                  disabled={manageLoading === "cancel"}
+                >
+                  {manageLoading === "cancel" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Cancel at period end"}
+                </Button>
+              )}
+              {!info.paused ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => manage("pause")}
+                  disabled={manageLoading === "pause"}
+                >
+                  {manageLoading === "pause" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Pause billing"}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => manage("unpause")}
+                  disabled={manageLoading === "unpause"}
+                >
+                  {manageLoading === "unpause" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Resume billing"}
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground ml-1">
+                Need a refund or a different card? Use “Manage in Stripe”.
+              </p>
+            </div>
+          )}
 
           {paymentIssue && (
             <div className="mt-4 rounded-lg border border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 p-4">
