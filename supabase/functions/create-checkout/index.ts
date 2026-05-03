@@ -32,9 +32,25 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });
 
-    const { priceId } = await req.json();
+    const { priceId, tier } = await req.json();
     if (!priceId) throw new Error("priceId is required");
-    logStep("Price ID received", { priceId });
+    logStep("Price ID received", { priceId, tier });
+
+    // Look up referrer (creator who referred this user) for 10% commission
+    let referrerId: string | null = null;
+    try {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      const { data: profile } = await admin
+        .from("profiles").select("referred_by").eq("id", user.id).maybeSingle();
+      if (profile?.referred_by) {
+        const { data: refProfile } = await admin
+          .from("profiles").select("id").eq("referral_code", profile.referred_by).maybeSingle();
+        if (refProfile?.id) referrerId = refProfile.id;
+      }
+    } catch (e) { logStep("referrer lookup failed", { error: String(e) }); }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -51,6 +67,20 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/dashboard?checkout=success`,
       cancel_url: `${req.headers.get("origin")}/dashboard?checkout=cancelled`,
+      metadata: {
+        type: "subscription",
+        tier: tier || "",
+        user_id: user.id,
+        referrer_id: referrerId || "",
+      },
+      subscription_data: {
+        metadata: {
+          type: "subscription",
+          tier: tier || "",
+          user_id: user.id,
+          referrer_id: referrerId || "",
+        },
+      },
     });
     logStep("Checkout session created", { sessionId: session.id });
 
