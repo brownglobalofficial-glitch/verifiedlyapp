@@ -41,7 +41,7 @@ const UpgradePro = () => {
     setLoading(tier);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId: STRIPE_TIERS[tier].price_id },
+        body: { priceId: STRIPE_TIERS[tier].price_id, tier },
       });
       if (error) throw error;
       if (data?.url) window.open(data.url, "_blank");
