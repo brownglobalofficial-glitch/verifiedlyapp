@@ -22,11 +22,11 @@ const Hero = () => {
             <VerifiedBadge className="w-4 h-4" />
             <span className="text-sm font-medium text-muted-foreground">Trusted by creators, athletes, businesses & teams</span>
           </motion.div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.05] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.15] mb-6">
             One link.
             <br />
             <motion.span
-              className="text-gradient inline-block"
+              className="text-gradient inline-block pb-2"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
