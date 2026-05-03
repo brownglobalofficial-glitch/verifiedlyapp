@@ -86,16 +86,25 @@ serve(async (req) => {
 
     log("Event received", { type: event.type, id: event.id });
 
-    // Persist a lightweight record of the event for the admin diagnostics banner
-    try {
-      await supabase.from("webhook_events").insert({
-        stripe_event_id: event.id,
-        event_type: event.type,
-        livemode: (event as any).livemode ?? null,
-        payload_preview: { id: event.id, type: event.type, created: event.created },
-      });
-    } catch (e) {
-      log("Failed to log webhook event", { error: String(e) });
+    // Idempotency: a unique index on stripe_event_id ensures the same event
+    // is only processed once. If insert fails with a duplicate, return 200
+    // immediately so Stripe stops retrying without re-running side effects.
+    const { error: dupErr } = await supabase.from("webhook_events").insert({
+      stripe_event_id: event.id,
+      event_type: event.type,
+      livemode: (event as any).livemode ?? null,
+      payload_preview: { id: event.id, type: event.type, created: event.created },
+    });
+    if (dupErr) {
+      const code = (dupErr as any).code;
+      if (code === "23505") {
+        log("Duplicate event — already processed, skipping", { id: event.id });
+        return new Response(JSON.stringify({ received: true, duplicate: true }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      log("Failed to log webhook event (continuing)", { error: dupErr.message });
     }
 
     // ── Stripe Connect account.updated → cache payout status on creator_private_data ──
@@ -236,26 +245,9 @@ serve(async (req) => {
           }).eq("id", metadata.user_id);
 
           log("Profile upgraded", { tier, userId: metadata.user_id });
-
-          // Referral commission: 10% to referrer on the first payment
-          const referrerId = metadata.referrer_id;
-          if (referrerId && referrerId !== metadata.user_id) {
-            const totalAmount = (session.amount_total || 0) / 100;
-            const commission = Math.round(totalAmount * 0.10 * 100) / 100;
-            if (commission > 0) {
-              await supabase.from("earnings").insert({
-                creator_id: referrerId,
-                amount: commission,
-                source: "referral",
-                description: `Referral commission — ${tier === "elite" ? "Elite" : "Pro"} signup`,
-              });
-              await notifyCreator(supabase, referrerId,
-                `🎉 Referral commission: $${commission.toFixed(2)}`,
-                `<p style="font-size:15px;color:#333;">Someone you referred just upgraded to <strong>Verifiedly ${tier === "elite" ? "Elite" : "Pro"}</strong>. You earned a <strong>$${commission.toFixed(2)}</strong> referral commission.</p>`
-              );
-              log("Referral commission credited", { referrerId, commission });
-            }
-          }
+          // Referral commission is paid out from `invoice.payment_succeeded`
+          // (first paid invoice only) — see handler below — to guarantee the
+          // payment actually cleared before we credit the referrer.
         }
       } else if (type === "creator_subscription") {
         log("Processing creator subscription", metadata);
@@ -295,6 +287,66 @@ serve(async (req) => {
         );
 
         log("Creator subscription recorded", { amount: totalAmount });
+      }
+    }
+
+    // ── Referral commission: credit referrer 10% on the FIRST paid invoice ──
+    // Using invoice.payment_succeeded + billing_reason === "subscription_create"
+    // ensures we only credit on the genuine first successful charge. The
+    // unique webhook_events index above guarantees no duplicate credits even
+    // if Stripe retries this event.
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice;
+      if (invoice.billing_reason === "subscription_create" && invoice.subscription) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          const md = (sub.metadata || {}) as Record<string, string>;
+          const referrerId = md.referrer_id;
+          const userId = md.user_id;
+          const tier = md.tier;
+          if (referrerId && userId && referrerId !== userId && (tier === "pro" || tier === "elite")) {
+            const paidAmount = (invoice.amount_paid || 0) / 100;
+            const commission = Math.round(paidAmount * 0.10 * 100) / 100;
+            if (commission > 0) {
+              await supabase.from("earnings").insert({
+                creator_id: referrerId,
+                amount: commission,
+                source: "referral",
+                description: `Referral commission — ${tier === "elite" ? "Elite" : "Pro"} signup`,
+              });
+              await notifyCreator(supabase, referrerId,
+                `🎉 Referral commission: $${commission.toFixed(2)}`,
+                `<p style="font-size:15px;color:#333;">Someone you referred just upgraded to <strong>Verifiedly ${tier === "elite" ? "Elite" : "Pro"}</strong>. You earned a <strong>$${commission.toFixed(2)}</strong> referral commission.</p>`
+              );
+              log("Referral commission credited", { referrerId, commission });
+            }
+          }
+        } catch (e) {
+          log("Referral handling failed", { error: String(e) });
+        }
+      }
+    }
+
+    // ── Sync profile flags on subscription cancellation / failure ──
+    if (event.type === "customer.subscription.deleted" || event.type === "customer.subscription.updated") {
+      const sub = event.data.object as Stripe.Subscription;
+      const md = (sub.metadata || {}) as Record<string, string>;
+      const userId = md.user_id;
+      if (userId) {
+        const isActive = ["active", "trialing"].includes(sub.status);
+        const tier = md.tier;
+        if (event.type === "customer.subscription.deleted" || !isActive) {
+          await supabase.from("profiles").update({
+            is_pro: false, is_elite: false,
+          }).eq("id", userId);
+          log("Profile downgraded — subscription ended", { userId });
+        } else if (tier === "pro" || tier === "elite") {
+          await supabase.from("profiles").update({
+            is_pro: tier === "pro" || tier === "elite",
+            is_elite: tier === "elite",
+            is_verified: true,
+          }).eq("id", userId);
+        }
       }
     }
 
