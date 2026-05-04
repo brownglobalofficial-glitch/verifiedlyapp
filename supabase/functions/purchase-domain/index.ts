@@ -43,47 +43,57 @@ serve(async (req) => {
       .from("profiles")
       .select("display_name, username")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     // Get contact email from private data
     const { data: privateData } = await supabase
       .from("creator_private_data")
       .select("contact_email")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    const contactEmail = privateData?.contact_email || user.email;
-    const contactName = profile?.display_name || profile?.username || "Domain Owner";
-    const [firstName, ...lastParts] = contactName.split(" ");
-    const lastName = lastParts.join(" ") || firstName;
+    // Build the createDomain request. Name.com REQUIRES purchasePrice to match
+    // the price returned by checkAvailability; otherwise it returns 400.
+    const numericPrice = typeof purchasePrice === "number"
+      ? purchasePrice
+      : Number(purchasePrice);
+    if (!isFinite(numericPrice) || numericPrice <= 0) {
+      throw new Error("Domain price is missing — please re-check availability and try again.");
+    }
 
-    // Purchase domain
+    const body: Record<string, unknown> = {
+      domain: { domainName: cleanDomain },
+      purchasePrice: numericPrice,
+      years: 1,
+    };
+
+    console.log("[PURCHASE-DOMAIN] Creating domain", { domain: cleanDomain, price: numericPrice });
+
     const purchaseRes = await fetch(`${NAME_COM_API}/v4/domains`, {
       method: "POST",
       headers: {
         "Authorization": nameComAuth,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        domain: {
-          domainName: cleanDomain,
-        },
-        purchasePrice: purchasePrice || undefined,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!purchaseRes.ok) {
-      const err = await purchaseRes.text();
-      console.error("[PURCHASE-DOMAIN] Name.com error:", err);
-      throw new Error(`Domain purchase failed: ${err}`);
+      const errText = await purchaseRes.text();
+      console.error("[PURCHASE-DOMAIN] Name.com error", purchaseRes.status, errText);
+      // Try to surface a clean message
+      let friendly = errText;
+      try {
+        const parsed = JSON.parse(errText);
+        friendly = parsed.message || parsed.details || errText;
+      } catch { /* keep raw */ }
+      throw new Error(`Domain purchase failed (${purchaseRes.status}): ${friendly}`);
     }
 
     const domainData = await purchaseRes.json();
 
     // Set DNS to point to Verifiedly (A record to the user's profile)
     // Point to a simple redirect or the Verifiedly profile
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    
     // Create a CNAME record pointing to verifiedly
     try {
       await fetch(`${NAME_COM_API}/v4/domains/${cleanDomain}/records`, {
