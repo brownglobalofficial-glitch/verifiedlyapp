@@ -126,7 +126,10 @@ const Dashboard = () => {
               <Link to={`/${username}`} className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link to="/explore" className="md:hidden">
+              <Button variant="ghost" size="sm">Explore</Button>
+            </Link>
             <Link to={`/${username}`} target="_blank">
               <Button variant="outline" size="sm" className="gap-2">
                 <ExternalLink className="w-3 h-3" /> Preview
