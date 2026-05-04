@@ -61,6 +61,11 @@ const Dashboard = () => {
       (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", userId).maybeSingle() as any),
       supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin"),
     ]);
+    // Fans don't have selling features — bounce to fan dashboard
+    if (profileRes.data?.account_type === "fan") {
+      navigate("/fan", { replace: true });
+      return;
+    }
     setProfile({
       ...(profileRes.data || {}),
       referral_code: refRes?.data ?? null,
@@ -121,7 +126,10 @@ const Dashboard = () => {
               <Link to={`/${username}`} className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link to="/explore" className="md:hidden">
+              <Button variant="ghost" size="sm">Explore</Button>
+            </Link>
             <Link to={`/${username}`} target="_blank">
               <Button variant="outline" size="sm" className="gap-2">
                 <ExternalLink className="w-3 h-3" /> Preview

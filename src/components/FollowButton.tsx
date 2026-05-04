@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, HeartOff } from "lucide-react";
@@ -14,6 +15,8 @@ const FollowButton = ({ creatorId, className }: FollowButtonProps) => {
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -36,7 +39,11 @@ const FollowButton = ({ creatorId, className }: FollowButtonProps) => {
 
   const handleToggle = async () => {
     if (!userId) {
-      toast({ title: "Sign in required", description: "Create an account to follow creators.", variant: "destructive" });
+      toast({
+        title: "Create a free fan account",
+        description: "Sign up in seconds to follow this creator.",
+      });
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(location.pathname)}`);
       return;
     }
     if (userId === creatorId) return;
