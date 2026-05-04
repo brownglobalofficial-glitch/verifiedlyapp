@@ -45,6 +45,11 @@ const Product = () => {
 
   const handleBuy = async () => {
     if (!product) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (product.price === 0 && product.file_url) {
       window.open(product.file_url, "_blank");
       return;
