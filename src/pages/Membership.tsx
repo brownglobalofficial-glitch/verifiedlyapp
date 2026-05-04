@@ -66,6 +66,11 @@ const Membership = () => {
   }, [username]);
 
   const handleSubscribe = async (tier: Tier, interval: "month" | "year") => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (!profile?.has_payments) {
       toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
       return;
