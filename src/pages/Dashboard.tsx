@@ -61,6 +61,11 @@ const Dashboard = () => {
       (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", userId).maybeSingle() as any),
       supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin"),
     ]);
+    // Fans don't have selling features — bounce to fan dashboard
+    if (profileRes.data?.account_type === "fan") {
+      navigate("/fan", { replace: true });
+      return;
+    }
     setProfile({
       ...(profileRes.data || {}),
       referral_code: refRes?.data ?? null,
