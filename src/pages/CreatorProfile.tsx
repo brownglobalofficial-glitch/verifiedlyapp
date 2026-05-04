@@ -380,7 +380,7 @@ const CreatorProfile = () => {
           </div>
 
           {profile?.bio && (
-            <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed`}>{profile.bio}</p>
+            <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed whitespace-pre-wrap break-words`}>{profile.bio}</p>
           )}
 
           <div className="flex items-center justify-center gap-2 mt-4">
@@ -654,9 +654,24 @@ const CreatorProfile = () => {
         </Dialog>
 
         <div className="mt-12 text-center">
-          <Link to="/" className={`text-xs ${theme.muted} hover:opacity-70 transition-opacity`}>
-            Powered by Verifiedly
-          </Link>
+          {!viewerId ? (
+            <div className="space-y-3">
+              <Link to="/signup">
+                <Button size="sm" className="rounded-full gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Create your own Verifiedly
+                </Button>
+              </Link>
+              <div>
+                <Link to="/" className={`text-xs ${theme.muted} hover:opacity-70 transition-opacity`}>
+                  Powered by Verifiedly
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <Link to="/" className={`text-xs ${theme.muted} hover:opacity-70 transition-opacity`}>
+              Powered by Verifiedly
+            </Link>
+          )}
         </div>
       </div>
     </div>
