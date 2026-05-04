@@ -23,7 +23,13 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [accountType, setAccountType] = useState("creator");
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
+  const initialType = (searchParams.get("type") || "creator").toLowerCase();
+  const returnTo = searchParams.get("returnTo") || "";
+  const [accountType, setAccountType] = useState(
+    ["fan", "creator", "business"].includes(initialType) ? initialType : "creator"
+  );
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
@@ -31,12 +37,10 @@ const Signup = () => {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const referralCode = searchParams.get("ref") || "";
 
   const handleOAuth = async (provider: "google" | "apple") => {
     const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+      redirect_uri: returnTo ? `${window.location.origin}${returnTo}` : window.location.origin,
     });
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
