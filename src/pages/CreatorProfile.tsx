@@ -252,6 +252,10 @@ const CreatorProfile = () => {
   };
 
   const handleTip = async (amount: number) => {
+    if (!viewerId) {
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     setCheckoutLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-tip", {
@@ -267,6 +271,10 @@ const CreatorProfile = () => {
   };
 
   const handleBuyProduct = async (product: any) => {
+    if (!viewerId) {
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (product.price === 0 && product.file_url) {
       window.open(product.file_url, "_blank");
       return;
@@ -286,6 +294,10 @@ const CreatorProfile = () => {
   };
 
   const handleSubscribe = async (sub: any, interval: "month" | "year" = "month") => {
+    if (!viewerId) {
+      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (!profile?.has_payments) {
       toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
       return;
