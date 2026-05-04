@@ -85,7 +85,9 @@ const Signup = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          emailRedirectTo: returnTo
+            ? `${window.location.origin}${returnTo}`
+            : `${window.location.origin}/onboarding`,
           data: {
             username: username.toLowerCase(),
             display_name: displayName,
@@ -99,7 +101,10 @@ const Signup = () => {
         toast({ title: "Signup failed", description: error.message, variant: "destructive" });
         return;
       }
-      navigate(`/login?confirmed=pending&email=${encodeURIComponent(email)}`, { replace: true });
+      navigate(
+        `/login?confirmed=pending&email=${encodeURIComponent(email)}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
+        { replace: true }
+      );
     } catch (err: any) {
       toast({ title: "Signup failed", description: err?.message ?? "Unknown error", variant: "destructive" });
     } finally {
