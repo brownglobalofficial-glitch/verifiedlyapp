@@ -7,6 +7,7 @@ import { ArrowLeft, DollarSign, Users, Eye, Share2, MousePointerClick, LinkIcon 
 import logo from "@/assets/verifiedly-logo.webp";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, LineChart, Line } from "recharts";
+import TierLock from "@/components/TierLock";
 
 const chartConfig = {
   earnings: { label: "Earnings", color: "hsl(var(--foreground))" },
@@ -37,6 +38,7 @@ const Analytics = () => {
   const [linkStats, setLinkStats] = useState<{ id: string; title: string; clicks: number; ctr: number }[]>([]);
   const [totalLinkClicks, setTotalLinkClicks] = useState(0);
   const [totals, setTotals] = useState({ earnings: 0, views: 0, subs: 0 });
+  const [userTier, setUserTier] = useState<"free" | "pro" | "elite">("free");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +46,11 @@ const Analytics = () => {
       if (!session) { navigate("/login"); return; }
       setUserId(session.user.id);
       fetchAnalytics(session.user.id, range);
+      supabase.from("profiles").select("is_pro,is_elite").eq("id", session.user.id).maybeSingle()
+        .then(({ data }) => {
+          if (data?.is_elite) setUserTier("elite");
+          else if (data?.is_pro) setUserTier("pro");
+        });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
@@ -161,6 +168,12 @@ const Analytics = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
+        <TierLock
+          requires="pro"
+          userTier={userTier}
+          title="Advanced analytics"
+          description="Detailed earnings, audience, and link analytics are available on Verifiedly Pro and Elite."
+        >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
@@ -337,6 +350,7 @@ const Analytics = () => {
             </ChartContainer>
           </Card>
         </div>
+        </TierLock>
       </div>
     </div>
   );

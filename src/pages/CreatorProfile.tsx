@@ -397,7 +397,7 @@ const CreatorProfile = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            {profile?.stripe_connect_account_id && (
+            {profile?.has_payments && profile?.tips_enabled !== false && (
               <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
                 <Coins className="w-4 h-4" /> Tip
               </Button>
@@ -430,7 +430,7 @@ const CreatorProfile = () => {
       </div>
 
       <div className="max-w-md mx-auto px-4 pb-12 -mt-2">
-        {viewerId && profile?.id === viewerId && (products.length > 0 || subscriptions.length > 0 || profile?.stripe_connect_account_id) && (
+        {viewerId && profile?.id === viewerId && (products.length > 0 || subscriptions.length > 0 || profile?.has_payments) && (
           <div className="mb-6">
             <FeePreview
               currentTier={profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free"}

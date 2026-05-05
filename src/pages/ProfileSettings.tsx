@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Camera, Plus, Trash2, GripVertical, MousePointerClick, Check } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Trash2, GripVertical, MousePointerClick, Check, Lock, Sparkles } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -211,6 +211,7 @@ const ProfileSettings = () => {
   const [stripeAgreed, setStripeAgreed] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
+  const [tipsEnabled, setTipsEnabled] = useState(true);
 
   // Bio Links
   const [links, setLinks] = useState<BioLink[]>([]);
@@ -248,6 +249,7 @@ const ProfileSettings = () => {
       setWebsite(data.website || "");
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
+      setTipsEnabled(data.tips_enabled !== false);
       const sl = (data.social_links || {}) as Record<string, string>;
       setInstagram(sl.instagram || "");
       setTwitter(sl.twitter || "");
@@ -297,6 +299,7 @@ const ProfileSettings = () => {
       website,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       theme_color: themeColor,
+      tips_enabled: tipsEnabled,
     }).eq("id", profile.id);
 
     // Save contact_email to private data table
@@ -488,6 +491,26 @@ const ProfileSettings = () => {
               <DomainSearchSection />
             )}
 
+            {/* Tips toggle */}
+            {profile?.account_type !== "fan" && (
+              <div className="border-t border-border pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-display font-semibold text-lg">Accept tips</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Show a Tip button on your public profile so fans can support you.
+                      {!stripeConnected && " Connect Stripe above to start receiving tips."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={tipsEnabled}
+                    onCheckedChange={setTipsEnabled}
+                    aria-label="Toggle tips"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-border pt-6">
               <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -549,23 +572,46 @@ const ProfileSettings = () => {
           <TabsContent value="theme" className="space-y-6">
             <div>
               <h2 className="text-xl font-display font-bold">Profile Theme</h2>
-              <p className="text-sm text-muted-foreground">Choose how your public profile looks</p>
+              <p className="text-sm text-muted-foreground">
+                Choose how your public profile looks. Premium themes are available on{" "}
+                <Link to="/pro" className="underline">Verifiedly Pro & Elite</Link>.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {THEMES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setThemeColor(t.id)}
-                  className={`rounded-xl border-2 p-4 text-center transition-all ${themeColor === t.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
-                >
-                  <div className={`${t.bg} rounded-lg h-20 mb-2 flex items-end justify-center p-2`}>
-                    <div className={`${t.accent} rounded-full h-3 w-12`} />
-                  </div>
-                  <p className="text-sm font-medium">{t.label}</p>
-                  {themeColor === t.id && <Check className="w-4 h-4 mx-auto mt-1 text-primary" />}
-                </button>
-              ))}
+              {THEMES.map(t => {
+                const isFree = t.id === "default" || t.id === "mono";
+                const userTier: "free" | "pro" | "elite" = profile?.is_elite ? "elite" : profile?.is_pro ? "pro" : "free";
+                const locked = !isFree && userTier === "free";
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      if (locked) {
+                        toast({
+                          title: "Pro feature",
+                          description: "Upgrade to Verifiedly Pro to unlock premium themes.",
+                        });
+                        navigate("/pro");
+                        return;
+                      }
+                      setThemeColor(t.id);
+                    }}
+                    className={`relative rounded-xl border-2 p-4 text-center transition-all ${themeColor === t.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"} ${locked ? "opacity-60" : ""}`}
+                  >
+                    {locked && (
+                      <span className="absolute top-2 right-2 inline-flex items-center gap-1 text-[10px] font-semibold bg-foreground text-background px-1.5 py-0.5 rounded-full">
+                        <Lock className="w-2.5 h-2.5" /> Pro
+                      </span>
+                    )}
+                    <div className={`${t.bg} rounded-lg h-20 mb-2 flex items-end justify-center p-2`}>
+                      <div className={`${t.accent} rounded-full h-3 w-12`} />
+                    </div>
+                    <p className="text-sm font-medium">{t.label}</p>
+                    {themeColor === t.id && <Check className="w-4 h-4 mx-auto mt-1 text-primary" />}
+                  </button>
+                );
+              })}
             </div>
 
             <Button onClick={handleSave} disabled={saving} className="w-full">
