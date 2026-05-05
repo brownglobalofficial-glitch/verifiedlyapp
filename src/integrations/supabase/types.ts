@@ -488,6 +488,72 @@ export type Database = {
           },
         ]
       }
+      payout_ledger: {
+        Row: {
+          buyer_email: string | null
+          buyer_user_id: string | null
+          created_at: string
+          currency: string
+          destination_stripe_account_id: string | null
+          gross_amount: number
+          id: string
+          metadata: Json
+          net_amount: number
+          platform_fee: number
+          platform_fee_percent: number
+          reference_id: string | null
+          seller_user_id: string | null
+          stripe_event_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          buyer_email?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          currency?: string
+          destination_stripe_account_id?: string | null
+          gross_amount?: number
+          id?: string
+          metadata?: Json
+          net_amount?: number
+          platform_fee?: number
+          platform_fee_percent?: number
+          reference_id?: string | null
+          seller_user_id?: string | null
+          stripe_event_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          buyer_email?: string | null
+          buyer_user_id?: string | null
+          created_at?: string
+          currency?: string
+          destination_stripe_account_id?: string | null
+          gross_amount?: number
+          id?: string
+          metadata?: Json
+          net_amount?: number
+          platform_fee?: number
+          platform_fee_percent?: number
+          reference_id?: string | null
+          seller_user_id?: string | null
+          stripe_event_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null

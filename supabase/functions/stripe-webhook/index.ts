@@ -10,6 +10,28 @@ const SITE_NAME = "Verifiedly";
 const SENDER_DOMAIN = "notify.brownglobal.app";
 const FROM_DOMAIN = "brownglobal.app";
 
+async function getCreatorDestination(supabase: any, creatorId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from("creator_private_data")
+      .select("stripe_connect_account_id")
+      .eq("id", creatorId)
+      .maybeSingle();
+    return data?.stripe_connect_account_id ?? null;
+  } catch { return null; }
+}
+
+async function logLedger(supabase: any, row: Record<string, any>) {
+  try {
+    const { error } = await supabase.from("payout_ledger").insert(row);
+    if (error && (error as any).code !== "23505") {
+      log("Ledger insert failed", { error: error.message });
+    }
+  } catch (e) {
+    log("Ledger insert exception", { error: String(e) });
+  }
+}
+
 async function notifyCreator(supabase: any, creatorId: string, subject: string, bodyHtml: string) {
   try {
     // Get contact email from private data table first, then fall back to auth email
@@ -203,6 +225,24 @@ serve(async (req) => {
           description: `Sale: ${product?.name || "Product"}`,
         });
 
+        await logLedger(supabase, {
+          transaction_type: "product",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_user_id: buyerId,
+          buyer_email: session.customer_email || metadata.buyer_email || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: (session.payment_intent as string) || null,
+          reference_id: metadata.product_id || null,
+          metadata: { product_name: product?.name || null },
+        });
+
         // Notify creator
         await notifyCreator(supabase, metadata.creator_id,
           `💰 New sale: ${product?.name || "Product"}`,
@@ -223,6 +263,21 @@ serve(async (req) => {
           amount: creatorEarnings,
           source: "tip",
           description: `Tip received`,
+        });
+
+        await logLedger(supabase, {
+          transaction_type: "tip",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_email: session.customer_email || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: (session.payment_intent as string) || null,
         });
 
         // Notify creator
@@ -279,6 +334,23 @@ serve(async (req) => {
           description: `New subscriber`,
         });
 
+        await logLedger(supabase, {
+          transaction_type: "creator_subscription",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_user_id: subscriberId,
+          buyer_email: buyerEmail || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_subscription_id: (session.subscription as string) || null,
+          reference_id: metadata.subscription_id || null,
+        });
+
         // Notify creator
         await notifyCreator(supabase, metadata.creator_id,
           `🎉 New subscriber!`,
@@ -304,8 +376,31 @@ serve(async (req) => {
           const referrerId = md.referrer_id;
           const userId = md.user_id;
           const tier = md.tier;
+          const paidAmount = (invoice.amount_paid || 0) / 100;
+
+          // Log Verifiedly Pro/Elite platform subscription to ledger.
+          // Destination = Verifiedly platform account (null = stays on platform).
+          if (userId && (tier === "pro" || tier === "elite")) {
+            await logLedger(supabase, {
+              transaction_type: "platform_subscription",
+              seller_user_id: null,
+              destination_stripe_account_id: null,
+              buyer_user_id: userId,
+              buyer_email: invoice.customer_email || null,
+              gross_amount: paidAmount,
+              platform_fee: paidAmount,
+              net_amount: 0,
+              platform_fee_percent: 100,
+              currency: invoice.currency || "usd",
+              stripe_event_id: event.id,
+              stripe_invoice_id: invoice.id,
+              stripe_subscription_id: invoice.subscription as string,
+              reference_id: tier,
+              metadata: { tier, referrer_id: referrerId || null },
+            });
+          }
+
           if (referrerId && userId && referrerId !== userId && (tier === "pro" || tier === "elite")) {
-            const paidAmount = (invoice.amount_paid || 0) / 100;
             const commission = Math.round(paidAmount * 0.10 * 100) / 100;
             if (commission > 0) {
               await supabase.from("earnings").insert({
@@ -313,6 +408,21 @@ serve(async (req) => {
                 amount: commission,
                 source: "referral",
                 description: `Referral commission — ${tier === "elite" ? "Elite" : "Pro"} signup`,
+              });
+              await logLedger(supabase, {
+                transaction_type: "referral",
+                seller_user_id: referrerId,
+                destination_stripe_account_id: await getCreatorDestination(supabase, referrerId),
+                buyer_user_id: userId,
+                gross_amount: paidAmount,
+                platform_fee: paidAmount - commission,
+                net_amount: commission,
+                platform_fee_percent: 90,
+                currency: invoice.currency || "usd",
+                stripe_event_id: event.id + ":referral",
+                stripe_invoice_id: invoice.id,
+                stripe_subscription_id: invoice.subscription as string,
+                reference_id: tier,
               });
               await notifyCreator(supabase, referrerId,
                 `🎉 Referral commission: $${commission.toFixed(2)}`,
