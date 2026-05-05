@@ -633,6 +633,7 @@ export type Database = {
           referred_by: string | null
           social_links: Json | null
           theme_color: string | null
+          tips_enabled: boolean
           updated_at: string
           username: string
           website: string | null
@@ -656,6 +657,7 @@ export type Database = {
           referred_by?: string | null
           social_links?: Json | null
           theme_color?: string | null
+          tips_enabled?: boolean
           updated_at?: string
           username: string
           website?: string | null
@@ -679,6 +681,7 @@ export type Database = {
           referred_by?: string | null
           social_links?: Json | null
           theme_color?: string | null
+          tips_enabled?: boolean
           updated_at?: string
           username?: string
           website?: string | null
