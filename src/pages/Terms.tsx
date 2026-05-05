@@ -76,7 +76,10 @@ const Terms = () => (
       <p>You agree to indemnify, defend, and hold harmless BrownGlobal Holdings LLC and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses arising from your use of the Platform or violation of these Terms.</p>
 
       <h2>16. Governing Law & Dispute Resolution</h2>
-      <p>These Terms shall be governed by and construed in accordance with the laws of the State of Wyoming, United States, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.</p>
+      <p>These Terms shall be governed by and construed in accordance with the laws of the State of Georgia, United States, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved through binding arbitration administered by the American Arbitration Association in Atlanta, Georgia, USA. Users outside the United States expressly consent to this venue and to the application of Georgia law, except where local mandatory consumer protection laws apply.</p>
+
+      <h2>16a. International Users</h2>
+      <p>The Platform is operated from the United States and is intended for a global audience. By using the Platform from outside the United States, you represent that doing so is lawful in your jurisdiction and you consent to the transfer of your data to, and processing in, the United States and other countries where our service providers operate. You are responsible for compliance with all local laws applicable to your use of the Platform, including tax, consumer, and content regulations. EU/UK residents retain rights described in our Privacy Policy (GDPR/UK GDPR). Nothing in these Terms limits non-waivable consumer rights granted to you by the laws of your country of residence.</p>
 
       <h2>17. Severability</h2>
       <p>If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force and effect.</p>

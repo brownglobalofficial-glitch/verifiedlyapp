@@ -71,7 +71,10 @@ const Privacy = () => (
       <p>The Platform is not intended for users under 18 years of age. We do not knowingly collect personal information from minors. If we learn that we have collected data from a minor, we will delete it promptly.</p>
 
       <h2>9. International Data Transfers</h2>
-      <p>Your data may be processed in countries other than your own. We ensure appropriate safeguards are in place for international transfers in compliance with applicable data protection laws.</p>
+      <p>BrownGlobal Holdings LLC is organized under the laws of the State of Georgia, United States, and operates the Platform from the United States. Your personal data may be processed in the United States and other countries where our service providers operate. For users in the European Economic Area, the United Kingdom, or Switzerland, we rely on Standard Contractual Clauses or other appropriate safeguards as required by GDPR / UK GDPR. EU/UK residents have the right to lodge a complaint with their local supervisory authority.</p>
+
+      <h2>9a. International Users (GDPR / UK / Global)</h2>
+      <p>If you are accessing the Platform from outside the United States, you acknowledge and consent to the collection, transfer, storage, and processing of your information in the United States. We honor data-subject rights granted by the GDPR, UK GDPR, and similar laws including Brazil (LGPD), Canada (PIPEDA), and Australia (Privacy Act). Requests can be submitted to <strong>support@verifiedly.app</strong>.</p>
 
       <h2>10. California Privacy Rights (CCPA)</h2>
       <p>California residents have additional rights under the CCPA, including the right to know what personal information is collected, the right to delete, and the right to opt out of the sale of personal information. We do not sell personal information.</p>
