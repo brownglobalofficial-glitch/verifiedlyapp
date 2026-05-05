@@ -376,8 +376,31 @@ serve(async (req) => {
           const referrerId = md.referrer_id;
           const userId = md.user_id;
           const tier = md.tier;
+          const paidAmount = (invoice.amount_paid || 0) / 100;
+
+          // Log Verifiedly Pro/Elite platform subscription to ledger.
+          // Destination = Verifiedly platform account (null = stays on platform).
+          if (userId && (tier === "pro" || tier === "elite")) {
+            await logLedger(supabase, {
+              transaction_type: "platform_subscription",
+              seller_user_id: null,
+              destination_stripe_account_id: null,
+              buyer_user_id: userId,
+              buyer_email: invoice.customer_email || null,
+              gross_amount: paidAmount,
+              platform_fee: paidAmount,
+              net_amount: 0,
+              platform_fee_percent: 100,
+              currency: invoice.currency || "usd",
+              stripe_event_id: event.id,
+              stripe_invoice_id: invoice.id,
+              stripe_subscription_id: invoice.subscription as string,
+              reference_id: tier,
+              metadata: { tier, referrer_id: referrerId || null },
+            });
+          }
+
           if (referrerId && userId && referrerId !== userId && (tier === "pro" || tier === "elite")) {
-            const paidAmount = (invoice.amount_paid || 0) / 100;
             const commission = Math.round(paidAmount * 0.10 * 100) / 100;
             if (commission > 0) {
               await supabase.from("earnings").insert({
@@ -385,6 +408,21 @@ serve(async (req) => {
                 amount: commission,
                 source: "referral",
                 description: `Referral commission — ${tier === "elite" ? "Elite" : "Pro"} signup`,
+              });
+              await logLedger(supabase, {
+                transaction_type: "referral",
+                seller_user_id: referrerId,
+                destination_stripe_account_id: await getCreatorDestination(supabase, referrerId),
+                buyer_user_id: userId,
+                gross_amount: paidAmount,
+                platform_fee: paidAmount - commission,
+                net_amount: commission,
+                platform_fee_percent: 90,
+                currency: invoice.currency || "usd",
+                stripe_event_id: event.id + ":referral",
+                stripe_invoice_id: invoice.id,
+                stripe_subscription_id: invoice.subscription as string,
+                reference_id: tier,
               });
               await notifyCreator(supabase, referrerId,
                 `🎉 Referral commission: $${commission.toFixed(2)}`,
