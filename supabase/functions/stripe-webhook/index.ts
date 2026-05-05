@@ -10,6 +10,28 @@ const SITE_NAME = "Verifiedly";
 const SENDER_DOMAIN = "notify.brownglobal.app";
 const FROM_DOMAIN = "brownglobal.app";
 
+async function getCreatorDestination(supabase: any, creatorId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from("creator_private_data")
+      .select("stripe_connect_account_id")
+      .eq("id", creatorId)
+      .maybeSingle();
+    return data?.stripe_connect_account_id ?? null;
+  } catch { return null; }
+}
+
+async function logLedger(supabase: any, row: Record<string, any>) {
+  try {
+    const { error } = await supabase.from("payout_ledger").insert(row);
+    if (error && (error as any).code !== "23505") {
+      log("Ledger insert failed", { error: error.message });
+    }
+  } catch (e) {
+    log("Ledger insert exception", { error: String(e) });
+  }
+}
+
 async function notifyCreator(supabase: any, creatorId: string, subject: string, bodyHtml: string) {
   try {
     // Get contact email from private data table first, then fall back to auth email
