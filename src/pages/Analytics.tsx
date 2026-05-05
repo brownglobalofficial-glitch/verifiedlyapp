@@ -168,6 +168,12 @@ const Analytics = () => {
       </nav>
 
       <div className="container mx-auto py-8 px-4 max-w-5xl">
+        <TierLock
+          requires="pro"
+          userTier={userTier}
+          title="Advanced analytics"
+          description="Detailed earnings, audience, and link analytics are available on Verifiedly Pro and Elite."
+        >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold mb-2">Analytics</h1>
@@ -344,6 +350,7 @@ const Analytics = () => {
             </ChartContainer>
           </Card>
         </div>
+        </TierLock>
       </div>
     </div>
   );
