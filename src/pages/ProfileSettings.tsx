@@ -491,6 +491,26 @@ const ProfileSettings = () => {
               <DomainSearchSection />
             )}
 
+            {/* Tips toggle */}
+            {profile?.account_type !== "fan" && (
+              <div className="border-t border-border pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-display font-semibold text-lg">Accept tips</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Show a Tip button on your public profile so fans can support you.
+                      {!stripeConnected && " Connect Stripe above to start receiving tips."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={tipsEnabled}
+                    onCheckedChange={setTipsEnabled}
+                    aria-label="Toggle tips"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-border pt-6">
               <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
