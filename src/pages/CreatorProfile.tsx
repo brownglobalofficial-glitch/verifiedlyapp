@@ -397,7 +397,7 @@ const CreatorProfile = () => {
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
-            {profile?.stripe_connect_account_id && (
+            {profile?.has_payments && profile?.tips_enabled !== false && (
               <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
                 <Coins className="w-4 h-4" /> Tip
               </Button>
