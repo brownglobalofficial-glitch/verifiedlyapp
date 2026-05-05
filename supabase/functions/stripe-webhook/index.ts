@@ -225,6 +225,24 @@ serve(async (req) => {
           description: `Sale: ${product?.name || "Product"}`,
         });
 
+        await logLedger(supabase, {
+          transaction_type: "product",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_user_id: buyerId,
+          buyer_email: session.customer_email || metadata.buyer_email || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: (session.payment_intent as string) || null,
+          reference_id: metadata.product_id || null,
+          metadata: { product_name: product?.name || null },
+        });
+
         // Notify creator
         await notifyCreator(supabase, metadata.creator_id,
           `💰 New sale: ${product?.name || "Product"}`,
@@ -245,6 +263,21 @@ serve(async (req) => {
           amount: creatorEarnings,
           source: "tip",
           description: `Tip received`,
+        });
+
+        await logLedger(supabase, {
+          transaction_type: "tip",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_email: session.customer_email || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: (session.payment_intent as string) || null,
         });
 
         // Notify creator
@@ -299,6 +332,23 @@ serve(async (req) => {
           amount: creatorEarnings,
           source: "subscription",
           description: `New subscriber`,
+        });
+
+        await logLedger(supabase, {
+          transaction_type: "creator_subscription",
+          seller_user_id: metadata.creator_id,
+          destination_stripe_account_id: await getCreatorDestination(supabase, metadata.creator_id),
+          buyer_user_id: subscriberId,
+          buyer_email: buyerEmail || null,
+          gross_amount: totalAmount,
+          platform_fee: totalAmount * (feePercent / 100),
+          net_amount: creatorEarnings,
+          platform_fee_percent: feePercent,
+          currency: session.currency || "usd",
+          stripe_event_id: event.id,
+          stripe_session_id: session.id,
+          stripe_subscription_id: (session.subscription as string) || null,
+          reference_id: metadata.subscription_id || null,
         });
 
         // Notify creator
