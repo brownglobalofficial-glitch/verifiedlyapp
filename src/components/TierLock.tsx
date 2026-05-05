@@ -35,7 +35,7 @@ const TierLock = ({ requires, userTier, title, description, children }: TierLock
       <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
         {description || `This is a Verifiedly ${requires === "elite" ? "Elite" : "Pro"} feature.`}
       </p>
-      <Link to="/upgrade">
+      <Link to="/pro">
         <Button size="sm" className="mt-4 gap-1.5">
           <Sparkles className="w-3.5 h-3.5" />
           Upgrade to {requires === "elite" ? "Elite" : "Pro"}
