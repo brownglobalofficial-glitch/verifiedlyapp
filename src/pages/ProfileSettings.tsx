@@ -211,6 +211,7 @@ const ProfileSettings = () => {
   const [stripeAgreed, setStripeAgreed] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
+  const [tipsEnabled, setTipsEnabled] = useState(true);
 
   // Bio Links
   const [links, setLinks] = useState<BioLink[]>([]);
@@ -248,6 +249,7 @@ const ProfileSettings = () => {
       setWebsite(data.website || "");
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
+      setTipsEnabled(data.tips_enabled !== false);
       const sl = (data.social_links || {}) as Record<string, string>;
       setInstagram(sl.instagram || "");
       setTwitter(sl.twitter || "");
@@ -297,6 +299,7 @@ const ProfileSettings = () => {
       website,
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       theme_color: themeColor,
+      tips_enabled: tipsEnabled,
     }).eq("id", profile.id);
 
     // Save contact_email to private data table
