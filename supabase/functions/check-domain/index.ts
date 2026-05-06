@@ -38,6 +38,11 @@ serve(async (req) => {
     if (!checkRes.ok) {
       const err = await checkRes.text();
       console.error("[CHECK-DOMAIN] Name.com error:", err);
+      if (checkRes.status === 401 || checkRes.status === 403 || /permission denied/i.test(err)) {
+        throw new Error(
+          "Domain lookup is unavailable: the Name.com API token was rejected. Please regenerate the token (with API access enabled) and update the NAME_COM_API_TOKEN secret."
+        );
+      }
       throw new Error("Failed to check domain availability");
     }
 
