@@ -87,6 +87,11 @@ serve(async (req) => {
         const parsed = JSON.parse(errText);
         friendly = parsed.message || parsed.details || errText;
       } catch { /* keep raw */ }
+      if (purchaseRes.status === 401 || purchaseRes.status === 403 || /permission denied/i.test(friendly)) {
+        throw new Error(
+          "Domain registrar is not authorized. The Name.com API token has been rejected — please regenerate it in your Name.com account (API access must be enabled) and update the NAME_COM_API_TOKEN secret."
+        );
+      }
       throw new Error(`Domain purchase failed (${purchaseRes.status}): ${friendly}`);
     }
 
