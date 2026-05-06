@@ -51,7 +51,19 @@ const Product = () => {
       return;
     }
     if (product.price === 0 && product.file_url) {
-      window.open(product.file_url, "_blank");
+      setCheckoutLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("download-product", {
+          body: { productId: product.id },
+        });
+        if (error) throw error;
+        if (data?.url) window.open(data.url, "_blank");
+        else throw new Error("Could not generate download link.");
+      } catch (err: any) {
+        toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+      } finally {
+        setCheckoutLoading(false);
+      }
       return;
     }
     setCheckoutLoading(true);
