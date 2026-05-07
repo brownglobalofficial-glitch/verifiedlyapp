@@ -420,20 +420,6 @@ const ProfileSettings = () => {
               </div>
             )}
 
-            {/* Custom domain info */}
-            {profile?.account_type !== "fan" && (
-              <div className="border-t border-border pt-6">
-                <h3 className="font-display font-semibold text-lg mb-2">Custom Domain</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Want your own domain (like <span className="font-mono">yourname.com</span>) to point at your Verifiedly profile?
-                  You can buy one or connect an existing domain through your Verifiedly project settings.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Open <span className="font-medium">Project Settings → Domains</span> to buy a new domain or connect one you already own. Verifiedly handles SSL automatically.
-                </p>
-              </div>
-            )}
-
             <div className="border-t border-border pt-6">
               <h3 className="font-display font-semibold text-lg mb-4">Social Links</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
