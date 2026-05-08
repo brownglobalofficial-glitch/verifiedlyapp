@@ -304,6 +304,9 @@ const Onboarding = () => {
                   <h1 className="text-2xl font-display font-bold">What type of account?</h1>
                   <p className="text-muted-foreground mt-1">This helps us personalize your experience</p>
                 </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-foreground">Tip:</span> You can change your category later from Profile Settings. Pick the one closest to what you do today.
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {[
@@ -344,6 +347,9 @@ const Onboarding = () => {
                 <div>
                   <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
                   <p className="text-muted-foreground mt-1">Tell your audience who you are</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-foreground">Tip:</span> Your username becomes your public link — <span className="font-mono">verifiedly.app/yourname</span>. Pick something short and memorable.
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -398,6 +404,9 @@ const Onboarding = () => {
                   <h1 className="text-2xl font-display font-bold">Add your links</h1>
                   <p className="text-muted-foreground mt-1">These will appear on your profile as clickable cards</p>
                 </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-foreground">Tip:</span> Start with 3–5 of your most important links (latest content, store, socials). You can reorder and add more anytime.
+                </div>
 
                 <Card className="p-4 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -434,6 +443,9 @@ const Onboarding = () => {
                     Set up Stripe to receive payments from product sales, tips, and subscriptions.
                     You can skip this for now and set it up later from your settings.
                   </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-foreground">Tip:</span> Stripe takes about 2 minutes — you'll need a bank account or debit card and your tax info to get paid.
                 </div>
 
                 {stripeConnected ? (
@@ -529,6 +541,9 @@ const Onboarding = () => {
                 <div>
                   <h1 className="text-2xl font-display font-bold">Choose your theme</h1>
                   <p className="text-muted-foreground mt-1">Pick a style for your public profile</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-foreground">Tip:</span> You can switch themes anytime from Profile Settings — try a few and see what feels right.
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
