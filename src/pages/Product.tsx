@@ -57,8 +57,17 @@ const Product = () => {
           body: { productId: product.id },
         });
         if (error) throw error;
-        if (data?.url) window.open(data.url, "_blank");
-        else throw new Error("Could not generate download link.");
+        if (data?.url) {
+          const a = document.createElement("a");
+          a.href = data.url;
+          a.rel = "noopener noreferrer";
+          a.target = "_blank";
+          if (data.fileName) a.download = data.fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          toast({ title: "Download started", description: "Check your downloads folder. You can re-download anytime from your dashboard." });
+        } else throw new Error("Could not generate download link.");
       } catch (err: any) {
         toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
       } finally {
