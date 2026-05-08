@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ShoppingBag, Image as ImageIcon, ShieldCheck, Zap, Star, Check } from "lucide-react";
+import { ArrowLeft, Download, ShoppingBag, Image as ImageIcon, ShieldCheck, Zap, Star, Check, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 import RefundsSummary from "@/components/RefundsSummary";
@@ -20,6 +21,7 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     if (!username || !productId) return;
@@ -52,12 +54,17 @@ const Product = () => {
     }
     if (product.price === 0 && product.file_url) {
       setCheckoutLoading(true);
+      setDownloadProgress(10);
+      const tick = setInterval(() => {
+        setDownloadProgress((p) => (p < 80 ? p + 10 : p));
+      }, 250);
       try {
         const { data, error } = await supabase.functions.invoke("download-product", {
           body: { productId: product.id },
         });
         if (error) throw error;
         if (data?.url) {
+          setDownloadProgress(100);
           const a = document.createElement("a");
           a.href = data.url;
           a.rel = "noopener noreferrer";
@@ -71,7 +78,8 @@ const Product = () => {
       } catch (err: any) {
         toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
       } finally {
-        setCheckoutLoading(false);
+        clearInterval(tick);
+        setTimeout(() => { setCheckoutLoading(false); setDownloadProgress(0); }, 600);
       }
       return;
     }
@@ -209,12 +217,17 @@ const Product = () => {
                 disabled={checkoutLoading}
                 className="w-full h-14 text-base rounded-2xl gap-2 font-semibold"
               >
-                {checkoutLoading ? "Loading…" : isFree ? (
+                {checkoutLoading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> {isFree ? "Preparing download…" : "Loading…"}</>
+                ) : isFree ? (
                   <><Download className="w-5 h-5" /> Get it free</>
                 ) : (
                   <><ShoppingBag className="w-5 h-5" /> Buy now · ${Number(product.price).toFixed(2)}</>
                 )}
               </Button>
+              {checkoutLoading && isFree && (
+                <Progress value={downloadProgress} className="w-full h-1 mt-2" />
+              )}
             </div>
 
             {/* Trust badges */}
