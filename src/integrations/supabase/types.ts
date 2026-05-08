@@ -619,6 +619,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           category: string | null
+          comp_tier: string | null
           created_at: string
           display_name: string | null
           follower_count: number | null
@@ -643,6 +644,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          comp_tier?: string | null
           created_at?: string
           display_name?: string | null
           follower_count?: number | null
@@ -667,6 +669,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           category?: string | null
+          comp_tier?: string | null
           created_at?: string
           display_name?: string | null
           follower_count?: number | null
@@ -685,6 +688,75 @@ export type Database = {
           updated_at?: string
           username?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          notes: string | null
+          tier: string
+          updated_at: string
+          uses: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          notes?: string | null
+          tier: string
+          updated_at?: string
+          uses?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          notes?: string | null
+          tier?: string
+          updated_at?: string
+          uses?: number
+        }
+        Relationships: []
+      }
+      promo_redemptions: {
+        Row: {
+          code: string
+          id: string
+          promo_code_id: string | null
+          redeemed_at: string
+          tier: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          promo_code_id?: string | null
+          redeemed_at?: string
+          tier: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          promo_code_id?: string | null
+          redeemed_at?: string
+          tier?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -446,10 +446,16 @@ serve(async (req) => {
         const isActive = ["active", "trialing"].includes(sub.status);
         const tier = md.tier;
         if (event.type === "customer.subscription.deleted" || !isActive) {
+          // Respect comp_tier (gifted Pro/Elite via promo code) — don't strip
+          // those flags when the paid subscription ends.
+          const { data: prof } = await supabase
+            .from("profiles").select("comp_tier").eq("id", userId).maybeSingle();
+          const comp = prof?.comp_tier as "pro" | "elite" | null | undefined;
           await supabase.from("profiles").update({
-            is_pro: false, is_elite: false,
+            is_pro: comp === "pro" || comp === "elite",
+            is_elite: comp === "elite",
           }).eq("id", userId);
-          log("Profile downgraded — subscription ended", { userId });
+          log("Profile downgraded — subscription ended", { userId, comp_tier: comp ?? null });
         } else if (tier === "pro" || tier === "elite") {
           await supabase.from("profiles").update({
             is_pro: tier === "pro" || tier === "elite",
