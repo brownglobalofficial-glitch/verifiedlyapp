@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Check, Crown, ArrowLeft, Sparkles, ShieldCheck, TrendingUp, Star, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -21,6 +22,8 @@ const UpgradePro = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [currentTier, setCurrentTier] = useState<"free" | "pro" | "elite">("free");
   const [ready, setReady] = useState(false);
+  const [promo, setPromo] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -61,6 +64,32 @@ const UpgradePro = () => {
       toast({ title: "Could not open portal", description: err?.message || "Try again", variant: "destructive" });
     }
     setLoading(null);
+  };
+
+  const redeem = async () => {
+    if (!promo.trim()) return;
+    setRedeeming(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("redeem-promo", {
+        body: { code: promo.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const tier = data?.tier as "pro" | "elite";
+      toast({
+        title: data?.alreadyRedeemed ? "Already redeemed" : `${tier === "elite" ? "Elite" : "Pro"} unlocked!`,
+        description: data?.alreadyRedeemed
+          ? `You already have ${tier === "elite" ? "Elite" : "Pro"} from this code.`
+          : `Your account now has ${tier === "elite" ? "Elite" : "Pro"} features for free.`,
+      });
+      if (tier === "elite") setCurrentTier("elite");
+      else if (tier === "pro" && currentTier !== "elite") setCurrentTier("pro");
+      setPromo("");
+    } catch (err: any) {
+      toast({ title: "Couldn't redeem", description: err?.message || "Try again", variant: "destructive" });
+    } finally {
+      setRedeeming(false);
+    }
   };
 
   const benefits = [
@@ -210,6 +239,26 @@ const UpgradePro = () => {
           Cancel anytime from the billing portal. Your lower fee applies the moment Stripe confirms
           payment — no waiting period.
         </p>
+
+        {/* Promo code redemption */}
+        <Card className="mt-10 p-5 max-w-md mx-auto">
+          <p className="font-display font-semibold text-sm mb-1">Have a promo code?</p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Redeem a code to unlock Pro or Elite features for free.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              value={promo}
+              onChange={(e) => setPromo(e.target.value.toUpperCase())}
+              placeholder="ENTER CODE"
+              className="font-mono uppercase tracking-wider"
+              disabled={redeeming}
+            />
+            <Button onClick={redeem} disabled={redeeming || !promo.trim()}>
+              {redeeming ? "Redeeming…" : "Redeem"}
+            </Button>
+          </div>
+        </Card>
       </div>
     </div>
   );
