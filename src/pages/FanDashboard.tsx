@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, ShoppingBag, LogOut, Users, Download, ExternalLink } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
 import type { User } from "@supabase/supabase-js";
@@ -14,7 +15,9 @@ const FanDashboard = () => {
   const [following, setFollowing] = useState<any[]>([]);
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,6 +51,37 @@ const FanDashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleDownload = async (purchase: any) => {
+    if (!purchase.product_id) {
+      toast({ title: "Unavailable", description: "This purchase has no downloadable file.", variant: "destructive" });
+      return;
+    }
+    setDownloadingId(purchase.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("download-product", {
+        body: { productId: purchase.product_id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        // Trigger download via temporary anchor so browser saves the file with the proper name
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.rel = "noopener noreferrer";
+        a.target = "_blank";
+        if (data.fileName) a.download = data.fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        throw new Error("Could not generate download link.");
+      }
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
@@ -109,11 +143,16 @@ const FanDashboard = () => {
                     </p>
                   </div>
                   {p.file_url && (
-                    <a href={p.file_url} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm" className="gap-1.5">
-                        <Download className="w-3.5 h-3.5" /> Download
-                      </Button>
-                    </a>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={downloadingId === p.id}
+                      onClick={() => handleDownload(p)}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      {downloadingId === p.id ? "Preparing…" : "Download"}
+                    </Button>
                   )}
                 </Card>
               ))}

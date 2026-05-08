@@ -101,15 +101,26 @@ serve(async (req) => {
       if (i !== -1) objectKey = objectKey.slice(i + "product-files/".length).split("?")[0];
     }
 
+    // Preserve the original file extension so the download opens correctly
+    // (e.g. .zip / .pdf / .mp4) — without this the browser may save the file
+    // with no extension and the OS won't know what app to open it with.
+    const lastSegment = objectKey.split("/").pop() || objectKey;
+    const extMatch = lastSegment.match(/\.[A-Za-z0-9]+$/);
+    const ext = extMatch ? extMatch[0] : "";
+    const safeBase = (product.name || "download").replace(/[^\w\-. ]+/g, "_").trim() || "download";
+    const downloadName = ext && !safeBase.toLowerCase().endsWith(ext.toLowerCase())
+      ? `${safeBase}${ext}`
+      : safeBase;
+
     const { data: signed, error: signErr } = await supabase
       .storage.from("product-files")
-      .createSignedUrl(objectKey, 60 * 10, { download: product.name || true });
+      .createSignedUrl(objectKey, 60 * 10, { download: downloadName });
     if (signErr || !signed?.signedUrl) {
       log("Sign error", { error: signErr?.message, key: objectKey });
       throw new Error("Could not generate download link. Please contact support.");
     }
 
-    return new Response(JSON.stringify({ url: signed.signedUrl, fileName: product.name }), {
+    return new Response(JSON.stringify({ url: signed.signedUrl, fileName: downloadName }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
