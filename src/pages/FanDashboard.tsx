@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, ShoppingBag, LogOut, Users, Download, ExternalLink } from "lucide-react";
+import { Heart, ShoppingBag, LogOut, Users, Download, ExternalLink, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logo from "@/assets/verifiedly-logo.webp";
@@ -16,6 +17,7 @@ const FanDashboard = () => {
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -59,12 +61,17 @@ const FanDashboard = () => {
       return;
     }
     setDownloadingId(purchase.id);
+    setDownloadProgress(10);
+    const tick = setInterval(() => {
+      setDownloadProgress((p) => (p < 80 ? p + 10 : p));
+    }, 250);
     try {
       const { data, error } = await supabase.functions.invoke("download-product", {
         body: { productId: purchase.product_id },
       });
       if (error) throw error;
       if (data?.url) {
+        setDownloadProgress(100);
         // Trigger download via temporary anchor so browser saves the file with the proper name
         const a = document.createElement("a");
         a.href = data.url;
@@ -74,13 +81,15 @@ const FanDashboard = () => {
         document.body.appendChild(a);
         a.click();
         a.remove();
+        toast({ title: "Download ready", description: "Saving to your downloads folder." });
       } else {
         throw new Error("Could not generate download link.");
       }
     } catch (err: any) {
       toast({ title: "Download failed", description: err.message || "Please try again.", variant: "destructive" });
     } finally {
-      setDownloadingId(null);
+      clearInterval(tick);
+      setTimeout(() => { setDownloadingId(null); setDownloadProgress(0); }, 600);
     }
   };
 
@@ -143,16 +152,24 @@ const FanDashboard = () => {
                     </p>
                   </div>
                   {p.file_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      disabled={downloadingId === p.id}
-                      onClick={() => handleDownload(p)}
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      {downloadingId === p.id ? "Preparing…" : "Download"}
-                    </Button>
+                    <div className="flex flex-col items-end gap-1.5 min-w-[150px]">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={downloadingId === p.id}
+                        onClick={() => handleDownload(p)}
+                      >
+                        {downloadingId === p.id ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Preparing…</>
+                        ) : (
+                          <><Download className="w-3.5 h-3.5" /> Download</>
+                        )}
+                      </Button>
+                      {downloadingId === p.id && (
+                        <Progress value={downloadProgress} className="w-full h-1" />
+                      )}
+                    </div>
                   )}
                 </Card>
               ))}
