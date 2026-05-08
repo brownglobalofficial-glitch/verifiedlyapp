@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Users, Eye, DollarSign, ShoppingBag, Search, ArrowLeft } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import PromoCodesPanel from "@/components/admin/PromoCodesPanel";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const Admin = () => {
@@ -125,6 +126,7 @@ const Admin = () => {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="featured">Featured</TabsTrigger>
             <TabsTrigger value="verified">Verified</TabsTrigger>
+            <TabsTrigger value="promo">Promo Codes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="mt-4">
@@ -258,6 +260,10 @@ const Admin = () => {
                 <p className="text-muted-foreground col-span-full text-center py-8">No verified users yet.</p>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="promo" className="mt-4">
+            <PromoCodesPanel />
           </TabsContent>
         </Tabs>
       </div>
