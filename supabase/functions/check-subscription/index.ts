@@ -41,11 +41,24 @@ serve(async (req) => {
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
+    // Read comp_tier so admin/promo gifts are never downgraded by Stripe state
+    const { data: profileRow } = await supabaseClient
+      .from("profiles")
+      .select("comp_tier")
+      .eq("id", user.id)
+      .maybeSingle();
+    const compTier = (profileRow?.comp_tier as string | null) || null;
+    const compRank = compTier === "elite" ? 2 : compTier === "pro" ? 1 : 0;
+
     if (customers.data.length === 0) {
       logStep("No customer found");
-      // Update profile to free tier
-      await supabaseClient.from("profiles").update({ is_pro: false, is_elite: false }).eq("id", user.id);
-      return new Response(JSON.stringify({ subscribed: false, tier: "free" }), {
+      // Preserve comp_tier gifts; only force-free if not gifted
+      const tier = compTier || "free";
+      await supabaseClient.from("profiles").update({
+        is_pro: tier === "pro" || tier === "elite",
+        is_elite: tier === "elite",
+      }).eq("id", user.id);
+      return new Response(JSON.stringify({ subscribed: tier !== "free", tier, comp: !!compTier }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -106,6 +119,13 @@ serve(async (req) => {
     }
 
     logStep("Subscription tier determined", { tier, productId });
+
+    // If admin/promo gifted a higher tier, keep the gifted tier
+    const stripeRank = tier === "elite" ? 2 : tier === "pro" ? 1 : 0;
+    if (compRank > stripeRank) {
+      tier = compTier as string;
+      logStep("comp_tier overrides Stripe", { compTier });
+    }
 
     // Update profile
     await supabaseClient.from("profiles").update({
