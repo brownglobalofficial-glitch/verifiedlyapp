@@ -313,9 +313,7 @@ const Dashboard = () => {
               </div>
               <h3 className="font-display font-semibold text-base mb-1">Subscriptions</h3>
               <p className="text-sm text-muted-foreground">
-                {profile?.is_pro || profile?.is_elite ? "Manage subscriber tiers" : (
-                  <span>Pro/Elite feature — <span className="text-foreground underline">Upgrade</span></span>
-                )}
+                Create paid subscriber tiers and recurring revenue
               </p>
             </Card>
           </Link>
