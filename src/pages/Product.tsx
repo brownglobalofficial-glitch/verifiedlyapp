@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,41 @@ const Product = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 md:pb-12">
+      {product && creator && (
+        <Helmet>
+          <title>{`${product.name} · ${creator.display_name || creator.username} · Verifiedly`}</title>
+          <meta
+            name="description"
+            content={(product.description || `Buy ${product.name} from ${creator.display_name || creator.username} on Verifiedly.`).slice(0, 158)}
+          />
+          <link rel="canonical" href={`https://verifiedly.app/${creator.username}/p/${product.id}`} />
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={product.name} />
+          <meta
+            property="og:description"
+            content={(product.description || `From ${creator.display_name || creator.username} on Verifiedly.`).slice(0, 200)}
+          />
+          <meta property="og:url" content={`https://verifiedly.app/${creator.username}/p/${product.id}`} />
+          {product.image_url && <meta property="og:image" content={product.image_url} />}
+          <meta name="twitter:card" content={product.image_url ? "summary_large_image" : "summary"} />
+          {product.image_url && <meta name="twitter:image" content={product.image_url} />}
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            description: product.description || undefined,
+            image: product.image_url || undefined,
+            brand: { "@type": "Brand", name: creator.display_name || creator.username },
+            offers: {
+              "@type": "Offer",
+              url: `https://verifiedly.app/${creator.username}/p/${product.id}`,
+              priceCurrency: "USD",
+              price: Number(product.price).toFixed(2),
+              availability: "https://schema.org/InStock",
+            },
+          })}</script>
+        </Helmet>
+      )}
       {/* Top bar */}
       <div className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -354,6 +355,35 @@ const CreatorProfile = () => {
 
   return (
     <div className={`min-h-screen ${theme.bg} ${theme.font}`}>
+      {profile && (
+        <Helmet>
+          <title>{`${profile.display_name || profile.username} (@${profile.username}) · Verifiedly`}</title>
+          <meta
+            name="description"
+            content={(profile.bio || `Follow ${profile.display_name || profile.username} on Verifiedly — links, products, subscriptions, and more.`).slice(0, 158)}
+          />
+          <link rel="canonical" href={`https://verifiedly.app/${profile.username}`} />
+          <meta property="og:type" content="profile" />
+          <meta property="og:title" content={`${profile.display_name || profile.username} on Verifiedly`} />
+          <meta
+            property="og:description"
+            content={(profile.bio || `Tips, subscriptions, and products from ${profile.display_name || profile.username}.`).slice(0, 200)}
+          />
+          <meta property="og:url" content={`https://verifiedly.app/${profile.username}`} />
+          {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
+          {profile.avatar_url && <meta name="twitter:image" content={profile.avatar_url} />}
+          <meta name="twitter:card" content="summary" />
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: profile.display_name || profile.username,
+            alternateName: `@${profile.username}`,
+            url: `https://verifiedly.app/${profile.username}`,
+            image: profile.avatar_url || undefined,
+            description: profile.bio || undefined,
+          })}</script>
+        </Helmet>
+      )}
       <div className={`bg-gradient-to-b ${theme.gradient} pt-12 pb-8`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
