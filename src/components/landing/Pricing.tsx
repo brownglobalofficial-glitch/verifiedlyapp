@@ -6,14 +6,14 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 
 const Pricing = () => {
   return (
-    <section id="pricing" className="py-24 px-4">
+    <section id="pricing" className="py-16 sm:py-24 px-4">
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10 sm:mb-16"
         >
           <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Keep more of what you earn</h2>
@@ -21,7 +21,7 @@ const Pricing = () => {
             Free forever. Pay nothing until you're earning. Upgrade to drop your platform fee from 10% all the way to 0%.
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
           {/* Free */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
