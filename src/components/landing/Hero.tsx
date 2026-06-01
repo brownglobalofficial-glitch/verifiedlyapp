@@ -6,7 +6,7 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 
 const Hero = () => {
   return (
-    <section className="pt-32 pb-20 px-4 overflow-hidden">
+    <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 overflow-hidden">
       <div className="container mx-auto text-center max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
