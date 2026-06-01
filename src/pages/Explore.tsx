@@ -199,7 +199,7 @@ const Explore = () => {
               className="pl-10"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <button onClick={() => setSearch("")} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2">
                 <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
               </button>
             )}
@@ -208,6 +208,8 @@ const Explore = () => {
             variant={showFilters ? "default" : "outline"}
             size="icon"
             onClick={() => setShowFilters(!showFilters)}
+            aria-label={showFilters ? "Hide filters" : "Show filters"}
+            aria-expanded={showFilters}
             className="shrink-0 relative"
           >
             <SlidersHorizontal className="w-4 h-4" />
