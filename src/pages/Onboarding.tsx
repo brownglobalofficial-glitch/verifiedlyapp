@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
-import { recordStripeAgreement } from "@/lib/stripe-agreement";
-import PayoutsChecklist from "@/components/payouts/PayoutsChecklist";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
@@ -71,11 +69,6 @@ const Onboarding = () => {
   // Step 3: Theme
   const [theme, setTheme] = useState("default");
 
-  // Step: Stripe Connect (for creators/businesses)
-  const [stripeConnecting, setStripeConnecting] = useState(false);
-  const [stripeConnected, setStripeConnected] = useState(false);
-  const [stripeAgreed, setStripeAgreed] = useState(false);
-
   const steps = ["Profile", "Links", "Theme"];
 
   useEffect(() => {
@@ -109,18 +102,7 @@ const Onboarding = () => {
         }
       });
 
-      // Check stripe connection from private data
-      (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", session.user.id).maybeSingle() as any).then(({ data }: any) => {
-        if (data?.stripe_connect_account_id) setStripeConnected(true);
-      });
     });
-
-    // Handle Stripe Connect return
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("stripe_onboarded") === "true") {
-      setStripeConnected(true);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
   }, [navigate]);
 
   // Username availability check
@@ -218,50 +200,8 @@ const Onboarding = () => {
     return true;
   };
 
-  const handleStripeConnect = async () => {
-    if (!stripeAgreed) {
-      toast({
-        title: "Please accept the agreements",
-        description: "You must agree to the Stripe Connected Account Agreement and our Terms before connecting.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setStripeConnecting(true);
-    // Safety: if Stripe takes too long, re-enable the button so it never hangs
-    const safety = setTimeout(() => setStripeConnecting(false), 15000);
-    try {
-      // Record agreement acceptance for audit trail (timestamp + IP + UA)
-      await recordStripeAgreement(userId, "onboarding").catch((e) =>
-        console.warn("Failed to record stripe agreement:", e)
-      );
-      const { data, error } = await supabase.functions.invoke("create-connect-account", {
-        body: {
-          return_url: `${window.location.origin}/onboarding?stripe_onboarded=true`,
-          refresh_url: `${window.location.origin}/onboarding`,
-        },
-      });
-      if (error) throw error;
-      if (!data) throw new Error("No response from Stripe — please try again.");
-      if (data.onboarded) {
-        setStripeConnected(true);
-        toast({ title: "Stripe connected! 🎉", description: "You're ready to receive payouts." });
-      } else if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        throw new Error(data.error);
-      } else {
-        throw new Error("Stripe didn't return an onboarding link. Please try again.");
-      }
-    } catch (err: any) {
-      toast({ title: "Stripe connect failed", description: err?.message || "Unknown error", variant: "destructive" });
-    } finally {
-      clearTimeout(safety);
-      setStripeConnecting(false);
-    }
-  };
-
   const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
+  void categories;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
