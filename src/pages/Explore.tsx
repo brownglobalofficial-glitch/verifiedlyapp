@@ -297,24 +297,6 @@ const Explore = () => {
           </div>
         )}
 
-        {tab === "creators" && (
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
-            {CREATOR_CATEGORIES.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setCreatorCategoryFilter(c.value)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-                  creatorCategoryFilter === c.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Trending & Featured Sections */}
         {showTrending && tab === "creators" && (trendingCreators.length > 0 || featuredCreators.length > 0) && (
           <div className="space-y-8 mb-8">
