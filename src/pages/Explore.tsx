@@ -183,7 +183,7 @@ const Explore = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder={
-                tab === "creators" ? "Search creators by name, username, or bio..." :
+                tab === "creators" ? "Search profiles by name, username, or bio..." :
                 tab === "products" ? "Search products by name or description..." :
                 "Search subscriptions..."
               }
