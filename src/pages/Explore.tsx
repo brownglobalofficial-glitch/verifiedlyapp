@@ -163,7 +163,7 @@ const Explore = () => {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType; count: number }[] = [
-    { key: "creators", label: "Creators", icon: Users, count: filteredCreators.length },
+    { key: "creators", label: "Profiles", icon: Users, count: filteredCreators.length },
     { key: "products", label: "Products", icon: ShoppingBag, count: filteredProducts.length },
     { key: "subscriptions", label: "Subscriptions", icon: Video, count: filteredSubscriptions.length },
   ];
