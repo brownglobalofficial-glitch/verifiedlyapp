@@ -62,11 +62,6 @@ const Dashboard = () => {
       (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", userId).maybeSingle() as any),
       supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin"),
     ]);
-    // Fans don't have selling features — bounce to fan dashboard
-    if (profileRes.data?.account_type === "fan") {
-      navigate("/fan", { replace: true });
-      return;
-    }
     setProfile({
       ...(profileRes.data || {}),
       referral_code: refRes?.data ?? null,
@@ -125,9 +120,13 @@ const Dashboard = () => {
             <div className="hidden md:flex items-center gap-4 text-sm">
               <Link to="/explore" className="text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
               <Link to={`/${username}`} className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link>
+              <Link to="/dashboard/verification" className="text-muted-foreground hover:text-foreground transition-colors">Verification</Link>
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
+            <Link to="/dashboard/verification" className="hidden sm:inline-flex" aria-label="View verification">
+              <TrustScore score={profile?.trust_score ?? 0} isElite={!!profile?.is_elite} size="sm" />
+            </Link>
             <Link to="/explore" className="md:hidden">
               <Button variant="ghost" size="sm">Explore</Button>
             </Link>
@@ -165,7 +164,6 @@ const Dashboard = () => {
                 }`}>
                   {tierLabel}
                 </span>
-                <TrustScore score={profile?.trust_score ?? 0} isElite={!!profile?.is_elite} size="sm" />
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -205,7 +203,7 @@ const Dashboard = () => {
         )}
 
         {/* Upgrade banner — only when not Pro/Elite */}
-        {currentTier === "free" && profile?.account_type !== "fan" && (
+        {currentTier === "free" && (
           <Link to="/dashboard/upgrade" className="block mb-6 group">
             <Card className="p-4 border-2 border-foreground bg-gradient-to-r from-background via-background to-muted/40 hover:to-muted/60 transition-colors">
               <div className="flex items-center justify-between gap-4">
@@ -216,7 +214,7 @@ const Dashboard = () => {
                   <div>
                     <p className="font-display font-semibold text-sm">Upgrade to Verifiedly Pro</p>
                     <p className="text-xs text-muted-foreground">
-                      Get the verified badge and drop your platform fee from 10% to 5% (or 0% on Elite).
+                      Drop your platform fee from 10% to 0% and unlock paid subscriptions.
                     </p>
                   </div>
                 </div>
@@ -258,12 +256,12 @@ const Dashboard = () => {
         )}
 
         {/* Stripe agreement status — re-prompts if missing or outdated */}
-        {user && profile?.account_type !== "fan" && (
+        {user && (
           <StripeAgreementStatus userId={user.id} />
         )}
 
         {/* Compact payouts checklist with link to full page */}
-        {user && profile?.account_type !== "fan" && (
+        {user && (
           <div className="mb-6 space-y-2">
             <PayoutsChecklist userId={user.id} variant="compact" />
             <Link to="/dashboard/payouts" className="text-xs text-muted-foreground hover:text-foreground underline">
