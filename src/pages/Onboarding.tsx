@@ -298,50 +298,6 @@ const Onboarding = () => {
             {step === 0 && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-display font-bold">What type of account?</h1>
-                  <p className="text-muted-foreground mt-1">This helps us personalize your experience</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> You can change your category later from Profile Settings. Pick the one closest to what you do today.
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { value: "fan", label: "Fan", desc: "Follow creators, buy products" },
-                    { value: "creator", label: "Creator / Player", desc: "Sell products, build an audience" },
-                    { value: "business", label: "Business", desc: "Post campaigns, find creators" },
-                  ].map(t => (
-                    <button
-                      key={t.value}
-                      onClick={() => { setAccountType(t.value); setCategory(""); }}
-                      className={`rounded-xl border-2 p-5 text-left transition-all ${accountType === t.value ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
-                    >
-                      <p className="font-display font-semibold">{t.label}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{t.desc}</p>
-                    </button>
-                  ))}
-                </div>
-
-                <div>
-                  <Label>Category</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {categories.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setCategory(c.toLowerCase())}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${category === c.toLowerCase() ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 1 && (
-              <div className="space-y-6">
-                <div>
                   <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
                   <p className="text-muted-foreground mt-1">Tell your audience who you are</p>
                 </div>
