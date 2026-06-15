@@ -94,7 +94,8 @@ const Explore = () => {
         p.description?.toLowerCase().includes(search.toLowerCase());
       const matchesCat = categoryFilter === "all" || p.category === categoryFilter;
       const matchesP = matchesPrice(p.price);
-      const matchesVerified = !verifiedOnly || p.profiles?.is_verified || p.profiles?.is_pro || p.profiles?.is_elite;
+      const isProfileVerified = (p.profiles?.trust_score || 0) >= 80 && !p.profiles?.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isProfileVerified;
       return matchesSearch && matchesCat && matchesP && matchesVerified;
     })
     .sort((a, b) => {
