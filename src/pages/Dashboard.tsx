@@ -165,6 +165,7 @@ const Dashboard = () => {
                 }`}>
                   {tierLabel}
                 </span>
+                <TrustScore score={profile?.trust_score ?? 0} isElite={!!profile?.is_elite} size="sm" />
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
