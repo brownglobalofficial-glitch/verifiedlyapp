@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Users, ExternalLink, LogOut, Settings, BarChart3, Megaphone, LinkIcon, Share2, Copy, AlertCircle, CheckCircle2, Video, CreditCard, Eye } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import TrustScore from "@/components/TrustScore";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import logo from "@/assets/verifiedly-logo.webp";
 import { useToast } from "@/hooks/use-toast";
