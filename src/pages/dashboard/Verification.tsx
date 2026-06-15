@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, X, Plus, Trash2, Copy, RefreshCw, Clock } from "lucide-react";
+import { Shield, MessageSquareWarning } from "lucide-react";
 import TrustScore, { TrustSignal } from "@/components/TrustScore";
 
 const PLATFORMS = [
@@ -166,11 +167,19 @@ const Verification = () => {
           <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-foreground transition-all" style={{ width: `${score}%` }} />
           </div>
-          {userId && (
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => recompute(userId)}>
-              Recalculate
-            </Button>
-          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {userId && (
+              <Button variant="outline" size="sm" onClick={() => recompute(userId)}>
+                Recalculate
+              </Button>
+            )}
+            <Link to="/dashboard/privacy-controls">
+              <Button variant="ghost" size="sm" className="gap-1"><Shield className="w-3.5 h-3.5" /> Privacy controls</Button>
+            </Link>
+            <Link to="/dashboard/disputes">
+              <Button variant="ghost" size="sm" className="gap-1"><MessageSquareWarning className="w-3.5 h-3.5" /> Disputes</Button>
+            </Link>
+          </div>
         </Card>
 
         <Card className="p-6 mb-6">
