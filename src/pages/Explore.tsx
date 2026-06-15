@@ -319,7 +319,7 @@ const Explore = () => {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Star className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-display font-bold">Featured Creators</h2>
+                  <h2 className="text-lg font-display font-bold">Featured</h2>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {featuredCreators.map((creator) => (
