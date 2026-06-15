@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Trash2, Copy, RefreshCw, Clock } from "lucide-react";
 import TrustScore, { TrustSignal } from "@/components/TrustScore";
 
 const PLATFORMS = [
