@@ -54,6 +54,27 @@ const userRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions/
 const user = await userRes.json();
 // => { sub, username, display_name, avatar_url, trust_score, tier, verified }`;
 
+const GSN_ENV_SNIPPET = `# .env.local (development)
+VITE_GSN_CLIENT_ID=gsn_app
+VITE_GSN_CLIENT_SECRET=paste_rotated_secret_here
+VITE_GSN_REDIRECT_URI=http://localhost:8080/auth/callback
+
+# Production (Lovable / Vercel / etc. — server env vars)
+GSN_CLIENT_ID=gsn_app
+GSN_CLIENT_SECRET=paste_rotated_secret_here
+GSN_REDIRECT_URI=https://gsn.lovable.app/auth/callback`;
+
+const GSN_BUTTON_SNIPPET = `// Anywhere in GSN, e.g. src/pages/Login.tsx
+const authorize = () => {
+  const url = new URL("https://verifiedly.app/oauth/authorize");
+  url.searchParams.set("client_id", import.meta.env.VITE_GSN_CLIENT_ID);
+  url.searchParams.set("redirect_uri", import.meta.env.VITE_GSN_REDIRECT_URI);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "profile trust");
+  url.searchParams.set("state", crypto.randomUUID()); // store + verify on callback
+  window.location.href = url.toString();
+};`;
+
 const Developers = () => {
   const { toast } = useToast();
   const copy = (s: string) => {
@@ -119,6 +140,65 @@ const Developers = () => {
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">trust</code> — trust_score, tier, verified boolean</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — verified email address (request only if you need it)</li>
           </ul>
+        </Card>
+
+        <div className="mt-12 mb-6">
+          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-3">First-party</span>
+          <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight mb-2">Configure GSN OAuth</h2>
+          <p className="text-sm text-muted-foreground">Step-by-step setup for the pre-provisioned GSN client.</p>
+        </div>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Step 1 — Get the client secret</h2>
+          <p className="text-sm text-muted-foreground">
+            Sign in as <code className="text-xs bg-muted px-1 py-0.5 rounded">support@verifiedly.app</code> and open{" "}
+            <Link to="/admin/verification" className="underline">/admin/verification</Link> → <strong>OAuth clients</strong> tab.
+            Find <strong>GSN</strong> (<code className="text-xs bg-muted px-1 py-0.5 rounded">gsn_app</code>) and click <strong>Rotate secret</strong>.
+            Copy the plaintext value immediately — it is shown only once.
+          </p>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Step 2 — Add env vars in the GSN repo</h2>
+          <div className="relative">
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{GSN_ENV_SNIPPET}</code></pre>
+            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(GSN_ENV_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Never commit <code>VITE_GSN_CLIENT_SECRET</code>. In production keep the secret server-side
+            (<code>GSN_CLIENT_SECRET</code>) and perform the token exchange from an edge function.
+          </p>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Step 3 — Allowed redirect URIs</h2>
+          <p className="text-sm text-muted-foreground mb-2">The <code>gsn_app</code> client accepts only these callback URLs:</p>
+          <ul className="text-sm space-y-1 list-disc list-inside">
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://gsn.lovable.app/auth/callback</code></li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">http://localhost:8080/auth/callback</code></li>
+          </ul>
+          <p className="text-xs text-muted-foreground mt-3">Need another URL (custom domain, staging)? Email support@verifiedly.app to add it.</p>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Step 4 — Trigger the flow</h2>
+          <div className="relative">
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{GSN_BUTTON_SNIPPET}</code></pre>
+            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(GSN_BUTTON_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+          </div>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Step 5 — Handle the callback</h2>
+          <p className="text-sm text-muted-foreground">
+            A reference implementation lives at <Link to="/auth/callback" className="underline">/auth/callback</Link>{" "}
+            (<code className="text-xs bg-muted px-1 py-0.5 rounded">src/pages/AuthCallback.tsx</code>). It exchanges the
+            <code className="text-xs bg-muted px-1 py-0.5 rounded mx-1">code</code> for an access token, calls{" "}
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code>, and verifies that the granted
+            scopes include both <code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> and{" "}
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">trust</code> before signing the user in. Copy that file
+            into the GSN repo as a starting point.
+          </p>
         </Card>
 
         <Card className="p-4 bg-secondary">

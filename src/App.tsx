@@ -44,6 +44,7 @@ const Disputes = lazy(() => import("./pages/dashboard/Disputes"));
 const VerificationAdmin = lazy(() => import("./pages/admin/VerificationAdmin"));
 const Developers = lazy(() => import("./pages/Developers"));
 const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 const queryClient = new QueryClient();
 
@@ -169,6 +170,7 @@ const App = () => (
             <Route path="/admin/verification" element={<AuthGuard><VerificationAdmin /></AuthGuard>} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/verify/:username" element={<PublicVerification />} />
             <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
