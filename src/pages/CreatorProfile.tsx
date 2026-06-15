@@ -424,7 +424,9 @@ const CreatorProfile = () => {
 
           {(profile?.trust_score ?? 0) >= 60 && (
             <div className="flex justify-center mt-2">
-              <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />
+              <Link to={`/verify/${profile.username}`} aria-label="View verification details">
+                <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />
+              </Link>
             </div>
           )}
 
