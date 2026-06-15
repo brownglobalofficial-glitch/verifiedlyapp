@@ -16,7 +16,6 @@ const Signup = lazy(routeLoaders["/signup"]);
 const ForgotPassword = lazy(routeLoaders["/forgot-password"]);
 const ResetPassword = lazy(routeLoaders["/reset-password"]);
 const Dashboard = lazy(routeLoaders["/dashboard"]);
-const FanDashboard = lazy(routeLoaders["/fan"]);
 const ProfileSettings = lazy(routeLoaders["/dashboard/settings"]);
 const ManageProducts = lazy(routeLoaders["/dashboard/products"]);
 const ManageSubscriptions = lazy(routeLoaders["/dashboard/subscriptions"]);
@@ -44,6 +43,7 @@ const PrivacyControls = lazy(() => import("./pages/dashboard/PrivacyControls"));
 const Disputes = lazy(() => import("./pages/dashboard/Disputes"));
 const VerificationAdmin = lazy(() => import("./pages/admin/VerificationAdmin"));
 const Developers = lazy(() => import("./pages/Developers"));
+const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
 
 const queryClient = new QueryClient();
 
@@ -172,7 +172,7 @@ const App = () => (
             <Route path="/verify/:username" element={<PublicVerification />} />
             <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            <Route path="/fan" element={<FanDashboard />} />
+            <Route path="/dashboard/monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />
