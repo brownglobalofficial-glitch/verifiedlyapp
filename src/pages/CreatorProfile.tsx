@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import TrustScore from "@/components/TrustScore";
 import FollowButton from "@/components/FollowButton";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -420,6 +421,12 @@ const CreatorProfile = () => {
               <Users className="w-3 h-3" /> {profile?.follower_count || 0} followers
             </span>
           </div>
+
+          {(profile?.trust_score ?? 0) >= 60 && (
+            <div className="flex justify-center mt-2">
+              <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />
+            </div>
+          )}
 
           {profile?.bio && (
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed whitespace-pre-wrap break-words`}>{profile.bio}</p>

@@ -20,10 +20,10 @@ const Hero = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary mb-8"
           >
             <VerifiedBadge className="w-4 h-4" />
-            <span className="text-sm font-medium text-muted-foreground">Trusted by creators, athletes, businesses & teams</span>
+            <span className="text-sm font-medium text-muted-foreground">Verified identity + payments for creators & brands</span>
           </motion.div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.15] mb-6">
-            One link.
+            One verified link.
             <br />
             <motion.span
               className="text-gradient inline-block pb-2"
@@ -31,7 +31,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Every revenue stream.
+              Every way to get paid.
             </motion.span>
           </h1>
           <motion.p
@@ -40,9 +40,9 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            The all-in-one link in bio for creators, athletes & brands. Sell digital products,
-            run subscriptions, accept tips, and stream exclusive content — paid out directly to
-            your bank by Stripe. Keep up to <span className="text-foreground font-semibold">100%</span> of what you earn.
+            Verifiedly is the verified identity + payments layer for the creator economy.
+            Prove who you are with a public Trust Score, then sell products, run subscriptions,
+            and accept tips — paid out by Stripe. Keep up to <span className="text-foreground font-semibold">100%</span> of what you earn.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
