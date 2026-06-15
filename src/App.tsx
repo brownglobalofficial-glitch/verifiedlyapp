@@ -38,6 +38,8 @@ const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const UpgradePro = lazy(() => import("./pages/UpgradePro"));
 const Billing = lazy(() => import("./pages/dashboard/Billing"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
+const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
+const PublicVerification = lazy(() => import("./pages/PublicVerification"));
 
 const queryClient = new QueryClient();
 
