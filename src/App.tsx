@@ -38,6 +38,8 @@ const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const UpgradePro = lazy(() => import("./pages/UpgradePro"));
 const Billing = lazy(() => import("./pages/dashboard/Billing"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
+const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
+const PublicVerification = lazy(() => import("./pages/PublicVerification"));
 
 const queryClient = new QueryClient();
 
@@ -169,6 +171,8 @@ const App = () => (
             <Route path="/dashboard/upgrade" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/dashboard/billing" element={<AuthGuard><Billing /></AuthGuard>} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
+            <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+            <Route path="/verify/:username" element={<PublicVerification />} />
             <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/fan" element={<FanDashboard />} />

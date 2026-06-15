@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Trash2, Copy, RefreshCw, Clock } from "lucide-react";
 import TrustScore, { TrustSignal } from "@/components/TrustScore";
 
 const PLATFORMS = [
@@ -82,13 +82,51 @@ const Verification = () => {
     await recompute(userId);
   };
 
+  const issueCode = async (socialId: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("verify-social", {
+      body: { social_id: socialId, action: "issue" },
+    });
+    setBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Couldn't issue code", description: error?.message || data?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    if (userId) await load(userId);
+    toast({ title: "Code ready", description: "Paste it into your social bio, then click Verify." });
+  };
+
+  const checkCode = async (socialId: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("verify-social", {
+      body: { social_id: socialId, action: "check" },
+    });
+    setBusy(false);
+    if (error) {
+      toast({ title: "Check failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (data?.status === "verified") {
+      toast({ title: "Verified ✓", description: data.message });
+    } else {
+      toast({ title: "Not verified yet", description: data?.message || "Try again in a minute.", variant: "destructive" });
+    }
+    if (userId) await load(userId);
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Copied", description: "Paste it into your social bio." });
+  };
+
   const score = profile?.trust_score ?? 0;
   const isElite = !!profile?.is_elite;
 
   const hasBio = (profile?.bio?.length ?? 0) >= 10 && linksCount >= 1;
   const hasAvatar = !!profile?.avatar_url;
   const hasUsername = (profile?.username?.length ?? 0) >= 3;
-  const socialPts = Math.min(socials.length * 15, 30);
+  const verifiedSocials = socials.filter(s => s.verification_status === "verified");
+  const socialPts = Math.min(verifiedSocials.length * 15, 30);
 
   const signals: TrustSignal[] = [
     { label: "Email confirmed",              done: emailConfirmed, points: 10 },
@@ -96,7 +134,7 @@ const Verification = () => {
     { label: "Avatar uploaded",              done: hasAvatar,      points: 5 },
     { label: "Bio + at least one link",      done: hasBio,         points: 10 },
     { label: "Stripe payouts active",        done: stripeOk,       points: 30 },
-    { label: `Verified socials (${socials.length}/2)`, done: socialPts > 0, points: 30 },
+    { label: `Verified socials (${verifiedSocials.length}/2)`, done: socialPts > 0, points: 30 },
     { label: "Domain verified (optional)",   done: !!profile?.domain_verified, points: 10 },
   ];
 
@@ -161,20 +199,67 @@ const Verification = () => {
           </div>
 
           {socials.length > 0 && (
-            <ul className="space-y-2 mb-4">
+            <ul className="space-y-3 mb-4">
               {socials.map((s) => {
                 const meta = PLATFORMS.find(p => p.id === s.platform);
+                const status = s.verification_status as "pending" | "verified" | "failed";
+                const statusMeta = status === "verified"
+                  ? { label: "Verified",  cls: "bg-foreground text-background", Icon: Check }
+                  : status === "failed"
+                  ? { label: "Failed",    cls: "bg-destructive text-destructive-foreground", Icon: X }
+                  : { label: "Pending",   cls: "bg-muted text-muted-foreground", Icon: Clock };
+                const Icon = statusMeta.Icon;
                 return (
-                  <li key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                    <div>
-                      <p className="text-sm font-medium">{meta?.label || s.platform}</p>
-                      <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
-                        @{s.handle}
-                      </a>
+                  <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium">{meta?.label || s.platform}</p>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusMeta.cls}`}>
+                            <Icon className="w-3 h-3" /> {statusMeta.label}
+                          </span>
+                        </div>
+                        <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
+                          @{s.handle}
+                        </a>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)} aria-label="Remove">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+
+                    {status !== "verified" && (
+                      <div className="rounded-md bg-background border border-border p-3 space-y-2">
+                        {s.verification_code ? (
+                          <>
+                            <p className="text-[11px] text-muted-foreground">
+                              Paste this code anywhere in your public {meta?.label || s.platform} bio, save, then click Verify.
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
+                              <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)} aria-label="Copy code">
+                                <Copy className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1">
+                                <RefreshCw className="w-3.5 h-3.5" /> Verify now
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>
+                                Regenerate code
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>
+                            Get verification code
+                          </Button>
+                        )}
+                        {s.last_error && status === "failed" && (
+                          <p className="text-[11px] text-destructive">{s.last_error}</p>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
