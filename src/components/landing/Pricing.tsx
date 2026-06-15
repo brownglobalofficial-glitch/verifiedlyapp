@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { Link } from "react-router-dom";
-import VerifiedBadge from "@/components/VerifiedBadge";
 
 const Pricing = () => {
   return (
@@ -54,8 +53,8 @@ const Pricing = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300 bg-foreground text-background"
           >
-            <div className="absolute -top-3 left-6 bg-background text-foreground px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-              <VerifiedBadge className="w-3 h-3" /> PRO
+            <div className="absolute -top-3 left-6 bg-background text-foreground px-3 py-1 rounded-full text-xs font-semibold">
+              PRO
             </div>
             <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
             <p className="text-4xl font-display font-bold mb-1">$9<span className="text-lg opacity-60 font-normal">/mo</span></p>
