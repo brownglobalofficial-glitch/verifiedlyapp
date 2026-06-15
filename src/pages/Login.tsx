@@ -49,9 +49,10 @@ const Login = () => {
       } catch {
         // ignore — fall back to default route
       }
+      void accountType;
       const dest = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
         ? nextPath
-        : (accountType === "fan" ? "/fan" : "/dashboard");
+        : "/dashboard";
       navigate(dest, { replace: true });
     } catch (err: any) {
       toast({ title: "Login failed", description: err?.message ?? "Unknown error", variant: "destructive" });

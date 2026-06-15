@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Plus, Trash2, Copy, RefreshCw, Clock } from "lucide-react";
-import { Shield, MessageSquareWarning } from "lucide-react";
-import TrustScore, { TrustSignal } from "@/components/TrustScore";
+import {
+  Check, Clock, Plus, Trash2, Copy, RefreshCw, X, Shield, MessageSquareWarning,
+  Mail, AtSign, Image as ImageIcon, FileText, CreditCard, Share2, Globe, ChevronRight, ChevronDown,
+} from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import DashboardShell from "@/components/dashboard/DashboardShell";
 
 const PLATFORMS = [
   { id: "instagram", label: "Instagram", urlBase: "https://instagram.com/" },
@@ -33,6 +37,7 @@ const Verification = () => {
   const [socials, setSocials] = useState<any[]>([]);
   const [newPlatform, setNewPlatform] = useState<string>("instagram");
   const [newHandle, setNewHandle] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = async (uid: string) => {
     const [{ data: u }, { data: p }, { data: priv }, { count: lc }, { data: vs }] = await Promise.all([
@@ -73,7 +78,7 @@ const Verification = () => {
     setBusy(false);
     if (error) { toast({ title: "Couldn't add", description: error.message, variant: "destructive" }); return; }
     setNewHandle("");
-    toast({ title: "Social added", description: "Your trust score has been updated." });
+    toast({ title: "Social added" });
     await recompute(userId);
   };
 
@@ -85,235 +90,255 @@ const Verification = () => {
 
   const issueCode = async (socialId: string) => {
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("verify-social", {
-      body: { social_id: socialId, action: "issue" },
-    });
+    const { data, error } = await supabase.functions.invoke("verify-social", { body: { social_id: socialId, action: "issue" } });
     setBusy(false);
-    if (error || data?.error) {
-      toast({ title: "Couldn't issue code", description: error?.message || data?.message || data?.error, variant: "destructive" });
-      return;
-    }
+    if (error || data?.error) { toast({ title: "Couldn't issue code", description: error?.message || data?.error, variant: "destructive" }); return; }
     if (userId) await load(userId);
-    toast({ title: "Code ready", description: "Paste it into your social bio, then click Verify." });
   };
 
   const checkCode = async (socialId: string) => {
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("verify-social", {
-      body: { social_id: socialId, action: "check" },
-    });
+    const { data, error } = await supabase.functions.invoke("verify-social", { body: { social_id: socialId, action: "check" } });
     setBusy(false);
-    if (error) {
-      toast({ title: "Check failed", description: error.message, variant: "destructive" });
-      return;
-    }
-    if (data?.status === "verified") {
-      toast({ title: "Verified ✓", description: data.message });
-    } else {
-      toast({ title: "Not verified yet", description: data?.message || "Try again in a minute.", variant: "destructive" });
-    }
+    if (error) { toast({ title: "Check failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: data?.status === "verified" ? "Verified ✓" : "Not verified yet", description: data?.message });
     if (userId) await load(userId);
   };
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Copied", description: "Paste it into your social bio." });
+    toast({ title: "Copied" });
   };
 
   const score = profile?.trust_score ?? 0;
-  const isElite = !!profile?.is_elite;
-
   const hasBio = (profile?.bio?.length ?? 0) >= 10 && linksCount >= 1;
   const hasAvatar = !!profile?.avatar_url;
   const hasUsername = (profile?.username?.length ?? 0) >= 3;
   const verifiedSocials = socials.filter(s => s.verification_status === "verified");
-  const socialPts = Math.min(verifiedSocials.length * 15, 30);
 
-  const signals: TrustSignal[] = [
-    { label: "Email confirmed",              done: emailConfirmed, points: 10 },
-    { label: "Username claimed",             done: hasUsername,    points: 5 },
-    { label: "Avatar uploaded",              done: hasAvatar,      points: 5 },
-    { label: "Bio + at least one link",      done: hasBio,         points: 10 },
-    { label: "Stripe payouts active",        done: stripeOk,       points: 30 },
-    { label: `Verified socials (${verifiedSocials.length}/2)`, done: socialPts > 0, points: 30 },
-    { label: "Domain verified (optional)",   done: !!profile?.domain_verified, points: 10 },
+  const checklist = [
+    {
+      id: "email", icon: Mail, title: "Confirm your email", points: 10, done: emailConfirmed,
+      skip: "Without email confirmation we can't recover your account or pay you out.",
+      action: emailConfirmed ? null : <p className="text-xs text-muted-foreground">Check your inbox for the confirmation link.</p>,
+    },
+    {
+      id: "username", icon: AtSign, title: "Claim your username", points: 5, done: hasUsername,
+      skip: "Skip and your profile URL stays an auto-generated string.",
+      action: <Link to="/dashboard/settings"><Button size="sm" variant="outline">Edit username</Button></Link>,
+    },
+    {
+      id: "avatar", icon: ImageIcon, title: "Upload a profile photo", points: 5, done: hasAvatar,
+      skip: "Profiles without a photo feel anonymous and convert ~40% worse.",
+      action: <Link to="/dashboard/settings"><Button size="sm" variant="outline">Upload photo</Button></Link>,
+    },
+    {
+      id: "bio", icon: FileText, title: "Add a bio + at least one link", points: 10, done: hasBio,
+      skip: "Empty profiles look abandoned to fans and brands.",
+      action: <Link to="/dashboard/links"><Button size="sm" variant="outline">Add links</Button></Link>,
+    },
+    {
+      id: "stripe", icon: CreditCard, title: "Connect Stripe payouts", points: 30, done: stripeOk,
+      skip: "You can't accept payments, tips or subscriptions until this is done.",
+      action: <Link to="/dashboard/monetization"><Button size="sm">Connect payouts</Button></Link>,
+    },
+    {
+      id: "socials", icon: Share2, title: `Verify your social accounts (${verifiedSocials.length}/2)`, points: 30, done: verifiedSocials.length > 0,
+      skip: "Verified socials are the fastest way to reach the badge threshold.",
+      action: null, // handled in tab below
+    },
+    {
+      id: "domain", icon: Globe, title: "Verify your own domain", points: 10, done: !!profile?.domain_verified, optional: true,
+      skip: "Optional — gives a small boost and unlocks custom-domain profiles.",
+      action: <Link to="/dashboard/settings"><Button size="sm" variant="outline">Add domain</Button></Link>,
+    },
   ];
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="text-sm text-muted-foreground">Loading…</div></div>;
+  const totalPossible = checklist.reduce((s, c) => s + c.points, 0);
+  const earned = checklist.reduce((s, c) => s + (c.done ? c.points : 0), 0);
+  const percent = Math.min(100, Math.round((score / 80) * 100));
+  const isVerified = score >= 80;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-3xl">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to dashboard
-        </Link>
+    <DashboardShell title="Verification">
+      <div className="container mx-auto max-w-3xl py-8 px-4 space-y-6">
+        {loading ? <div className="text-sm text-muted-foreground">Loading…</div> : null}
 
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-2">Verification</h1>
-          <p className="text-sm text-muted-foreground max-w-xl">
-            Reach a Trust Score of 80 to earn the verified badge on your public profile. Complete each step below — the more signals you connect, the higher your score.
-          </p>
-        </div>
-
-        <Card className="p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Score card */}
+        <Card className="p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Your Trust Score</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Trust Score</p>
               <p className="text-5xl font-display font-bold tabular-nums">{score}<span className="text-xl text-muted-foreground">/100</span></p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {isVerified ? "You're verified ✓" : `${80 - score} points to the verified badge`}
+              </p>
             </div>
-            <TrustScore score={score} isElite={isElite} signals={signals} />
+            {isVerified && <VerifiedBadge className="w-10 h-10" />}
           </div>
-          <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-foreground transition-all" style={{ width: `${score}%` }} />
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {userId && (
-              <Button variant="outline" size="sm" onClick={() => recompute(userId)}>
-                Recalculate
-              </Button>
-            )}
-            <Link to="/dashboard/privacy-controls">
-              <Button variant="ghost" size="sm" className="gap-1"><Shield className="w-3.5 h-3.5" /> Privacy controls</Button>
-            </Link>
-            <Link to="/dashboard/disputes">
-              <Button variant="ghost" size="sm" className="gap-1"><MessageSquareWarning className="w-3.5 h-3.5" /> Disputes</Button>
-            </Link>
-          </div>
-        </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-4">Signals</h2>
-          <ul className="divide-y divide-border">
-            {signals.map((s) => (
-              <li key={s.label} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center ${s.done ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>
-                    {s.done ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                  </span>
-                  <span className="text-sm">{s.label}</span>
-                </div>
-                <span className="text-xs text-muted-foreground tabular-nums">+{s.points} pts</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-display font-semibold">Verified socials</h2>
-              <p className="text-xs text-muted-foreground">15 pts each, up to 30 pts total.</p>
+          {/* Progress bar with 80 marker */}
+          <div className="mt-5">
+            <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-foreground transition-all" style={{ width: `${Math.min(100, score)}%` }} />
+              <div className="absolute top-0 bottom-0" style={{ left: "80%" }}>
+                <div className="w-px h-full bg-foreground/60" />
+              </div>
+            </div>
+            <div className="relative h-4 mt-1 text-[10px] text-muted-foreground">
+              <span className="absolute left-0">0</span>
+              <span className="absolute" style={{ left: "calc(80% - 20px)" }}>Verified at 80</span>
+              <span className="absolute right-0">100</span>
             </div>
           </div>
 
-          {socials.length > 0 && (
-            <ul className="space-y-3 mb-4">
-              {socials.map((s) => {
-                const meta = PLATFORMS.find(p => p.id === s.platform);
-                const status = s.verification_status as "pending" | "verified" | "failed";
-                const statusMeta = status === "verified"
-                  ? { label: "Verified",  cls: "bg-foreground text-background", Icon: Check }
-                  : status === "failed"
-                  ? { label: "Failed",    cls: "bg-destructive text-destructive-foreground", Icon: X }
-                  : { label: "Pending",   cls: "bg-muted text-muted-foreground", Icon: Clock };
-                const Icon = statusMeta.Icon;
-                return (
-                  <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium">{meta?.label || s.platform}</p>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusMeta.cls}`}>
-                            <Icon className="w-3 h-3" /> {statusMeta.label}
-                          </span>
-                        </div>
-                        <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
-                          @{s.handle}
-                        </a>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)} aria-label="Remove">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    {status !== "verified" && (
-                      <div className="rounded-md bg-background border border-border p-3 space-y-2">
-                        {s.verification_code ? (
-                          <>
-                            <p className="text-[11px] text-muted-foreground">
-                              Paste this code anywhere in your public {meta?.label || s.platform} bio, save, then click Verify.
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
-                              <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)} aria-label="Copy code">
-                                <Copy className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1">
-                                <RefreshCw className="w-3.5 h-3.5" /> Verify now
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>
-                                Regenerate code
-                              </Button>
-                            </div>
-                          </>
-                        ) : (
-                          <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>
-                            Get verification code
-                          </Button>
-                        )}
-                        {s.last_error && status === "failed" && (
-                          <p className="text-[11px] text-destructive">{s.last_error}</p>
-                        )}
-                        {status === "failed" && (
-                          <Link to="/dashboard/disputes" className="text-[11px] underline text-muted-foreground hover:text-foreground">
-                            Request a manual review →
-                          </Link>
-                        )}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
-            <select
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-              value={newPlatform}
-              onChange={(e) => setNewPlatform(e.target.value)}
-            >
-              {PLATFORMS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
-            <div>
-              <Label htmlFor="handle" className="sr-only">Handle</Label>
-              <Input id="handle" placeholder="yourhandle" value={newHandle} onChange={(e) => setNewHandle(e.target.value)} />
-            </div>
-            <Button onClick={addSocial} disabled={busy || !newHandle.trim()} className="gap-1">
-              <Plus className="w-4 h-4" /> Add
-            </Button>
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-3">
-            We only display what you've connected. You can remove a social at any time and your score
-            will recalculate automatically.
+          <p className="text-xs text-muted-foreground mt-4">
+            {earned} of {totalPossible} signal points completed.{" "}
+            {userId && <button className="underline" onClick={() => recompute(userId)}>Recalculate</button>}
           </p>
         </Card>
 
-        {!stripeOk && (
-          <Card className="p-4 border-dashed">
-            <div className="flex items-center justify-between gap-4">
+        <Tabs defaultValue="checklist">
+          <TabsList>
+            <TabsTrigger value="checklist">Checklist</TabsTrigger>
+            <TabsTrigger value="socials">Verified socials</TabsTrigger>
+            <TabsTrigger value="more" className="gap-1"><Shield className="w-3.5 h-3.5" /> Privacy &amp; disputes</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="checklist">
+            <Card className="p-2 sm:p-3">
+              <ul className="divide-y divide-border">
+                {checklist.map((c) => {
+                  const isOpen = expanded === c.id;
+                  return (
+                    <li key={c.id}>
+                      <button
+                        onClick={() => setExpanded(isOpen ? null : c.id)}
+                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/50 rounded-md transition-colors"
+                      >
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                          c.done ? "bg-foreground text-background" : "border-2 border-border text-muted-foreground"
+                        }`}>
+                          {c.done ? <Check className="w-3.5 h-3.5" /> : <c.icon className="w-3.5 h-3.5" />}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium flex items-center gap-2">
+                            {c.title}
+                            {c.optional && <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Optional</span>}
+                          </p>
+                          {!c.done && !isOpen && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">If skipped: {c.skip}</p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground tabular-nums shrink-0">+{c.points}</span>
+                        {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      </button>
+                      {isOpen && (
+                        <div className="px-12 pb-4 space-y-3">
+                          {!c.done && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">If you skip this:</span> {c.skip}
+                            </p>
+                          )}
+                          {c.action}
+                          {c.id === "socials" && (
+                            <p className="text-xs text-muted-foreground">Add and verify socials in the next tab →</p>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="socials">
+            <Card className="p-5 space-y-4">
               <div>
-                <p className="text-sm font-semibold">Biggest boost: enable Stripe payouts</p>
-                <p className="text-xs text-muted-foreground">+30 points and unlocks paid features.</p>
+                <h2 className="font-display font-semibold">Verified socials</h2>
+                <p className="text-xs text-muted-foreground">15 points each, up to 30 points total.</p>
               </div>
-              <Link to="/dashboard/settings"><Button size="sm">Connect Stripe</Button></Link>
+
+              {socials.length > 0 && (
+                <ul className="space-y-3">
+                  {socials.map((s) => {
+                    const meta = PLATFORMS.find(p => p.id === s.platform);
+                    const status = s.verification_status as "pending" | "verified" | "failed";
+                    const StatusIcon = status === "verified" ? Check : status === "failed" ? X : Clock;
+                    return (
+                      <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                              {meta?.label || s.platform}
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background border">
+                                <StatusIcon className="w-3 h-3" /> {status}
+                              </span>
+                            </p>
+                            <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">@{s.handle}</a>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                        {status !== "verified" && (
+                          <div className="rounded-md bg-background border border-border p-3 space-y-2">
+                            {s.verification_code ? (
+                              <>
+                                <p className="text-[11px] text-muted-foreground">Paste this code in your {meta?.label} bio, then click Verify.</p>
+                                <div className="flex items-center gap-2">
+                                  <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
+                                  <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)}><Copy className="w-3.5 h-3.5" /></Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1"><RefreshCw className="w-3.5 h-3.5" /> Verify now</Button>
+                                  <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>Regenerate</Button>
+                                </div>
+                              </>
+                            ) : (
+                              <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>Get verification code</Button>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-2">
+                <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)}>
+                  {PLATFORMS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </select>
+                <div>
+                  <Label htmlFor="handle" className="sr-only">Handle</Label>
+                  <Input id="handle" placeholder="yourhandle" value={newHandle} onChange={(e) => setNewHandle(e.target.value)} />
+                </div>
+                <Button onClick={addSocial} disabled={busy || !newHandle.trim()} className="gap-1"><Plus className="w-4 h-4" /> Add</Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="more">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Link to="/dashboard/privacy-controls">
+                <Card className="p-5 card-hover h-full">
+                  <Shield className="w-5 h-5 mb-2" />
+                  <p className="font-display font-semibold">Privacy controls</p>
+                  <p className="text-xs text-muted-foreground mt-1">Opt out of Trust Score or hide signals from your public page.</p>
+                </Card>
+              </Link>
+              <Link to="/dashboard/disputes">
+                <Card className="p-5 card-hover h-full">
+                  <MessageSquareWarning className="w-5 h-5 mb-2" />
+                  <p className="font-display font-semibold">Disputes</p>
+                  <p className="text-xs text-muted-foreground mt-1">Request a manual review if a signal was rejected unfairly.</p>
+                </Card>
+              </Link>
             </div>
-          </Card>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
+    </DashboardShell>
   );
 };
 

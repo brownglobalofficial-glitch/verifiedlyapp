@@ -21,7 +21,6 @@ export const routeLoaders = {
   "/dashboard/links": () => import("@/pages/ManageLinks"),
   "/dashboard/content": () => import("@/pages/ManageContent"),
   "/dashboard/admin": () => import("@/pages/Admin"),
-  "/fan": () => import("@/pages/FanDashboard"),
   "/explore": () => import("@/pages/Explore"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),
   "/membership": () => import("@/pages/Membership"),

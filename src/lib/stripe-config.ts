@@ -4,8 +4,8 @@ export const STRIPE_TIERS = {
     price_id: "price_1TSoiE1hrOAc8qE8Kqpr2Z1h",
     product_id: "prod_URi89hw7irIarX",
     name: "Pro",
-    price: 4.99,
-    fee_percent: 5,
+    price: 9,
+    fee_percent: 0,
   },
   elite: {
     price_id: "price_1TSoiF1hrOAc8qE8R2dGTqHQ",
