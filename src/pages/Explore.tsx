@@ -349,7 +349,7 @@ const Explore = () => {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Flame className="w-5 h-5 text-destructive" />
-                  <h2 className="text-lg font-display font-bold">Trending Creators</h2>
+                  <h2 className="text-lg font-display font-bold">Trending</h2>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {trendingCreators.map((creator, i) => (
