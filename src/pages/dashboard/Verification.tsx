@@ -151,8 +151,7 @@ const Verification = () => {
         <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-2">Verification</h1>
           <p className="text-sm text-muted-foreground max-w-xl">
-            Verifiedly is built on trust. Connect more signals to raise your public Trust Score —
-            it appears on your profile and helps fans, brands, and partners see you're real.
+            Reach a Trust Score of 80 to earn the verified badge on your public profile. Complete each step below — the more signals you connect, the higher your score.
           </p>
         </div>
 

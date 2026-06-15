@@ -76,8 +76,7 @@ const Onboarding = () => {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeAgreed, setStripeAgreed] = useState(false);
 
-  const needsStripe = accountType === "creator" || accountType === "business";
-  const steps = needsStripe ? ["Type", "Profile", "Links", "Payouts", "Theme"] : ["Type", "Profile", "Links", "Theme"];
+  const steps = ["Profile", "Links", "Theme"];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -205,7 +204,7 @@ const Onboarding = () => {
       }
 
       toast({ title: "You're all set! 🎉", description: "Your profile is live." });
-      navigate(accountType === "fan" ? "/fan" : "/dashboard");
+      navigate("/dashboard");
     } catch (err: any) {
       console.error("Onboarding finish error:", err);
       toast({ title: "Setup failed", description: err.message || "Could not complete setup. Please try again.", variant: "destructive" });
@@ -215,9 +214,7 @@ const Onboarding = () => {
   };
 
   const canProceed = () => {
-    if (step === 1) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
-    // Payouts step index: 3 for creators/businesses (Type=0, Profile=1, Links=2, Payouts=3)
-    // Payouts step is optional — can be skipped and completed later from settings
+    if (step === 0) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
     return true;
   };
 
@@ -299,50 +296,6 @@ const Onboarding = () => {
             transition={{ duration: 0.3 }}
           >
             {step === 0 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">What type of account?</h1>
-                  <p className="text-muted-foreground mt-1">This helps us personalize your experience</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> You can change your category later from Profile Settings. Pick the one closest to what you do today.
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { value: "fan", label: "Fan", desc: "Follow creators, buy products" },
-                    { value: "creator", label: "Creator / Player", desc: "Sell products, build an audience" },
-                    { value: "business", label: "Business", desc: "Post campaigns, find creators" },
-                  ].map(t => (
-                    <button
-                      key={t.value}
-                      onClick={() => { setAccountType(t.value); setCategory(""); }}
-                      className={`rounded-xl border-2 p-5 text-left transition-all ${accountType === t.value ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
-                    >
-                      <p className="font-display font-semibold">{t.label}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{t.desc}</p>
-                    </button>
-                  ))}
-                </div>
-
-                <div>
-                  <Label>Category</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {categories.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setCategory(c.toLowerCase())}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${category === c.toLowerCase() ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 1 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
@@ -435,108 +388,7 @@ const Onboarding = () => {
               </div>
             )}
 
-            {needsStripe && step === 3 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">Connect your payout account</h1>
-                  <p className="text-muted-foreground mt-1">
-                    Set up Stripe to receive payments from product sales, tips, and subscriptions.
-                    You can skip this for now and set it up later from your settings.
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> Stripe takes about 2 minutes — you'll need a bank account or debit card and your tax info to get paid.
-                </div>
-
-                {stripeConnected ? (
-                  <Card className="p-6 text-center space-y-3">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto">
-                      <Check className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="font-display font-semibold text-lg">Stripe Connected!</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your payout account is set up. You'll receive payments directly to your bank account.
-                    </p>
-                    {userId && <div className="mt-4 text-left"><PayoutsChecklist userId={userId} variant="compact" /></div>}
-                  </Card>
-                ) : (
-                  <Card className="p-6 space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="font-display font-semibold">Why connect Stripe?</h3>
-                      <ul className="space-y-2 text-sm text-muted-foreground">
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          Get paid directly to your bank account
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          Accept credit cards, Apple Pay, and more
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          Automatic payouts — no manual withdrawals
-                        </li>
-                      </ul>
-                    </div>
-                    <label className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={stripeAgreed}
-                        onChange={(e) => setStripeAgreed(e.target.checked)}
-                        className="mt-1 w-4 h-4 accent-primary cursor-pointer"
-                      />
-                      <span className="text-xs leading-relaxed text-muted-foreground">
-                        I agree to the{" "}
-                        <a
-                          href="https://stripe.com/legal/connect-account"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-foreground hover:opacity-70"
-                        >
-                          Stripe Connected Account Agreement
-                        </a>{" "}
-                        and{" "}
-                        <a
-                          href="https://stripe.com/legal/ssa"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-foreground hover:opacity-70"
-                        >
-                          Stripe Services Agreement
-                        </a>
-                        , and to Verifiedly's{" "}
-                        <a href="/terms" target="_blank" className="underline text-foreground hover:opacity-70">
-                          Terms
-                        </a>{" "}
-                        and{" "}
-                        <a href="/refunds" target="_blank" className="underline text-foreground hover:opacity-70">
-                          Refund Policy
-                        </a>
-                        . I understand I am the merchant of record for my sales.
-                      </span>
-                    </label>
-                    <Button
-                      onClick={handleStripeConnect}
-                      disabled={stripeConnecting || !stripeAgreed}
-                      className="w-full"
-                      size="lg"
-                    >
-                      {stripeConnecting ? "Setting up..." : "Connect Stripe Account"}
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      You'll be redirected to Stripe to complete setup securely.
-                    </p>
-                  </Card>
-                )}
-                {!stripeConnected && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Not ready? You can skip this and connect Stripe later from your dashboard settings.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {step === (needsStripe ? 4 : 3) && (
+            {step === 2 && (
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-display font-bold">Choose your theme</h1>

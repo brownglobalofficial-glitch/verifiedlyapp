@@ -73,21 +73,10 @@ const RouteOptimizer = () => {
       // Only redirect if currently sitting on /login or /signup
       if (!AUTH_PAGES.has(window.location.pathname)) return;
       let accountType: string | null = null;
-      try {
-        const profilePromise = supabase
-          .from("profiles")
-          .select("account_type")
-          .eq("id", userId)
-          .maybeSingle();
-        const timeout = new Promise<{ data: null }>((resolve) =>
-          setTimeout(() => resolve({ data: null }), 1500)
-        );
-        const result: any = await Promise.race([profilePromise, timeout]);
-        accountType = result?.data?.account_type ?? null;
-      } catch {
-        // ignore
-      }
-      navigate(accountType === "fan" ? "/fan" : "/dashboard", { replace: true });
+      // Universal account: everyone lands in /dashboard.
+      void accountType;
+      void userId;
+      navigate("/dashboard", { replace: true });
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
