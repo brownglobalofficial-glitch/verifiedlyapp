@@ -199,20 +199,67 @@ const Verification = () => {
           </div>
 
           {socials.length > 0 && (
-            <ul className="space-y-2 mb-4">
+            <ul className="space-y-3 mb-4">
               {socials.map((s) => {
                 const meta = PLATFORMS.find(p => p.id === s.platform);
+                const status = s.verification_status as "pending" | "verified" | "failed";
+                const statusMeta = status === "verified"
+                  ? { label: "Verified",  cls: "bg-foreground text-background", Icon: Check }
+                  : status === "failed"
+                  ? { label: "Failed",    cls: "bg-destructive text-destructive-foreground", Icon: X }
+                  : { label: "Pending",   cls: "bg-muted text-muted-foreground", Icon: Clock };
+                const Icon = statusMeta.Icon;
                 return (
-                  <li key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
-                    <div>
-                      <p className="text-sm font-medium">{meta?.label || s.platform}</p>
-                      <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
-                        @{s.handle}
-                      </a>
+                  <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium">{meta?.label || s.platform}</p>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusMeta.cls}`}>
+                            <Icon className="w-3 h-3" /> {statusMeta.label}
+                          </span>
+                        </div>
+                        <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
+                          @{s.handle}
+                        </a>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)} aria-label="Remove">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+
+                    {status !== "verified" && (
+                      <div className="rounded-md bg-background border border-border p-3 space-y-2">
+                        {s.verification_code ? (
+                          <>
+                            <p className="text-[11px] text-muted-foreground">
+                              Paste this code anywhere in your public {meta?.label || s.platform} bio, save, then click Verify.
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
+                              <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)} aria-label="Copy code">
+                                <Copy className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1">
+                                <RefreshCw className="w-3.5 h-3.5" /> Verify now
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>
+                                Regenerate code
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>
+                            Get verification code
+                          </Button>
+                        )}
+                        {s.last_error && status === "failed" && (
+                          <p className="text-[11px] text-destructive">{s.last_error}</p>
+                        )}
+                      </div>
+                    )}
                   </li>
                 );
               })}
