@@ -422,6 +422,12 @@ const CreatorProfile = () => {
             </span>
           </div>
 
+          {(profile?.trust_score ?? 0) >= 60 && (
+            <div className="flex justify-center mt-2">
+              <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />
+            </div>
+          )}
+
           {profile?.bio && (
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed whitespace-pre-wrap break-words`}>{profile.bio}</p>
           )}
