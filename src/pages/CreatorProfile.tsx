@@ -346,9 +346,10 @@ const CreatorProfile = () => {
   const theme = THEME_STYLES[profile?.theme_color || "default"] || THEME_STYLES.default;
   const socialLinks = profile?.social_links || {};
   const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
-  const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
   const trustScore = profile?.trust_score ?? 0;
   const isTrustVerified = trustScore >= 80 && !profile?.trust_score_opt_out;
+  // Badge is EARNED only — Trust Score >= 80. Pro/Elite do NOT grant the badge.
+  const isVerified = isTrustVerified;
   const showTrustPill = (profile?.trust_score_public !== false) && !profile?.trust_score_opt_out && trustScore >= 60;
 
   const contentIcon = (type: string) => {
