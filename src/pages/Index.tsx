@@ -6,7 +6,6 @@ import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
 import FeaturedCreators from "@/components/landing/FeaturedCreators";
 import Pricing from "@/components/landing/Pricing";
-import FanCTA from "@/components/landing/FanCTA";
 import Footer from "@/components/landing/Footer";
 
 const Index = () => {
@@ -30,7 +29,6 @@ const Index = () => {
       <Hero />
       <Features />
       <FeaturedCreators />
-      <FanCTA />
       <Pricing />
       <Footer />
     </div>
