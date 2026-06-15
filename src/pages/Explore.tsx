@@ -46,7 +46,13 @@ const Explore = () => {
     categoryFilter === "all" && creatorCategoryFilter === "all";
 
   const trendingCreators = [...creators]
-    .sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0))
+    .sort((a, b) => {
+      const aVerified = (a.trust_score || 0) >= 80 && !a.trust_score_opt_out;
+      const bVerified = (b.trust_score || 0) >= 80 && !b.trust_score_opt_out;
+      if (aVerified !== bVerified) return aVerified ? -1 : 1;
+      if (aVerified && bVerified) return (b.trust_score || 0) - (a.trust_score || 0);
+      return (b.follower_count || 0) - (a.follower_count || 0);
+    })
     .slice(0, 6);
 
   const featuredCreators = creators.filter(c => c.is_featured);
@@ -56,14 +62,13 @@ const Explore = () => {
     const fetchData = async () => {
       const [{ data: prods }, { data: profs }, { data: subs }] = await Promise.all([
         supabase.from("products")
-          .select("*, profiles(username, display_name, is_pro, is_verified, is_elite, avatar_url)")
+          .select("*, profiles(username, display_name, avatar_url, trust_score, trust_score_opt_out)")
           .eq("is_published", true).limit(100),
         supabase.from("profiles")
           .select("*")
-          .eq("onboarding_completed", true)
           .limit(100),
         supabase.from("subscriptions")
-          .select("*, profiles(username, display_name, is_pro, is_verified, is_elite, avatar_url, category)")
+          .select("*, profiles(username, display_name, avatar_url, category, trust_score, trust_score_opt_out)")
           .eq("is_active", true).limit(100),
       ]);
       setProducts(prods || []);
@@ -89,7 +94,8 @@ const Explore = () => {
         p.description?.toLowerCase().includes(search.toLowerCase());
       const matchesCat = categoryFilter === "all" || p.category === categoryFilter;
       const matchesP = matchesPrice(p.price);
-      const matchesVerified = !verifiedOnly || p.profiles?.is_verified || p.profiles?.is_pro || p.profiles?.is_elite;
+      const isProfileVerified = (p.profiles?.trust_score || 0) >= 80 && !p.profiles?.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isProfileVerified;
       return matchesSearch && matchesCat && matchesP && matchesVerified;
     })
     .sort((a, b) => {
@@ -106,11 +112,18 @@ const Explore = () => {
         c.username?.toLowerCase().includes(search.toLowerCase()) ||
         c.bio?.toLowerCase().includes(search.toLowerCase());
       const matchesCat = creatorCategoryFilter === "all" || c.category === creatorCategoryFilter;
-      const matchesVerified = !verifiedOnly || c.is_verified || c.is_pro || c.is_elite;
+      const isCreatorVerified = (c.trust_score || 0) >= 80 && !c.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isCreatorVerified;
       return matchesSearch && matchesCat && matchesVerified;
     })
     .sort((a, b) => {
-      if (sort === "popular") return (b.follower_count || 0) - (a.follower_count || 0);
+      if (sort === "popular") {
+        const aVerified = (a.trust_score || 0) >= 80 && !a.trust_score_opt_out;
+        const bVerified = (b.trust_score || 0) >= 80 && !b.trust_score_opt_out;
+        if (aVerified !== bVerified) return aVerified ? -1 : 1;
+        if (aVerified && bVerified) return (b.trust_score || 0) - (a.trust_score || 0);
+        return (b.follower_count || 0) - (a.follower_count || 0);
+      }
       if (sort === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === "name") return (a.display_name || "").localeCompare(b.display_name || "");
       return 0;
@@ -122,7 +135,8 @@ const Explore = () => {
         s.description?.toLowerCase().includes(search.toLowerCase()) ||
         s.profiles?.display_name?.toLowerCase().includes(search.toLowerCase());
       const matchesP = matchesPrice(s.price);
-      const matchesVerified = !verifiedOnly || s.profiles?.is_verified || s.profiles?.is_pro || s.profiles?.is_elite;
+      const isSubProfileVerified = (s.profiles?.trust_score || 0) >= 80 && !s.profiles?.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isSubProfileVerified;
       return matchesSearch && matchesP && matchesVerified;
     })
     .sort((a, b) => {
@@ -149,7 +163,7 @@ const Explore = () => {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType; count: number }[] = [
-    { key: "creators", label: "Creators", icon: Users, count: filteredCreators.length },
+    { key: "creators", label: "Profiles", icon: Users, count: filteredCreators.length },
     { key: "products", label: "Products", icon: ShoppingBag, count: filteredProducts.length },
     { key: "subscriptions", label: "Subscriptions", icon: Video, count: filteredSubscriptions.length },
   ];
@@ -160,7 +174,7 @@ const Explore = () => {
       <div className="container mx-auto pt-24 pb-12 px-4 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Explore</h1>
-          <p className="text-muted-foreground">Discover creators, digital products, and subscription content</p>
+          <p className="text-muted-foreground">Discover people, digital products, and subscription content</p>
         </div>
 
         {/* Search + Filter Bar */}
@@ -169,7 +183,7 @@ const Explore = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder={
-                tab === "creators" ? "Search creators by name, username, or bio..." :
+                tab === "creators" ? "Search profiles by name, username, or bio..." :
                 tab === "products" ? "Search products by name or description..." :
                 "Search subscriptions..."
               }
@@ -305,7 +319,7 @@ const Explore = () => {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Star className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-display font-bold">Featured Creators</h2>
+                  <h2 className="text-lg font-display font-bold">Featured</h2>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {featuredCreators.map((creator) => (
@@ -335,7 +349,7 @@ const Explore = () => {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Flame className="w-5 h-5 text-destructive" />
-                  <h2 className="text-lg font-display font-bold">Trending Creators</h2>
+                  <h2 className="text-lg font-display font-bold">Trending</h2>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {trendingCreators.map((creator, i) => (
@@ -428,7 +442,7 @@ const Explore = () => {
             {filteredCreators.length === 0 && (
               <div className="col-span-full text-center py-16">
                 <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-                <p className="text-muted-foreground font-medium">No creators found</p>
+                <p className="text-muted-foreground font-medium">No profiles found</p>
                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search term</p>
               </div>
             )}
