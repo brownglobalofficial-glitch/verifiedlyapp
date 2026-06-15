@@ -29,7 +29,7 @@ const tierMeta: Record<TrustTier, { label: string; Icon: typeof ShieldCheck; cla
   unverified: { label: "Unverified", Icon: ShieldCheck, classes: "bg-muted text-muted-foreground" },
   verified:   { label: "Verified",   Icon: BadgeCheck,  classes: "bg-secondary text-foreground border border-border" },
   trusted:    { label: "Trusted",    Icon: BadgeCheck,  classes: "bg-foreground text-background" },
-  elite:      { label: "Elite Verified", Icon: Star,    classes: "bg-foreground text-background ring-2 ring-foreground/30" },
+  elite:      { label: "Pro Verified",   Icon: Star,    classes: "bg-foreground text-background ring-2 ring-foreground/30" },
 };
 
 const TrustScore = ({ score, isElite = false, signals, size = "md", className }: TrustScoreProps) => {
