@@ -347,6 +347,9 @@ const CreatorProfile = () => {
   const socialLinks = profile?.social_links || {};
   const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
   const isVerified = profile?.is_verified || profile?.is_pro || profile?.is_elite;
+  const trustScore = profile?.trust_score ?? 0;
+  const isTrustVerified = trustScore >= 80 && !profile?.trust_score_opt_out;
+  const showTrustPill = (profile?.trust_score_public !== false) && !profile?.trust_score_opt_out && trustScore >= 60;
 
   const contentIcon = (type: string) => {
     if (type === "video") return <Video className="w-4 h-4" />;
@@ -358,17 +361,17 @@ const CreatorProfile = () => {
     <div className={`min-h-screen ${theme.bg} ${theme.font}`}>
       {profile && (
         <Helmet>
-          <title>{`${profile.display_name || profile.username} (@${profile.username}) · Verifiedly`}</title>
+          <title>{`${profile.display_name || profile.username} (@${profile.username})${isTrustVerified ? " · Verified" : ""} · Verifiedly`}</title>
           <meta
             name="description"
-            content={(profile.bio || `Follow ${profile.display_name || profile.username} on Verifiedly — links, products, subscriptions, and more.`).slice(0, 158)}
+            content={(profile.bio || `${profile.display_name || profile.username} on Verifiedly${isTrustVerified ? " — verified identity, Trust Score " + trustScore + "/100." : "."} Links, products, subscriptions.`).slice(0, 158)}
           />
           <link rel="canonical" href={`https://verifiedly.app/${profile.username}`} />
           <meta property="og:type" content="profile" />
-          <meta property="og:title" content={`${profile.display_name || profile.username} on Verifiedly`} />
+          <meta property="og:title" content={`${profile.display_name || profile.username}${isTrustVerified ? " · Verified on Verifiedly" : " on Verifiedly"}`} />
           <meta
             property="og:description"
-            content={(profile.bio || `Tips, subscriptions, and products from ${profile.display_name || profile.username}.`).slice(0, 200)}
+            content={(profile.bio || `Tips, subscriptions, and products from ${profile.display_name || profile.username}.${isTrustVerified ? " Verified Trust Score " + trustScore + "/100." : ""}`).slice(0, 200)}
           />
           <meta property="og:url" content={`https://verifiedly.app/${profile.username}`} />
           {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
@@ -422,7 +425,7 @@ const CreatorProfile = () => {
             </span>
           </div>
 
-          {(profile?.trust_score ?? 0) >= 60 && (
+          {showTrustPill && (
             <div className="flex justify-center mt-2">
               <Link to={`/verify/${profile.username}`} aria-label="View verification details">
                 <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />

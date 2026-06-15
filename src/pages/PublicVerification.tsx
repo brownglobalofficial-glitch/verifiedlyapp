@@ -51,22 +51,45 @@ const PublicVerification = () => {
 
   const score = profile.trust_score ?? 0;
   const verifiedSocials = socials.filter(s => s.verification_status === "verified");
+  const isVerified = score >= 80;
+  const showScore = profile.trust_score_public !== false;
+  const showBreakdown = profile.signal_breakdown_public !== false;
+  const showSocials = profile.verified_socials_public !== false;
+  const showPayout = profile.payout_status_public !== false;
+  const optedOut = !!profile.trust_score_opt_out;
 
-  const signals = [
+  const allSignals = [
     { label: "Username claimed",          done: !!profile.username },
     { label: "Display name + avatar",     done: !!profile.avatar_url && !!profile.display_name },
     { label: "Bio + at least one link",   done: (profile.bio?.length ?? 0) >= 10 && linksCount >= 1 },
-    { label: "Stripe payouts active",     done: hasStripe },
+    ...(showPayout ? [{ label: "Stripe payouts active", done: hasStripe }] : []),
     { label: `Verified socials (${verifiedSocials.length})`, done: verifiedSocials.length > 0 },
     { label: "Domain verified",           done: !!profile.domain_verified },
   ];
+  const signals = allSignals;
+
+  const ogTitle = optedOut
+    ? `@${profile.username} · Verifiedly`
+    : isVerified
+    ? `@${profile.username} · Verified on Verifiedly`
+    : `@${profile.username} · Verification status`;
+  const ogDesc = optedOut
+    ? `${profile.display_name || profile.username} has opted out of public verification.`
+    : `${profile.display_name || profile.username} · Trust Score ${score}/100 on Verifiedly.`;
 
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>{`Verification · @${profile.username} · Verifiedly`}</title>
-        <meta name="description" content={`Public verification status for ${profile.display_name || profile.username} on Verifiedly. Trust Score ${score}/100.`} />
+        <title>{ogTitle}</title>
+        <meta name="description" content={ogDesc} />
         <link rel="canonical" href={`https://verifiedly.app/verify/${profile.username}`} />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={ogDesc} />
+        <meta property="og:url" content={`https://verifiedly.app/verify/${profile.username}`} />
+        <meta property="og:type" content="profile" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDesc} />
       </Helmet>
 
       <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -80,29 +103,39 @@ const PublicVerification = () => {
             {profile.display_name || profile.username}
           </h1>
           <p className="text-sm text-muted-foreground">@{profile.username}</p>
-          <div className="mt-3 flex justify-center">
-            <TrustScore score={score} isElite={!!profile.is_elite} />
-          </div>
+          {!optedOut && showScore && (
+            <div className="mt-3 flex justify-center">
+              <TrustScore score={score} isElite={!!profile.is_elite} />
+            </div>
+          )}
         </div>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">What's verified</h2>
-          <ul className="divide-y divide-border">
-            {signals.map(s => (
-              <li key={s.label} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center ${s.done ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>
-                    {s.done ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                  </span>
-                  <span className="text-sm">{s.label}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{s.done ? "Verified" : "Not yet"}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        {optedOut ? (
+          <Card className="p-6 mb-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              This creator has opted out of public verification. Their account is still active on Verifiedly.
+            </p>
+          </Card>
+        ) : showBreakdown ? (
+          <Card className="p-6 mb-6">
+            <h2 className="font-display font-semibold mb-3">What's verified</h2>
+            <ul className="divide-y divide-border">
+              {signals.map(s => (
+                <li key={s.label} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center ${s.done ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>
+                      {s.done ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                    </span>
+                    <span className="text-sm">{s.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{s.done ? "Verified" : "Not yet"}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
 
-        {verifiedSocials.length > 0 && (
+        {!optedOut && showSocials && verifiedSocials.length > 0 && (
           <Card className="p-6 mb-6">
             <h2 className="font-display font-semibold mb-3">Verified socials</h2>
             <ul className="space-y-2">

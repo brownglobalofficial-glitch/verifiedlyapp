@@ -468,6 +468,7 @@ export type Database = {
           logo_url: string | null
           name: string
           redirect_uris: string[]
+          rotated_at: string | null
           scopes: string[]
           updated_at: string
         }
@@ -482,6 +483,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           redirect_uris?: string[]
+          rotated_at?: string | null
           scopes?: string[]
           updated_at?: string
         }
@@ -496,6 +498,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           redirect_uris?: string[]
+          rotated_at?: string | null
           scopes?: string[]
           updated_at?: string
         }
@@ -755,15 +758,20 @@ export type Database = {
           is_verified: boolean | null
           link_layout: string
           onboarding_completed: boolean | null
+          payout_status_public: boolean
           referral_code: string | null
           referred_by: string | null
+          signal_breakdown_public: boolean
           social_links: Json | null
           theme_color: string | null
           tips_enabled: boolean
           trust_score: number
+          trust_score_opt_out: boolean
+          trust_score_public: boolean
           updated_at: string
           username: string
           verified_domain: string | null
+          verified_socials_public: boolean
           website: string | null
         }
         Insert: {
@@ -783,15 +791,20 @@ export type Database = {
           is_verified?: boolean | null
           link_layout?: string
           onboarding_completed?: boolean | null
+          payout_status_public?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          signal_breakdown_public?: boolean
           social_links?: Json | null
           theme_color?: string | null
           tips_enabled?: boolean
           trust_score?: number
+          trust_score_opt_out?: boolean
+          trust_score_public?: boolean
           updated_at?: string
           username: string
           verified_domain?: string | null
+          verified_socials_public?: boolean
           website?: string | null
         }
         Update: {
@@ -811,15 +824,20 @@ export type Database = {
           is_verified?: boolean | null
           link_layout?: string
           onboarding_completed?: boolean | null
+          payout_status_public?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          signal_breakdown_public?: boolean
           social_links?: Json | null
           theme_color?: string | null
           tips_enabled?: boolean
           trust_score?: number
+          trust_score_opt_out?: boolean
+          trust_score_public?: boolean
           updated_at?: string
           username?: string
           verified_domain?: string | null
+          verified_socials_public?: boolean
           website?: string | null
         }
         Relationships: []
@@ -1180,6 +1198,30 @@ export type Database = {
         }
         Relationships: []
       }
+      trust_score_errors: {
+        Row: {
+          created_at: string
+          error_message: string
+          id: string
+          resolved: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          id?: string
+          resolved?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          id?: string
+          resolved?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -1197,6 +1239,86 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      verification_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      verification_disputes: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          id: string
+          priority: boolean
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+          signal_type: string
+          social_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          priority?: boolean
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signal_type: string
+          social_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          priority?: boolean
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signal_type?: string
+          social_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_disputes_social_id_fkey"
+            columns: ["social_id"]
+            isOneToOne: false
+            referencedRelation: "verified_socials"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verified_socials: {
         Row: {

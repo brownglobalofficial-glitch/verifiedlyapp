@@ -1,95 +1,117 @@
-# Verifiedly Repositioning Plan
 
-Shift from "creator monetization platform" → **"Verified identity layer for the internet economy."** Monetization stays exactly as-is (Stripe Connect, tiers, products, tips). We add identity, a light Trust Score, "Sign in with Verifiedly" SSO for GSN/Globalis/partners, and an optional embedded Globalis AI companion.
+# Verifiedly v2 — Refine, Verify, Open Up
 
-## Legal note on Trust Score
-A Trust Score is legal as long as it is **factual, transparent, and not defamatory**. We will:
-- Only score signals the user explicitly connected (socials, email, payout, ID-optional).
-- Show the user exactly what raises/lowers their score and let them dispute/remove signals.
-- Never label anyone "untrustworthy" — only show what *is* verified ("Email verified", "Stripe payouts active", "TikTok connected").
-- No score sold to third parties without consent.
-This mirrors how LinkedIn "All-Star" or eBay seller ratings work and is well within US/EU law.
+This plan does four things at once: (1) finishes the verification product so it's safe and disputable, (2) ships SSO as a real drop-in for our sibling apps, (3) locks in the product decisions you made (earned-only badge, Stripe-only money, no wallet), and (4) cuts the fat so the site stops feeling like a kitchen sink.
 
-## Phase 1 — Verified Identity (ship first)
+## Product decisions locked in
 
-### New brand frame
-- New homepage hero copy: **"One verified link. Every way to get paid."**
-- Sub: "Verifiedly is the identity + payments layer for creators, brands, and the apps they use."
-- Update landing sections (`Hero`, `Features`, footer tagline) — same B&W aesthetic, no visual redesign.
+- **Badge = earned only.** Trust Score ≥ 80 → "Verified". ≥ 95 → "Elite Verified". No pay-to-verify. The Elite plan stops granting a badge tier; Elite is purely fee structure + perks now. This is the most defensible legal stance — factual signals, no endorsement.
+- **No wallet.** All money flows Stripe Connect → creator. Globalis keeps its own credit system; we do not mirror it. Removes money-transmitter licensing exposure entirely.
+- **Pricing stays 3 tiers** but reframed: Free (10% fee), Pro $4.99 (5% fee + priority verification re-checks), Elite $19.99 (0% fee + advanced analytics). No badge tied to payment.
 
-### Verification signals (light, no government ID)
-Add to onboarding + profile settings:
-| Signal | Source | Points |
-|---|---|---|
-| Email confirmed | Supabase auth | 10 |
-| Username claimed | profiles | 5 |
-| Avatar uploaded | profiles | 5 |
-| Bio + ≥1 link | profiles + bio_links | 10 |
-| Stripe Connect active (`charges_enabled`) | creator_private_data | 30 |
-| ≥1 social verified (Instagram/TikTok/X/YouTube via OAuth or DNS-style code) | new `verified_socials` table | 15 each, cap 30 |
-| Domain verified (optional, TXT record) | new column | 10 |
+## 1. Privacy controls (new page: `/dashboard/privacy`)
 
-Total visible as **0–100 Trust Score** with three public tiers:
-- **Verified** (≥60): black check on profile.
-- **Trusted** (≥80): black check + "Trusted" pill.
-- **Elite Verified** (≥95 *and* on Elite plan): filled star.
+Per-creator switches stored on `profiles`:
+- Hide trust score from public profile (`trust_score_public`)
+- Hide verified socials list from `/verify/:username` (`verified_socials_public`)
+- Hide individual signal breakdown, show badge only (`signal_breakdown_public`)
+- Hide email-confirmed / Stripe-connected indicators (`payout_status_public`)
+- One-click **remove a verified social** (deletes row + recomputes score)
+- One-click **opt out of Trust Score entirely** — sets `trust_score_opt_out = true`, badge disappears, public page shows "This creator has opted out of public verification."
 
-This **replaces** the current Pro/Elite-only checkmark logic but does not remove paid tiers.
+`/verify/:username` and `CreatorProfile.tsx` respect each flag.
 
-### Schema additions
-- `verified_socials(id, user_id, platform, handle, verified_at, method)` + RLS.
-- `profiles.trust_score int default 0`, `profiles.domain_verified bool default false`.
-- DB function `recompute_trust_score(_user_id)` (security definer) called on relevant inserts/updates.
+## 2. Dispute flow
 
-### UI
-- New **Verification** tab in dashboard showing each signal + how to complete it.
-- Public profile shows score pill + hover popover listing verified items.
-- Marketplace (`brand_campaigns` browse) gets a Trust Score filter + sort.
+New table `verification_disputes` (user_id, social_id nullable, signal_type, reason, status: `pending|reviewing|resolved|rejected`, admin_note, created_at).
 
-## Phase 2 — Sign in with Verifiedly (SSO for GSN + Globalis)
+- On a failed `verify_social` attempt, a "Request manual review" button appears.
+- Submission goes into the dispute queue; creator sees status in **Verification → Disputes** tab.
+- Pro/Elite get priority queue flag.
+- Admin resolves → on approve, the social row flips to `verified` and trust score recomputes.
 
-Verifiedly becomes an **OAuth 2.0 / OIDC provider** for our other apps.
+## 3. Admin panel additions (`/admin/verification`)
 
-### Approach
-Use Supabase as the auth source of truth and expose a thin OIDC layer via two edge functions:
-- `oauth-authorize` — handles `/oauth/authorize?client_id=...&redirect_uri=...&state=...&scope=profile+trust`, requires the user to be signed in, shows a consent screen, returns an authorization code.
-- `oauth-token` — exchanges the code for an `id_token` (JWT signed with our key) + access token; access token can call `oauth-userinfo` returning `{ sub, username, display_name, avatar, trust_score, verified: bool, email? }`.
+Gated by existing `has_role(uid, 'admin')`.
+- **Disputes queue** — review, approve, reject, leave note.
+- **Failed-recompute log** — new `trust_score_errors` table populated by the nightly cron when a recompute throws; admin can re-run per user.
+- **OAuth client management** — list `oauth_clients`, view client_id, **rotate client_secret** (regenerates, hashes new, returns plaintext once). GSN + Globalis rows seeded.
+- **Manual signal override** — admin can flip a single signal verified/unverified with audit trail (`verification_audit_log`).
 
-New table `oauth_clients(id, client_id, client_secret_hash, name, redirect_uris[], created_by)` — seeded with one row each for GSN and Globalis.
-New table `oauth_authorizations(code, user_id, client_id, scopes, expires_at)`.
+## 4. OG metadata with verification state
 
-A small `<SignInWithVerifiedly />` button drop-in (vanilla JS snippet + React component) we paste into GSN and Globalis next.
+Add `react-helmet-async` to `CreatorProfile.tsx`:
+- `og:title` = "@username · Verified on Verifiedly" (if verified) / "@username on Verifiedly" (otherwise)
+- `og:description` includes trust tier
+- `og:image` → new edge function `og-card` that renders a 1200×630 PNG with avatar, name, and badge state (verified / pending / unverified). Cached per-username, busted on score change.
+- Same on `/verify/:username`.
 
-### Why not just share Supabase auth
-Different projects = different Supabase instances. OIDC is the clean way and gives us a real moat.
+Note: social crawlers don't run JS, so we also generate a static fallback per profile at build/publish time isn't possible — the edge function returning a real image is the right path. I'll be honest with you: LinkedIn/Slack cache aggressively, so changes take time to propagate.
 
-## Phase 3 — Embedded Globalis AI Companion (opt-in per creator)
+## 5. Sign in with Verifiedly — drop-in snippet
 
-Since Globalis is now an AI travel platform with **credit-based chat**, we wire it in as an optional widget, not a default:
-- New **AI Assistant** card in dashboard: "Enable a Globalis-powered AI companion on your profile."
-- Creator picks persona + topics ("Ask me about my coaching", "Travel Q&A", etc.).
-- Visitors get a chat bubble on `verifiedly.app/<username>` powered by a `companion-chat` edge function that:
-  - Authenticates via the creator's linked Globalis account (OAuth out — reverse of phase 2, deferred) or uses our shared `LOVABLE_API_KEY` Gemini gateway for free-tier creators, capped.
-  - Pro: 100 msgs/mo included. Elite: 1,000 msgs/mo. Free: disabled (upsell).
-- New table `ai_companion_config(user_id, enabled, persona, system_prompt, monthly_msgs_used, period_start)`.
+- New public route `/developers` documenting the OAuth2 flow, scopes (`openid profile trust`), and userinfo response shape.
+- Publishable npm-style snippet in docs:
+  ```tsx
+  <SignInWithVerifiedly clientId="gsn_xxx" redirectUri="..." scope="openid profile trust" />
+  ```
+- Ships as a copy-paste React component (not a real package — keeps it zero-infra). GSN/Globalis paste it in.
+- `oauth-userinfo` already returns `trust_score`, `verified`, `tier` — no changes needed.
 
-This ties the two products together and gives Pro/Elite a tangible new perk.
+## 6. Simplification pass (the big one)
 
-## Memory + positioning updates
-- Update `mem://index.md` Core: change tagline + add "Verifiedly = verified identity + payments layer; SSO provider for sibling apps."
-- New memory file `mem://product/positioning` capturing the trust score model + legal stance.
-- New memory file `mem://tech/sso-provider` capturing the OIDC contract for GSN/Globalis.
+### Remove entirely
+- **Marketplace / brand_campaigns / campaign_applications** — barely-used, complicates the value prop. Tables stay (data preserved) but routes + nav entries removed.
+- **Social analytics page** — replaced by a single stat on the dashboard.
+- **Promo codes from main nav** — moved into Settings.
+- **Subscription perks page from main nav** — folded into the subscription tier editor.
+- **Explore page** — keep but only visible to logged-in users (per your pick).
 
-## Out of scope (intentionally)
-- Government ID / KYC via Stripe Identity — skipped per your "light" preference.
-- Visual redesign — current B&W look stays.
-- Removing existing tiers or fees — payments stay live and untouched.
-- Wiring GSN/Globalis themselves — that's per-project work; this plan only ships the provider side.
+### Restructure dashboard nav (5 items, not 12)
+```
+Home          → overview + quick stats
+Profile       → links, products, content
+Verification  → score, socials, disputes
+Earnings      → payouts, purchases, subscribers
+Settings      → privacy, plan, promo codes, perks, account
+```
 
-## Suggested build order
-1. Trust Score schema + recompute function + Verification dashboard tab + profile pill. *(highest user-visible impact, lowest risk)*
-2. Landing copy refresh.
-3. OIDC provider edge functions + `oauth_clients` seeding for GSN & Globalis + drop-in button.
-4. Globalis AI companion widget + quotas.
+### Copy/wording overhaul
+- Hero: "One verified link. Every way to get paid." (kept)
+- Sub: "Verifiedly is the verified identity and payments layer for creators. Earn your badge through real signals — no pay-to-verify."
+- Pricing reframed around **fee + features**, not badges.
+- Footer trimmed to 3 columns.
+- Remove every "AI-powered" / "next-gen" / generic-startup phrase.
 
-Approve and I'll start with step 1.
+## 7. Memory + legal
+
+- Update `mem://product/positioning` and `mem://business/monetization-rules` to reflect earned-only badge and no-wallet stance.
+- Add one paragraph to Terms: "Verification reflects automated checks of public signals. It is not an endorsement, KYC, or guarantee of identity."
+
+---
+
+## Technical details
+
+**Migrations (one file)**
+- `profiles`: add `trust_score_opt_out bool`, `trust_score_public bool default true`, `verified_socials_public bool default true`, `signal_breakdown_public bool default true`, `payout_status_public bool default true`.
+- New tables: `verification_disputes`, `trust_score_errors`, `verification_audit_log`. All with GRANTs (authenticated for own rows, service_role for admin/edge), RLS, policies using `has_role(auth.uid(),'admin')` for admin reads.
+- `oauth_clients`: add `client_secret_hash` (already there) + `rotated_at`.
+- Update `recompute_trust_score`: respect `trust_score_opt_out` (returns 0, skips badge).
+
+**Edge functions**
+- New `og-card` — returns PNG using `@vercel/og`-style approach via `npm:satori` + `npm:resvg-wasm` (or simpler: SVG-to-PNG via canvas — final call at build).
+- New `dispute-submit`, `admin-resolve-dispute`, `admin-rotate-oauth-secret`, `admin-recompute-user`.
+- Update nightly cron: wrap recompute in try/catch, log failures to `trust_score_errors`.
+
+**Frontend**
+- New pages: `src/pages/dashboard/Privacy.tsx`, `src/pages/dashboard/Disputes.tsx` (tab inside Verification), `src/pages/admin/VerificationAdmin.tsx`, `src/pages/Developers.tsx`.
+- New component: `src/components/SignInWithVerifiedlySnippet.tsx` (a code-block displayer).
+- Install `react-helmet-async`, wrap app, update `CreatorProfile.tsx` + `PublicVerification.tsx`.
+- Route + nav cleanup in `src/App.tsx` and dashboard layout.
+
+**Out of scope**
+- Wallet, credits, KYC, ID checks, paid verification, GSN/Globalis-side integration code (snippet only).
+
+---
+
+Ready to build on approval. After implementation I'll run a Playwright pass on the dashboard nav, /verify/:username, and the OG image endpoint to confirm everything renders cleanly.
