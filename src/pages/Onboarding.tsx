@@ -76,8 +76,7 @@ const Onboarding = () => {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeAgreed, setStripeAgreed] = useState(false);
 
-  const needsStripe = accountType === "creator" || accountType === "business";
-  const steps = needsStripe ? ["Type", "Profile", "Links", "Payouts", "Theme"] : ["Type", "Profile", "Links", "Theme"];
+  const steps = ["Profile", "Links", "Theme"];
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -205,7 +204,7 @@ const Onboarding = () => {
       }
 
       toast({ title: "You're all set! 🎉", description: "Your profile is live." });
-      navigate(accountType === "fan" ? "/fan" : "/dashboard");
+      navigate("/dashboard");
     } catch (err: any) {
       console.error("Onboarding finish error:", err);
       toast({ title: "Setup failed", description: err.message || "Could not complete setup. Please try again.", variant: "destructive" });
@@ -215,9 +214,7 @@ const Onboarding = () => {
   };
 
   const canProceed = () => {
-    if (step === 1) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
-    // Payouts step index: 3 for creators/businesses (Type=0, Profile=1, Links=2, Payouts=3)
-    // Payouts step is optional — can be skipped and completed later from settings
+    if (step === 0) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
     return true;
   };
 
