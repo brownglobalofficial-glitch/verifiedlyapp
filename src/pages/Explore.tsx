@@ -174,7 +174,7 @@ const Explore = () => {
       <div className="container mx-auto pt-24 pb-12 px-4 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Explore</h1>
-          <p className="text-muted-foreground">Discover creators, digital products, and subscription content</p>
+          <p className="text-muted-foreground">Discover people, digital products, and subscription content</p>
         </div>
 
         {/* Search + Filter Bar */}
