@@ -46,7 +46,13 @@ const Explore = () => {
     categoryFilter === "all" && creatorCategoryFilter === "all";
 
   const trendingCreators = [...creators]
-    .sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0))
+    .sort((a, b) => {
+      const aVerified = (a.trust_score || 0) >= 80 && !a.trust_score_opt_out;
+      const bVerified = (b.trust_score || 0) >= 80 && !b.trust_score_opt_out;
+      if (aVerified !== bVerified) return aVerified ? -1 : 1;
+      if (aVerified && bVerified) return (b.trust_score || 0) - (a.trust_score || 0);
+      return (b.follower_count || 0) - (a.follower_count || 0);
+    })
     .slice(0, 6);
 
   const featuredCreators = creators.filter(c => c.is_featured);
