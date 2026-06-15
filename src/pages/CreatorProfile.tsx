@@ -412,6 +412,11 @@ const CreatorProfile = () => {
           <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-1.5 ${theme.text}`}>
             {profile?.display_name || username}
             {isVerified && <VerifiedBadge className="w-5 h-5" />}
+            {profile?.is_pro && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-foreground text-background align-middle">
+                Pro
+              </span>
+            )}
           </h1>
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
 
