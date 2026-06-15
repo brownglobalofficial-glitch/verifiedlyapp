@@ -290,41 +290,20 @@ const Verification = () => {
                 <ul className="space-y-3">
                   {socials.map((s) => {
                     const meta = PLATFORMS.find(p => p.id === s.platform);
-                    const status = s.verification_status as "pending" | "verified" | "failed";
-                    const StatusIcon = status === "verified" ? Check : status === "failed" ? X : Clock;
                     return (
-                      <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
+                      <li key={s.id} className="p-3 rounded-lg bg-secondary">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
                               {meta?.label || s.platform}
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background border">
-                                <StatusIcon className="w-3 h-3" /> {status}
+                                <Check className="w-3 h-3" /> verified
                               </span>
                             </p>
                             <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">@{s.handle}</a>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)}><Trash2 className="w-4 h-4" /></Button>
                         </div>
-                        {status !== "verified" && (
-                          <div className="rounded-md bg-background border border-border p-3 space-y-2">
-                            {s.verification_code ? (
-                              <>
-                                <p className="text-[11px] text-muted-foreground">Paste this code in your {meta?.label} bio, then click Verify.</p>
-                                <div className="flex items-center gap-2">
-                                  <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
-                                  <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)}><Copy className="w-3.5 h-3.5" /></Button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1"><RefreshCw className="w-3.5 h-3.5" /> Verify now</Button>
-                                  <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>Regenerate</Button>
-                                </div>
-                              </>
-                            ) : (
-                              <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>Get verification code</Button>
-                            )}
-                          </div>
-                        )}
                       </li>
                     );
                   })}
