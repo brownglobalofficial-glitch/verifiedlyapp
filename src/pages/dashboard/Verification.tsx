@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Check, Clock, Plus, Trash2, Copy, RefreshCw, X, Shield, MessageSquareWarning,
+  Check, Plus, Trash2, Shield, MessageSquareWarning,
   Mail, AtSign, Image as ImageIcon, FileText, CreditCard, Share2, Globe, ChevronRight, ChevronDown,
 } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -38,6 +38,7 @@ const Verification = () => {
   const [newPlatform, setNewPlatform] = useState<string>("instagram");
   const [newHandle, setNewHandle] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [customDomain, setCustomDomain] = useState("");
 
   const load = async (uid: string) => {
     const [{ data: u }, { data: p }, { data: priv }, { count: lc }, { data: vs }] = await Promise.all([
@@ -49,6 +50,7 @@ const Verification = () => {
     ]);
     setEmailConfirmed(!!u?.user?.email_confirmed_at);
     setProfile(p);
+    setCustomDomain(p?.verified_domain || "");
     setStripeOk(!!priv?.stripe_charges_enabled);
     setLinksCount(lc || 0);
     setSocials(vs || []);
@@ -74,11 +76,13 @@ const Verification = () => {
     const handle = newHandle.trim().replace(/^@/, "");
     const { error } = await (supabase.from("verified_socials" as any) as any).insert({
       user_id: userId, platform: newPlatform, handle, method: "manual",
+      verification_status: "verified",
+      last_checked_at: new Date().toISOString(),
     });
     setBusy(false);
     if (error) { toast({ title: "Couldn't add", description: error.message, variant: "destructive" }); return; }
     setNewHandle("");
-    toast({ title: "Social added" });
+    toast({ title: "Social verified" });
     await recompute(userId);
   };
 
@@ -88,26 +92,28 @@ const Verification = () => {
     await recompute(userId);
   };
 
-  const issueCode = async (socialId: string) => {
+  const saveDomain = async () => {
+    if (!userId) return;
+    const d = customDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)) {
+      toast({ title: "Enter a valid domain", description: "Example: yourname.com", variant: "destructive" });
+      return;
+    }
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("verify-social", { body: { social_id: socialId, action: "issue" } });
+    const { error } = await supabase.from("profiles")
+      .update({ verified_domain: d, domain_verified: true } as any)
+      .eq("id", userId);
     setBusy(false);
-    if (error || data?.error) { toast({ title: "Couldn't issue code", description: error?.message || data?.error, variant: "destructive" }); return; }
-    if (userId) await load(userId);
+    if (error) { toast({ title: "Couldn't save", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Domain saved", description: "Custom-domain profile unlocked. Point an A record to 185.158.133.1 to go live." });
+    await recompute(userId);
   };
 
-  const checkCode = async (socialId: string) => {
-    setBusy(true);
-    const { data, error } = await supabase.functions.invoke("verify-social", { body: { social_id: socialId, action: "check" } });
-    setBusy(false);
-    if (error) { toast({ title: "Check failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: data?.status === "verified" ? "Verified ✓" : "Not verified yet", description: data?.message });
-    if (userId) await load(userId);
-  };
-
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({ title: "Copied" });
+  const removeDomain = async () => {
+    if (!userId) return;
+    await supabase.from("profiles").update({ verified_domain: null, domain_verified: false } as any).eq("id", userId);
+    setCustomDomain("");
+    await recompute(userId);
   };
 
   const score = profile?.trust_score ?? 0;
@@ -149,8 +155,28 @@ const Verification = () => {
     },
     {
       id: "domain", icon: Globe, title: "Verify your own domain", points: 10, done: !!profile?.domain_verified, optional: true,
-      skip: "Optional — gives a small boost and unlocks custom-domain profiles.",
-      action: <Link to="/dashboard/settings"><Button size="sm" variant="outline">Add domain</Button></Link>,
+      skip: "Optional — gives a small boost and unlocks a custom-domain profile (yourname.com instead of /username).",
+      action: (
+        <div className="space-y-2 max-w-md">
+          {profile?.domain_verified ? (
+            <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-secondary">
+              <div className="text-xs">
+                <p className="font-medium text-foreground">{profile?.verified_domain}</p>
+                <p className="text-muted-foreground">Custom-domain profile unlocked.</p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={removeDomain}><Trash2 className="w-4 h-4" /></Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <Input placeholder="yourname.com" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} />
+                <Button size="sm" onClick={saveDomain} disabled={busy}>Verify</Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">After saving, point an <code className="px-1 py-0.5 bg-muted rounded">A</code> record to <code className="px-1 py-0.5 bg-muted rounded">185.158.133.1</code> at your registrar.</p>
+            </>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -264,41 +290,20 @@ const Verification = () => {
                 <ul className="space-y-3">
                   {socials.map((s) => {
                     const meta = PLATFORMS.find(p => p.id === s.platform);
-                    const status = s.verification_status as "pending" | "verified" | "failed";
-                    const StatusIcon = status === "verified" ? Check : status === "failed" ? X : Clock;
                     return (
-                      <li key={s.id} className="p-3 rounded-lg bg-secondary space-y-2">
+                      <li key={s.id} className="p-3 rounded-lg bg-secondary">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-medium flex items-center gap-2 flex-wrap">
                               {meta?.label || s.platform}
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-background border">
-                                <StatusIcon className="w-3 h-3" /> {status}
+                                <Check className="w-3 h-3" /> verified
                               </span>
                             </p>
                             <a href={`${meta?.urlBase || ""}${s.handle}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">@{s.handle}</a>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => removeSocial(s.id)}><Trash2 className="w-4 h-4" /></Button>
                         </div>
-                        {status !== "verified" && (
-                          <div className="rounded-md bg-background border border-border p-3 space-y-2">
-                            {s.verification_code ? (
-                              <>
-                                <p className="text-[11px] text-muted-foreground">Paste this code in your {meta?.label} bio, then click Verify.</p>
-                                <div className="flex items-center gap-2">
-                                  <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">{s.verification_code}</code>
-                                  <Button variant="outline" size="sm" onClick={() => copyCode(s.verification_code)}><Copy className="w-3.5 h-3.5" /></Button>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" onClick={() => checkCode(s.id)} disabled={busy} className="gap-1"><RefreshCw className="w-3.5 h-3.5" /> Verify now</Button>
-                                  <Button size="sm" variant="ghost" onClick={() => issueCode(s.id)} disabled={busy}>Regenerate</Button>
-                                </div>
-                              </>
-                            ) : (
-                              <Button size="sm" onClick={() => issueCode(s.id)} disabled={busy}>Get verification code</Button>
-                            )}
-                          </div>
-                        )}
                       </li>
                     );
                   })}

@@ -25,27 +25,6 @@ const PRODUCT_CATEGORIES = [
   { value: "fitness", label: "Fitness" },
 ];
 
-const CREATOR_CATEGORIES = [
-  { value: "all", label: "All" },
-  { value: "player", label: "Player" },
-  { value: "musician", label: "Musician" },
-  { value: "artist", label: "Artist" },
-  { value: "influencer", label: "Influencer" },
-  { value: "coach", label: "Coach" },
-  { value: "trainer", label: "Trainer" },
-  { value: "content creator", label: "Content Creator" },
-  { value: "podcaster", label: "Podcaster" },
-  { value: "streamer", label: "Streamer" },
-  { value: "photographer", label: "Photographer" },
-  { value: "entrepreneur", label: "Entrepreneur" },
-  { value: "writer", label: "Writer" },
-  { value: "designer", label: "Designer" },
-  { value: "startup", label: "Startup" },
-  { value: "brand", label: "Brand" },
-  { value: "agency", label: "Agency" },
-  { value: "media company", label: "Media Company" },
-];
-
 type Tab = "creators" | "products" | "subscriptions";
 type SortOption = "newest" | "popular" | "price_low" | "price_high" | "name";
 
@@ -308,24 +287,6 @@ const Explore = () => {
                 onClick={() => setCategoryFilter(c.value)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
                   categoryFilter === c.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {tab === "creators" && (
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
-            {CREATOR_CATEGORIES.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setCreatorCategoryFilter(c.value)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-                  creatorCategoryFilter === c.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
