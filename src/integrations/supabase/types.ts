@@ -456,6 +456,130 @@ export type Database = {
           },
         ]
       }
+      oauth_clients: {
+        Row: {
+          active: boolean
+          client_id: string
+          client_secret_hash: string
+          created_at: string
+          homepage_url: string | null
+          id: string
+          is_first_party: boolean
+          logo_url: string | null
+          name: string
+          redirect_uris: string[]
+          scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          client_id: string
+          client_secret_hash: string
+          created_at?: string
+          homepage_url?: string | null
+          id?: string
+          is_first_party?: boolean
+          logo_url?: string | null
+          name: string
+          redirect_uris?: string[]
+          scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          client_id?: string
+          client_secret_hash?: string
+          created_at?: string
+          homepage_url?: string | null
+          id?: string
+          is_first_party?: boolean
+          logo_url?: string | null
+          name?: string
+          redirect_uris?: string[]
+          scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      oauth_codes: {
+        Row: {
+          client_id: string
+          code: string
+          created_at: string
+          expires_at: string
+          redirect_uri: string
+          scopes: string[]
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          code: string
+          created_at?: string
+          expires_at: string
+          redirect_uri: string
+          scopes?: string[]
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          code?: string
+          created_at?: string
+          expires_at?: string
+          redirect_uri?: string
+          scopes?: string[]
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
+      oauth_tokens: {
+        Row: {
+          access_token: string
+          client_id: string
+          created_at: string
+          expires_at: string
+          revoked: boolean
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          client_id: string
+          created_at?: string
+          expires_at: string
+          revoked?: boolean
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          client_id?: string
+          created_at?: string
+          expires_at?: string
+          revoked?: boolean
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
       page_views: {
         Row: {
           created_at: string
@@ -1079,27 +1203,39 @@ export type Database = {
           created_at: string
           handle: string
           id: string
+          last_checked_at: string | null
+          last_error: string | null
           method: string
           platform: string
           user_id: string
+          verification_code: string | null
+          verification_status: string
           verified_at: string
         }
         Insert: {
           created_at?: string
           handle: string
           id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
           method?: string
           platform: string
           user_id: string
+          verification_code?: string | null
+          verification_status?: string
           verified_at?: string
         }
         Update: {
           created_at?: string
           handle?: string
           id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
           method?: string
           platform?: string
           user_id?: string
+          verification_code?: string | null
+          verification_status?: string
           verified_at?: string
         }
         Relationships: []
@@ -1188,6 +1324,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recompute_all_trust_scores: { Args: never; Returns: number }
       recompute_trust_score: { Args: { _user_id: string }; Returns: number }
       record_stripe_agreement: {
         Args: { _context: string; _ip: string; _user_agent: string }
