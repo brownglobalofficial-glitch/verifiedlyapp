@@ -25,27 +25,6 @@ const PRODUCT_CATEGORIES = [
   { value: "fitness", label: "Fitness" },
 ];
 
-const CREATOR_CATEGORIES = [
-  { value: "all", label: "All" },
-  { value: "player", label: "Player" },
-  { value: "musician", label: "Musician" },
-  { value: "artist", label: "Artist" },
-  { value: "influencer", label: "Influencer" },
-  { value: "coach", label: "Coach" },
-  { value: "trainer", label: "Trainer" },
-  { value: "content creator", label: "Content Creator" },
-  { value: "podcaster", label: "Podcaster" },
-  { value: "streamer", label: "Streamer" },
-  { value: "photographer", label: "Photographer" },
-  { value: "entrepreneur", label: "Entrepreneur" },
-  { value: "writer", label: "Writer" },
-  { value: "designer", label: "Designer" },
-  { value: "startup", label: "Startup" },
-  { value: "brand", label: "Brand" },
-  { value: "agency", label: "Agency" },
-  { value: "media company", label: "Media Company" },
-];
-
 type Tab = "creators" | "products" | "subscriptions";
 type SortOption = "newest" | "popular" | "price_low" | "price_high" | "name";
 
