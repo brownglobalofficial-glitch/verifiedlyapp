@@ -125,7 +125,8 @@ const Verification = () => {
   const hasBio = (profile?.bio?.length ?? 0) >= 10 && linksCount >= 1;
   const hasAvatar = !!profile?.avatar_url;
   const hasUsername = (profile?.username?.length ?? 0) >= 3;
-  const socialPts = Math.min(socials.length * 15, 30);
+  const verifiedSocials = socials.filter(s => s.verification_status === "verified");
+  const socialPts = Math.min(verifiedSocials.length * 15, 30);
 
   const signals: TrustSignal[] = [
     { label: "Email confirmed",              done: emailConfirmed, points: 10 },
@@ -133,7 +134,7 @@ const Verification = () => {
     { label: "Avatar uploaded",              done: hasAvatar,      points: 5 },
     { label: "Bio + at least one link",      done: hasBio,         points: 10 },
     { label: "Stripe payouts active",        done: stripeOk,       points: 30 },
-    { label: `Verified socials (${socials.length}/2)`, done: socialPts > 0, points: 30 },
+    { label: `Verified socials (${verifiedSocials.length}/2)`, done: socialPts > 0, points: 30 },
     { label: "Domain verified (optional)",   done: !!profile?.domain_verified, points: 10 },
   ];
 
