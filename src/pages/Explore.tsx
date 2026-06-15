@@ -442,7 +442,7 @@ const Explore = () => {
             {filteredCreators.length === 0 && (
               <div className="col-span-full text-center py-16">
                 <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-                <p className="text-muted-foreground font-medium">No creators found</p>
+                <p className="text-muted-foreground font-medium">No profiles found</p>
                 <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search term</p>
               </div>
             )}
