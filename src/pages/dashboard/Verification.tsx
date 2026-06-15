@@ -82,6 +82,43 @@ const Verification = () => {
     await recompute(userId);
   };
 
+  const issueCode = async (socialId: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("verify-social", {
+      body: { social_id: socialId, action: "issue" },
+    });
+    setBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Couldn't issue code", description: error?.message || data?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    if (userId) await load(userId);
+    toast({ title: "Code ready", description: "Paste it into your social bio, then click Verify." });
+  };
+
+  const checkCode = async (socialId: string) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("verify-social", {
+      body: { social_id: socialId, action: "check" },
+    });
+    setBusy(false);
+    if (error) {
+      toast({ title: "Check failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (data?.status === "verified") {
+      toast({ title: "Verified ✓", description: data.message });
+    } else {
+      toast({ title: "Not verified yet", description: data?.message || "Try again in a minute.", variant: "destructive" });
+    }
+    if (userId) await load(userId);
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Copied", description: "Paste it into your social bio." });
+  };
+
   const score = profile?.trust_score ?? 0;
   const isElite = !!profile?.is_elite;
 
