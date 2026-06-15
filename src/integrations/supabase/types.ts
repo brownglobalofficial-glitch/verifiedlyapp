@@ -622,6 +622,7 @@ export type Database = {
           comp_tier: string | null
           created_at: string
           display_name: string | null
+          domain_verified: boolean
           follower_count: number | null
           id: string
           is_elite: boolean | null
@@ -635,8 +636,10 @@ export type Database = {
           social_links: Json | null
           theme_color: string | null
           tips_enabled: boolean
+          trust_score: number
           updated_at: string
           username: string
+          verified_domain: string | null
           website: string | null
         }
         Insert: {
@@ -647,6 +650,7 @@ export type Database = {
           comp_tier?: string | null
           created_at?: string
           display_name?: string | null
+          domain_verified?: boolean
           follower_count?: number | null
           id: string
           is_elite?: boolean | null
@@ -660,8 +664,10 @@ export type Database = {
           social_links?: Json | null
           theme_color?: string | null
           tips_enabled?: boolean
+          trust_score?: number
           updated_at?: string
           username: string
+          verified_domain?: string | null
           website?: string | null
         }
         Update: {
@@ -672,6 +678,7 @@ export type Database = {
           comp_tier?: string | null
           created_at?: string
           display_name?: string | null
+          domain_verified?: boolean
           follower_count?: number | null
           id?: string
           is_elite?: boolean | null
@@ -685,8 +692,10 @@ export type Database = {
           social_links?: Json | null
           theme_color?: string | null
           tips_enabled?: boolean
+          trust_score?: number
           updated_at?: string
           username?: string
+          verified_domain?: string | null
           website?: string | null
         }
         Relationships: []
@@ -1065,6 +1074,36 @@ export type Database = {
         }
         Relationships: []
       }
+      verified_socials: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          method: string
+          platform: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          id?: string
+          method?: string
+          platform: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          method?: string
+          platform?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           event_type: string
@@ -1149,6 +1188,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recompute_trust_score: { Args: { _user_id: string }; Returns: number }
       record_stripe_agreement: {
         Args: { _context: string; _ip: string; _user_agent: string }
         Returns: string
