@@ -18,7 +18,7 @@ const Pricing = () => {
           <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Keep more of what you earn</h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Free forever. Pay nothing until you're earning. Upgrade to drop your platform fee from 10% all the way to 0%.
+            Free forever. The verified badge is always earned — never paid for. Upgrade only to drop your platform fee.
           </p>
         </motion.div>
         <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
@@ -34,7 +34,7 @@ const Pricing = () => {
             <p className="text-4xl font-display font-bold mb-1">$0<span className="text-lg text-muted-foreground font-normal">/mo</span></p>
             <p className="text-sm text-muted-foreground mb-6">10% platform fee on earnings</p>
             <ul className="space-y-3 mb-8">
-              {["Custom profile page", "Social links & bio", "Sell digital products", "Basic analytics", "Marketplace access"].map(f => (
+              {["Custom profile page", "Social links & bio", "Sell digital products & tips", "Earn the verified badge", "Basic analytics"].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
                   <Check className="w-4 h-4 text-[hsl(var(--success))]" />
                   {f}
@@ -63,12 +63,11 @@ const Pricing = () => {
             <ul className="space-y-3 mb-8">
               {[
                 "Everything in Free",
-                "Verification badge",
                 "Lower 5% platform fee",
-                "Boosted digital products",
                 "Subscription tiers",
-                "Sponsorship & affiliate access",
+                "Exclusive content for subscribers",
                 "Advanced analytics",
+                "Priority verification re-checks",
                 "Priority support",
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
@@ -101,7 +100,6 @@ const Pricing = () => {
                 "Everything in Pro",
                 "0% platform fees",
                 "Featured creator placement",
-                "Priority marketplace listings",
                 "Custom profile themes",
                 "Dedicated support",
                 "Early access to new features",
