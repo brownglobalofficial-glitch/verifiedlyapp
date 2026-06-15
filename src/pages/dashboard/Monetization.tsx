@@ -14,9 +14,13 @@ export default function Monetization() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = async (opts: { sync?: boolean } = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
+    // Pull latest from Stripe before reading the DB so the UI reflects reality.
+    if (opts.sync) {
+      await supabase.functions.invoke("sync-connect-status").catch(() => null);
+    }
     const { data } = await (supabase
       .from("creator_private_data" as any)
       .select("stripe_connect_account_id, stripe_charges_enabled")
@@ -27,7 +31,24 @@ export default function Monetization() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // Initial sync from Stripe so a returning user sees "Payouts ready" right away.
+    load({ sync: true });
+    const onFocus = () => load({ sync: true });
+    const onVisible = () => { if (document.visibilityState === "visible") load({ sync: true }); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    // Clean up the ?stripe_onboarded=true param after we handle it.
+    if (typeof window !== "undefined" && window.location.search.includes("stripe_onboarded")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("stripe_onboarded");
+      window.history.replaceState({}, "", url.toString());
+    }
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   const gate = (action: () => void) => () => {
     if (chargesEnabled) action();
@@ -132,7 +153,11 @@ export default function Monetization() {
           </div>
         </div>
 
-        <ConnectPayoutsModal open={connectOpen} onOpenChange={setConnectOpen} onReady={load} />
+        <ConnectPayoutsModal
+          open={connectOpen}
+          onOpenChange={(v) => { setConnectOpen(v); if (!v) load({ sync: true }); }}
+          onReady={() => load({ sync: true })}
+        />
         {loading ? null : null}
       </div>
     </DashboardShell>
