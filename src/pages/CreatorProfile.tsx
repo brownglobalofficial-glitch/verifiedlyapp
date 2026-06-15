@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import TrustScore from "@/components/TrustScore";
 import FollowButton from "@/components/FollowButton";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
