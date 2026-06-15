@@ -11,12 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Eye, EyeOff } from "lucide-react";
 
-const ACCOUNT_TYPES = [
-  { value: "fan", label: "Fan", desc: "Follow creators, buy products" },
-  { value: "creator", label: "Creator / Player", desc: "Sell products, build an audience" },
-  { value: "business", label: "Business", desc: "Post campaigns, find creators" },
-];
-
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,12 +19,7 @@ const Signup = () => {
   const [displayName, setDisplayName] = useState("");
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
-  const initialType = (searchParams.get("type") || "creator").toLowerCase();
   const returnTo = searchParams.get("returnTo") || "";
-  const [accountType, setAccountType] = useState(
-    ["fan", "creator", "business"].includes(initialType) ? initialType : "creator"
-  );
-  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -59,12 +48,6 @@ const Signup = () => {
     return () => clearTimeout(timer);
   }, [username]);
 
-  const filteredCategories = accountType === "business"
-    ? ["Brand", "Agency", "Team", "Organization", "Startup", "Non-Profit", "E-Commerce", "Media Company"]
-    : accountType === "creator"
-    ? ["Player", "Musician", "Artist", "Influencer", "Coach", "Trainer", "Content Creator", "Podcaster", "Streamer", "Photographer", "Entrepreneur", "Writer", "Designer", "Developer", "Fitness", "Chef", "Educator"]
-    : [];
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username.length < 3) {
@@ -91,8 +74,7 @@ const Signup = () => {
           data: {
             username: username.toLowerCase(),
             display_name: displayName,
-            account_type: accountType,
-            category,
+            account_type: "creator",
             referred_by: referralCode,
           },
         },
@@ -120,7 +102,7 @@ const Signup = () => {
             <img src={logo} alt="Verifiedly" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Monetize your content</p>
+          <p className="text-sm text-muted-foreground mt-1">One link. Every way to get paid.</p>
         </div>
 
         <div className="space-y-3">
@@ -141,39 +123,6 @@ const Signup = () => {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
-          {/* Account Type */}
-          <div>
-            <Label>Account Type</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {ACCOUNT_TYPES.map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => { setAccountType(t.value); setCategory(""); }}
-                  className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-center ${accountType === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {filteredCategories.length > 0 && (
-            <div>
-              <Label>Category</Label>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-              >
-                <option value="">Select category...</option>
-                {filteredCategories.map(c => (
-                  <option key={c} value={c.toLowerCase()}>{c}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div>
             <Label htmlFor="displayName">Display Name</Label>
             <Input id="displayName" value={displayName} onChange={e => setDisplayName(e.target.value)} required placeholder="Your Name" />
