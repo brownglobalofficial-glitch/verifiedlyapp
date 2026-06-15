@@ -267,6 +267,11 @@ const Verification = () => {
                         {s.last_error && status === "failed" && (
                           <p className="text-[11px] text-destructive">{s.last_error}</p>
                         )}
+                        {status === "failed" && (
+                          <Link to="/dashboard/disputes" className="text-[11px] underline text-muted-foreground hover:text-foreground">
+                            Request a manual review →
+                          </Link>
+                        )}
                       </div>
                     )}
                   </li>
