@@ -135,7 +135,8 @@ const Explore = () => {
         s.description?.toLowerCase().includes(search.toLowerCase()) ||
         s.profiles?.display_name?.toLowerCase().includes(search.toLowerCase());
       const matchesP = matchesPrice(s.price);
-      const matchesVerified = !verifiedOnly || s.profiles?.is_verified || s.profiles?.is_pro || s.profiles?.is_elite;
+      const isSubProfileVerified = (s.profiles?.trust_score || 0) >= 80 && !s.profiles?.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isSubProfileVerified;
       return matchesSearch && matchesP && matchesVerified;
     })
     .sort((a, b) => {
