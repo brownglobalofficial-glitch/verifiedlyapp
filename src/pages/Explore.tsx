@@ -112,11 +112,18 @@ const Explore = () => {
         c.username?.toLowerCase().includes(search.toLowerCase()) ||
         c.bio?.toLowerCase().includes(search.toLowerCase());
       const matchesCat = creatorCategoryFilter === "all" || c.category === creatorCategoryFilter;
-      const matchesVerified = !verifiedOnly || c.is_verified || c.is_pro || c.is_elite;
+      const isCreatorVerified = (c.trust_score || 0) >= 80 && !c.trust_score_opt_out;
+      const matchesVerified = !verifiedOnly || isCreatorVerified;
       return matchesSearch && matchesCat && matchesVerified;
     })
     .sort((a, b) => {
-      if (sort === "popular") return (b.follower_count || 0) - (a.follower_count || 0);
+      if (sort === "popular") {
+        const aVerified = (a.trust_score || 0) >= 80 && !a.trust_score_opt_out;
+        const bVerified = (b.trust_score || 0) >= 80 && !b.trust_score_opt_out;
+        if (aVerified !== bVerified) return aVerified ? -1 : 1;
+        if (aVerified && bVerified) return (b.trust_score || 0) - (a.trust_score || 0);
+        return (b.follower_count || 0) - (a.follower_count || 0);
+      }
       if (sort === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       if (sort === "name") return (a.display_name || "").localeCompare(b.display_name || "");
       return 0;
