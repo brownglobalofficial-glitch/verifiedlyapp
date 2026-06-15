@@ -387,6 +387,18 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Plan, renewal & payout requirements</p>
             </Card>
           </Link>
+          <Link to="/dashboard/verification">
+            <Card className="p-5 card-hover cursor-pointer h-full border-border hover:border-foreground/30">
+              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center mb-3">
+                <Shield className="w-5 h-5" />
+              </div>
+              <h3 className="font-display font-semibold text-base mb-1 flex items-center gap-2">
+                Verification
+                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-foreground text-background">New</span>
+              </h3>
+              <p className="text-sm text-muted-foreground">Raise your Trust Score · {profile?.trust_score ?? 0}/100</p>
+            </Card>
+          </Link>
           <UpgradePrompt currentTier={currentTier} />
           {isAdmin && (
             <Link to="/dashboard/admin">
