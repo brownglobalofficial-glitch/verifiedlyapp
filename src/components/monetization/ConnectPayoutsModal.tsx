@@ -13,14 +13,14 @@ type Props = {
   /** Called after payouts are confirmed ready. */
   onReady?: () => void;
   /** Context label passed to the agreement record. */
-  context?: string;
+  context?: "onboarding" | "settings" | "dashboard";
 };
 
 /**
  * 3-step Stripe Connect onboarding modal, shown only when a creator tries to
  * enable monetization (tips, subscriptions, paid products).
  */
-export default function ConnectPayoutsModal({ open, onOpenChange, onReady, context = "monetization" }: Props) {
+export default function ConnectPayoutsModal({ open, onOpenChange, onReady, context = "dashboard" }: Props) {
   const { toast } = useToast();
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [agreed, setAgreed] = useState(false);
