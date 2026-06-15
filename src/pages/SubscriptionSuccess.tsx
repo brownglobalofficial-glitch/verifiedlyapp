@@ -105,7 +105,7 @@ const SubscriptionSuccess = () => {
                   <Button variant="outline" className="w-full">Back to profile</Button>
                 </Link>
               )}
-              <Link to="/fan" className="flex-1">
+              <Link to="/dashboard" className="flex-1">
                 <Button className="w-full">Go to my account</Button>
               </Link>
             </div>
