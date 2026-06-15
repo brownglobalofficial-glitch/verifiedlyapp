@@ -40,6 +40,10 @@ const Billing = lazy(() => import("./pages/dashboard/Billing"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const PublicVerification = lazy(() => import("./pages/PublicVerification"));
+const PrivacyControls = lazy(() => import("./pages/dashboard/PrivacyControls"));
+const Disputes = lazy(() => import("./pages/dashboard/Disputes"));
+const VerificationAdmin = lazy(() => import("./pages/admin/VerificationAdmin"));
+const Developers = lazy(() => import("./pages/Developers"));
 
 const queryClient = new QueryClient();
 
@@ -171,6 +175,10 @@ const App = () => (
             <Route path="/dashboard/upgrade" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/dashboard/billing" element={<AuthGuard><Billing /></AuthGuard>} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
+            <Route path="/dashboard/privacy-controls" element={<AuthGuard><PrivacyControls /></AuthGuard>} />
+            <Route path="/dashboard/disputes" element={<AuthGuard><Disputes /></AuthGuard>} />
+            <Route path="/admin/verification" element={<AuthGuard><VerificationAdmin /></AuthGuard>} />
+            <Route path="/developers" element={<Developers />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
             <Route path="/verify/:username" element={<PublicVerification />} />
             <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
