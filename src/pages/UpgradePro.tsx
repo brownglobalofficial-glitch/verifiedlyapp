@@ -115,7 +115,7 @@ const UpgradePro = () => {
         {/* Savings example */}
         <Card className="p-5 mb-8 bg-muted/40">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">If you sell $1,000/mo</p>
-          <p className="text-sm">Free keeps <span className="font-display font-bold">$900</span> · Pro keeps <span className="font-display font-bold">$1,000</span> minus the $9 subscription = <span className="font-display font-bold">$991</span>. Pay back the plan after ~$90 in sales.</p>
+          <p className="text-sm">Free keeps <span className="font-display font-bold">$900</span> · Pro keeps <span className="font-display font-bold">$1,000</span> minus the $9.99 subscription = <span className="font-display font-bold">$990.01</span>. Pay back the plan after ~$100 in sales.</p>
         </Card>
 
         <div className="grid md:grid-cols-2 gap-5">
