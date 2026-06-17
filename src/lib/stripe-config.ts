@@ -1,10 +1,10 @@
 // Stripe tier configuration
 export const STRIPE_TIERS = {
   pro: {
-    price_id: "price_1TSoiE1hrOAc8qE8Kqpr2Z1h",
-    product_id: "prod_URi89hw7irIarX",
+    price_id: "price_1Tj8n91hrOAc8qE8BRJoXtxv",
+    product_id: "prod_UiZxt9S0G6T6LU",
     name: "Pro",
-    price: 9,
+    price: 9.99,
     fee_percent: 0,
   },
   elite: {
