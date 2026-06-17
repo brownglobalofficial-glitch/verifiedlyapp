@@ -91,7 +91,7 @@ const Dashboard = () => {
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-display font-semibold text-sm">Go Pro — $9/mo</p>
+                    <p className="font-display font-semibold text-sm">Go Pro — $9.99/mo</p>
                     <p className="text-xs text-muted-foreground truncate">Drop your platform fee from 10% to 0%. Keep 100% of every sale.</p>
                   </div>
                 </div>

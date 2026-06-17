@@ -57,7 +57,7 @@ const Pricing = () => {
               PRO
             </div>
             <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
-            <p className="text-4xl font-display font-bold mb-1">$9<span className="text-lg opacity-60 font-normal">/mo</span></p>
+            <p className="text-4xl font-display font-bold mb-1">$9.99<span className="text-lg opacity-60 font-normal">/mo</span></p>
             <p className="text-sm opacity-60 mb-6">0% platform fee — keep 100% of your earnings</p>
             <ul className="space-y-3 mb-8">
               {[
