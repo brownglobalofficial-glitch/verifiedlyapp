@@ -108,7 +108,9 @@ export default function Purchases() {
       setSubs(subRows);
 
       // Resolve creator names for purchases too
-      const purchaseCreatorIds = [...new Set(((p as any) || []).map((x: any) => x.creator_id))];
+      const purchaseCreatorIds = [
+        ...new Set(((p as any) || []).map((x: any) => x.creator_id as string)),
+      ] as string[];
       if (purchaseCreatorIds.length > 0) {
         const { data: profs } = await supabase
           .from("profiles")
