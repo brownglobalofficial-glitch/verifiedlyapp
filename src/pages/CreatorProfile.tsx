@@ -31,6 +31,7 @@ import MembershipTiers from "@/components/MembershipTiers";
 import FeePreview from "@/components/FeePreview";
 import TierUpgradeCelebration from "@/components/TierUpgradeCelebration";
 import { ToastAction } from "@/components/ui/toast";
+import StatusRing from "@/components/StatusRing";
 
 type ThemeStyle = {
   bg: string;
@@ -406,12 +407,15 @@ const CreatorProfile = () => {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Avatar className={`w-24 h-24 mx-auto mb-4 ring-4 ${theme.ring} shadow-lg`}>
-              {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.display_name} /> : null}
-              <AvatarFallback className="text-3xl font-display font-bold bg-muted">
-                {(profile?.display_name || username)?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="mb-4">
+              <StatusRing
+                creatorId={profile.id}
+                avatarUrl={profile?.avatar_url}
+                fallback={(profile?.display_name || username)?.[0]?.toUpperCase() || "?"}
+                sizeClass="w-24 h-24"
+                idleRingClass={theme.ring}
+              />
+            </div>
           </motion.div>
 
           <h1 className={`text-2xl font-display font-bold flex items-center justify-center gap-1.5 ${theme.text}`}>
