@@ -45,6 +45,7 @@ const VerificationAdmin = lazy(() => import("./pages/admin/VerificationAdmin"));
 const Developers = lazy(() => import("./pages/Developers"));
 const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Purchases = lazy(() => import("./pages/dashboard/Purchases"));
 
 const queryClient = new QueryClient();
 
@@ -175,6 +176,7 @@ const App = () => (
             <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/dashboard/monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
+            <Route path="/dashboard/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />

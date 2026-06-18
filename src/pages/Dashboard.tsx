@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import StatusComposer from "@/components/dashboard/StatusComposer";
 import {
   ExternalLink, LinkIcon, Palette, User as UserIcon, Eye, DollarSign, Users, ArrowRight, Sparkles,
 } from "lucide-react";
@@ -119,6 +120,8 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
+
+        {user && <StatusComposer userId={user.id} />}
 
         {/* Tabs: About / Links / Theme */}
         <Tabs defaultValue="about" className="w-full">

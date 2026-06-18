@@ -274,6 +274,41 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_status: {
+        Row: {
+          caption: string | null
+          created_at: string
+          creator_id: string
+          expires_at: string
+          id: string
+          image_url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          creator_id: string
+          expires_at?: string
+          id?: string
+          image_url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          creator_id?: string
+          expires_at?: string
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_status_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       earnings: {
         Row: {
           amount: number

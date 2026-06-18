@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, DollarSign, Settings, LogOut, ExternalLink, Compass } from "lucide-react";
+import { User, ShieldCheck, DollarSign, Settings, LogOut, ExternalLink, Compass, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -20,6 +20,7 @@ const items = [
   { title: "Profile", url: "/dashboard", icon: User, end: true },
   { title: "Verification", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Monetization", url: "/dashboard/monetization", icon: DollarSign },
+  { title: "My purchases", url: "/dashboard/purchases", icon: ShoppingBag },
   { title: "Explore", url: "/explore", icon: Compass },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
