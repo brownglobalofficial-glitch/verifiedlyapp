@@ -12,6 +12,18 @@ import Navbar from "@/components/landing/Navbar";
 import { motion } from "framer-motion";
 import { GridSkeleton } from "@/components/PageSkeleton";
 
+// Verified badge is EARNED only — Trust Score ≥ 80 and not opted out. Pro is a separate pill.
+const isEarnedVerified = (p: any) =>
+  (p?.trust_score || 0) >= 80 && !p?.trust_score_opt_out;
+
+const ProPill = ({ className = "" }: { className?: string }) => (
+  <span
+    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[10px] font-semibold bg-foreground text-background leading-tight ${className}`}
+  >
+    Pro
+  </span>
+);
+
 const PRODUCT_CATEGORIES = [
   { value: "all", label: "All" },
   { value: "presets", label: "Presets" },
