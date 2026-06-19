@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
   const { data: p } = await admin
     .from("profiles")
-    .select("username, display_name, avatar_url, trust_score, is_pro, is_elite")
+    .select("username, display_name, avatar_url, trust_score, trust_score_opt_out, is_pro")
     .eq("id", tok.user_id).maybeSingle();
   if (!p) return j({ error: "no_profile" }, 404);
 
@@ -36,9 +36,10 @@ Deno.serve(async (req) => {
     avatar_url: p.avatar_url,
   };
   if (scopes.includes("trust")) {
+    // Verified is EARNED only: Trust Score ≥ 80 and not opted out. Pro does NOT grant verified.
     payload.trust_score = p.trust_score ?? 0;
-    payload.verified = (p.trust_score ?? 0) >= 60;
-    payload.tier = p.is_elite ? "elite" : p.is_pro ? "pro" : "free";
+    payload.verified = (p.trust_score ?? 0) >= 80 && !p.trust_score_opt_out;
+    payload.tier = p.is_pro ? "pro" : "free";
   }
   if (scopes.includes("email")) {
     const { data: u } = await admin.auth.admin.getUserById(tok.user_id);
