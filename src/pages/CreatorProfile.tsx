@@ -239,6 +239,26 @@ const CreatorProfile = () => {
         // clamp at 0
         Object.keys(counts).forEach(k => { if (counts[k] < 0) counts[k] = 0; });
         setMemberCounts(counts);
+
+        // Determine which of these tiers the viewer is actively subscribed to
+        const { data: { session } } = await supabase.auth.getSession();
+        const vid = session?.user?.id;
+        if (vid) {
+          const { data: myEvents } = await supabase
+            .from("subscriber_events")
+            .select("subscription_id, event_type, created_at")
+            .eq("subscriber_id", vid)
+            .in("subscription_id", subs.map(s => s.id))
+            .order("created_at", { ascending: false });
+          const latest = new Map<string, string>();
+          (myEvents || []).forEach((e: any) => {
+            if (!e.subscription_id) return;
+            if (!latest.has(e.subscription_id)) latest.set(e.subscription_id, e.event_type);
+          });
+          setViewerActiveSubIds(
+            [...latest.entries()].filter(([, t]) => t === "subscribe").map(([id]) => id)
+          );
+        }
       }
       setLoading(false);
     };
