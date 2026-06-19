@@ -48,24 +48,33 @@ export default function StatusRing({
 
   const hasStatus = statuses.length > 0;
 
-  const ringClass = hasStatus
-    ? "ring-4 ring-offset-2 ring-offset-transparent ring-foreground cursor-pointer"
-    : `ring-4 ${idleRingClass}`;
+  // Mono-contrast ring: outer white + inner black (or inverse on dark)
+  // ensures the ring is visible against any avatar / background / logo.
+  const ringWrapper = hasStatus
+    ? "p-[3px] rounded-full bg-foreground"
+    : "";
+  const innerRing = hasStatus
+    ? "p-[2px] rounded-full bg-background"
+    : "";
 
   return (
     <>
       <button
         type="button"
         onClick={() => hasStatus && setOpen(true)}
-        className={hasStatus ? "rounded-full focus:outline-none" : "rounded-full pointer-events-none"}
+        className={hasStatus ? "rounded-full focus:outline-none mx-auto block" : "rounded-full pointer-events-none mx-auto block"}
         aria-label={hasStatus ? "View status" : undefined}
       >
-        <Avatar className={`${sizeClass} mx-auto shadow-lg ${ringClass}`}>
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
-          <AvatarFallback className="text-3xl font-display font-bold bg-muted">
-            {fallback}
-          </AvatarFallback>
-        </Avatar>
+        <div className={ringWrapper}>
+          <div className={innerRing}>
+            <Avatar className={`${sizeClass} shadow-lg ${hasStatus ? "" : `ring-4 ${idleRingClass}`}`}>
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
+              <AvatarFallback className="text-3xl font-display font-bold bg-muted">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
