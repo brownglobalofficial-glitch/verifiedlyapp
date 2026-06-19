@@ -74,13 +74,13 @@ const Explore = () => {
     const fetchData = async () => {
       const [{ data: prods }, { data: profs }, { data: subs }] = await Promise.all([
         supabase.from("products")
-          .select("*, profiles(username, display_name, avatar_url, trust_score, trust_score_opt_out)")
+          .select("*, profiles(username, display_name, avatar_url, trust_score, trust_score_opt_out, is_pro)")
           .eq("is_published", true).limit(100),
         supabase.from("profiles")
           .select("*")
           .limit(100),
         supabase.from("subscriptions")
-          .select("*, profiles(username, display_name, avatar_url, category, trust_score, trust_score_opt_out)")
+          .select("*, profiles(username, display_name, avatar_url, category, trust_score, trust_score_opt_out, is_pro)")
           .eq("is_active", true).limit(100),
       ]);
       setProducts(prods || []);
