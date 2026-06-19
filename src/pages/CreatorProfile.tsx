@@ -637,6 +637,7 @@ const CreatorProfile = () => {
               onSubscribe={(tier, interval) => handleSubscribe(tier, interval)}
               loadingTierId={checkoutLoading ? subscriptions.find(s => s.id)?.id || null : null}
               variant="compact"
+              activeSubIds={viewerActiveSubIds}
             />
           </motion.div>
         )}
