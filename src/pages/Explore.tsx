@@ -346,7 +346,8 @@ const Explore = () => {
                         </Avatar>
                         <p className="font-semibold text-xs flex items-center justify-center gap-1 truncate">
                           {creator.display_name}
-                          {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3 h-3" />}
+                          {isEarnedVerified(creator) && <VerifiedBadge className="w-3 h-3" />}
+                          {creator.is_pro && <ProPill />}
                         </p>
                         <p className="text-[10px] text-muted-foreground truncate">@{creator.username}</p>
                       </Card>
@@ -376,7 +377,8 @@ const Explore = () => {
                         </Avatar>
                         <p className="font-semibold text-xs flex items-center justify-center gap-1 truncate">
                           {creator.display_name}
-                          {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3 h-3" />}
+                          {isEarnedVerified(creator) && <VerifiedBadge className="w-3 h-3" />}
+                          {creator.is_pro && <ProPill />}
                         </p>
                         <p className="text-[10px] text-muted-foreground">{creator.follower_count || 0} followers</p>
                       </Card>
@@ -434,7 +436,8 @@ const Explore = () => {
                     </Avatar>
                     <p className="font-semibold text-sm flex items-center justify-center gap-1">
                       {creator.display_name}
-                      {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-3.5 h-3.5" />}
+                      {isEarnedVerified(creator) && <VerifiedBadge className="w-3.5 h-3.5" />}
+                      {creator.is_pro && <ProPill />}
                     </p>
                     <p className="text-xs text-muted-foreground">@{creator.username}</p>
                     {creator.category && (
@@ -484,9 +487,10 @@ const Explore = () => {
                         {product.profiles && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1 truncate ml-2">
                             {product.profiles.display_name}
-                            {(product.profiles.is_verified || product.profiles.is_pro || product.profiles.is_elite) && (
+                            {isEarnedVerified(product.profiles) && (
                               <VerifiedBadge className="w-3 h-3 shrink-0" />
                             )}
+                            {product.profiles.is_pro && <ProPill />}
                           </span>
                         )}
                       </div>
@@ -517,9 +521,10 @@ const Explore = () => {
                         {sub.profiles && (
                           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                             by {sub.profiles.display_name}
-                            {(sub.profiles.is_verified || sub.profiles.is_pro || sub.profiles.is_elite) && (
+                            {isEarnedVerified(sub.profiles) && (
                               <VerifiedBadge className="w-3.5 h-3.5" />
                             )}
+                            {sub.profiles.is_pro && <ProPill />}
                           </p>
                         )}
                       </div>
