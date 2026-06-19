@@ -216,7 +216,7 @@ const CreatorProfile = () => {
       if (subs && subs.length > 0) {
         const { data: allPerks } = await supabase
           .from("subscription_perks")
-          .select("*")
+          .select("*, unlock_url, perk_type")
           .in("subscription_id", subs.map(s => s.id))
           .order("sort_order", { ascending: true });
         const grouped: Record<string, any[]> = {};
