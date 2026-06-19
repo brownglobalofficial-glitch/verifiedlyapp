@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Gift, Sparkles, Users } from "lucide-react";
+import { Check, Gift, Sparkles, Users, Lock, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ export type Perk = {
   subscription_id: string;
   perk_name: string;
   perk_description?: string | null;
+  unlock_url?: string | null;
+  perk_type?: string | null;
 };
 
 type Props = {
@@ -27,6 +29,8 @@ type Props = {
   loadingTierId?: string | null;
   variant?: "compact" | "full"; // compact = profile, full = dedicated page
   className?: string;
+  /** Subscription IDs the current viewer is actively subscribed to. */
+  activeSubIds?: string[];
 };
 
 /**
@@ -44,6 +48,7 @@ export default function MembershipTiers({
   loadingTierId,
   variant = "compact",
   className,
+  activeSubIds = [],
 }: Props) {
   const [interval, setInterval] = useState<"month" | "year">("month");
 
@@ -109,6 +114,7 @@ export default function MembershipTiers({
           const tierPerks = perks[tier.id] || [];
           const count = memberCounts[tier.id] || 0;
           const annualTotal = (tier.price * 10).toFixed(tier.price * 10 % 1 === 0 ? 0 : 2);
+          const isSubscribed = activeSubIds.includes(tier.id);
 
           return (
             <motion.div
@@ -118,12 +124,18 @@ export default function MembershipTiers({
               transition={{ delay: 0.05 * i, duration: 0.3 }}
               className={cn(
                 "relative rounded-2xl border bg-card p-5 flex flex-col",
-                isPopular
+                isSubscribed
+                  ? "border-foreground shadow-lg ring-2 ring-foreground/20"
+                  : isPopular
                   ? "border-primary/60 shadow-lg ring-1 ring-primary/20"
                   : "border-border shadow-sm"
               )}
             >
-              {isPopular && (
+              {isSubscribed ? (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-foreground text-background text-[10px] font-bold tracking-wide px-2.5 py-1 rounded-full uppercase">
+                  <Check className="w-3 h-3" /> Subscribed
+                </span>
+              ) : isPopular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold tracking-wide px-2.5 py-1 rounded-full uppercase">
                   <Sparkles className="w-3 h-3" /> Most popular
                 </span>
@@ -167,12 +179,30 @@ export default function MembershipTiers({
                   {tierPerks.map((perk) => (
                     <li key={perk.id} className="text-sm flex items-start gap-2">
                       <Gift className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span>
-                        {perk.perk_name}
-                        {perk.perk_description && (
-                          <span className="text-muted-foreground"> — {perk.perk_description}</span>
+                      <div className="min-w-0 flex-1">
+                        <div>
+                          {perk.perk_name}
+                          {perk.perk_description && (
+                            <span className="text-muted-foreground"> — {perk.perk_description}</span>
+                          )}
+                        </div>
+                        {perk.unlock_url && (
+                          isSubscribed ? (
+                            <a
+                              href={perk.unlock_url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground underline underline-offset-2 hover:opacity-70"
+                            >
+                              Open link <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <Lock className="w-3 h-3" /> Link unlocks after subscribing
+                            </div>
+                          )
                         )}
-                      </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -180,20 +210,30 @@ export default function MembershipTiers({
                 <div className="flex-1 mt-4" />
               )}
 
-              <Button
-                onClick={() => onSubscribe(tier, interval)}
-                disabled={loadingTierId === tier.id}
-                className={cn(
-                  "w-full mt-5 rounded-xl",
-                  isPopular ? "" : "variant-outline"
-                )}
-                variant={isPopular ? "default" : "outline"}
-                size="lg"
-              >
-                {loadingTierId === tier.id
-                  ? "Loading..."
-                  : `Join for $${formatPrice(tier.price)}/${interval === "year" ? "yr" : "mo"}`}
-              </Button>
+              {isSubscribed ? (
+                <Button
+                  asChild
+                  className="w-full mt-5 rounded-xl"
+                  variant="secondary"
+                  size="lg"
+                >
+                  <a href="/dashboard/purchases">
+                    <Check className="w-4 h-4 mr-1" /> You're in — view perks
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => onSubscribe(tier, interval)}
+                  disabled={loadingTierId === tier.id}
+                  className="w-full mt-5 rounded-xl"
+                  variant={isPopular ? "default" : "outline"}
+                  size="lg"
+                >
+                  {loadingTierId === tier.id
+                    ? "Loading..."
+                    : `Join for $${formatPrice(tier.price)}/${interval === "year" ? "yr" : "mo"}`}
+                </Button>
+              )}
             </motion.div>
           );
         })}

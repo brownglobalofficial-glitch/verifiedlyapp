@@ -176,6 +176,7 @@ const CreatorProfile = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [perks, setPerks] = useState<Record<string, any[]>>({});
+  const [viewerActiveSubIds, setViewerActiveSubIds] = useState<string[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [publicContent, setPublicContent] = useState<any[]>([]);
@@ -215,7 +216,7 @@ const CreatorProfile = () => {
       if (subs && subs.length > 0) {
         const { data: allPerks } = await supabase
           .from("subscription_perks")
-          .select("*")
+          .select("*, unlock_url, perk_type")
           .in("subscription_id", subs.map(s => s.id))
           .order("sort_order", { ascending: true });
         const grouped: Record<string, any[]> = {};
@@ -238,6 +239,26 @@ const CreatorProfile = () => {
         // clamp at 0
         Object.keys(counts).forEach(k => { if (counts[k] < 0) counts[k] = 0; });
         setMemberCounts(counts);
+
+        // Determine which of these tiers the viewer is actively subscribed to
+        const { data: { session } } = await supabase.auth.getSession();
+        const vid = session?.user?.id;
+        if (vid) {
+          const { data: myEvents } = await supabase
+            .from("subscriber_events")
+            .select("subscription_id, event_type, created_at")
+            .eq("subscriber_id", vid)
+            .in("subscription_id", subs.map(s => s.id))
+            .order("created_at", { ascending: false });
+          const latest = new Map<string, string>();
+          (myEvents || []).forEach((e: any) => {
+            if (!e.subscription_id) return;
+            if (!latest.has(e.subscription_id)) latest.set(e.subscription_id, e.event_type);
+          });
+          setViewerActiveSubIds(
+            [...latest.entries()].filter(([, t]) => t === "subscribe").map(([id]) => id)
+          );
+        }
       }
       setLoading(false);
     };
@@ -616,6 +637,7 @@ const CreatorProfile = () => {
               onSubscribe={(tier, interval) => handleSubscribe(tier, interval)}
               loadingTierId={checkoutLoading ? subscriptions.find(s => s.id)?.id || null : null}
               variant="compact"
+              activeSubIds={viewerActiveSubIds}
             />
           </motion.div>
         )}

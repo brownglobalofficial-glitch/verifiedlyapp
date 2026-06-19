@@ -4,7 +4,7 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, ShoppingBag, Users, Loader2, ExternalLink, Check } from "lucide-react";
+import { Download, ShoppingBag, Users, Loader2, ExternalLink, Check, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +27,7 @@ type Sub = {
   creator_id: string;
   creator_username: string;
   creator_display: string;
-  perks: { perk_name: string; perk_description: string | null }[];
+  perks: { perk_name: string; perk_description: string | null; unlock_url: string | null; perk_type: string | null }[];
   subscribed_at: string;
 };
 
@@ -78,7 +78,7 @@ export default function Purchases() {
           .in("id", activeSubIds);
         const { data: perkData } = await supabase
           .from("subscription_perks")
-          .select("subscription_id, perk_name, perk_description, sort_order")
+          .select("subscription_id, perk_name, perk_description, unlock_url, perk_type, sort_order")
           .in("subscription_id", activeSubIds)
           .order("sort_order", { ascending: true });
         const perksBy: Record<string, any[]> = {};
@@ -257,13 +257,26 @@ export default function Purchases() {
                       <ul className="space-y-1.5">
                         {s.perks.map((pk, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm">
-                            <Check className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
-                            <div>
+                            {pk.perk_type === "community" ? (
+                              <Users className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                            ) : (
+                              <Gift className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+                            )}
+                            <div className="min-w-0 flex-1">
                               <span className="font-medium">{pk.perk_name}</span>
                               {pk.perk_description && (
                                 <span className="text-muted-foreground">
                                   {" "}— {pk.perk_description}
                                 </span>
+                              )}
+                              {pk.unlock_url && (
+                                <div className="mt-1">
+                                  <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1">
+                                    <a href={pk.unlock_url} target="_blank" rel="noreferrer noopener">
+                                      Open <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           </li>

@@ -27,6 +27,8 @@ const ManageSubscriptions = () => {
   const [saving, setSaving] = useState(false);
   const [perkName, setPerkName] = useState("");
   const [perkDesc, setPerkDesc] = useState("");
+  const [perkUrl, setPerkUrl] = useState("");
+  const [perkType, setPerkType] = useState<string>("standard");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { stripeConnected } = useStripeConnect();
@@ -103,12 +105,14 @@ const ManageSubscriptions = () => {
       creator_id: userId,
       perk_name: perkName,
       perk_description: perkDesc || null,
-    });
+      unlock_url: perkUrl.trim() || null,
+      perk_type: perkType,
+    } as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Perk added!" });
-      setPerkName(""); setPerkDesc(""); setPerkOpen(null);
+      setPerkName(""); setPerkDesc(""); setPerkUrl(""); setPerkType("standard"); setPerkOpen(null);
       fetchSubs(userId);
     }
   };
@@ -207,8 +211,32 @@ const ManageSubscriptions = () => {
                       <DialogContent>
                         <DialogHeader><DialogTitle>Add Perk to {sub.name}</DialogTitle></DialogHeader>
                         <div className="space-y-4 mt-4">
-                          <div><Label>Perk Name</Label><Input value={perkName} onChange={e => setPerkName(e.target.value)} placeholder="e.g. Discord access" /></div>
+                          <div><Label>Perk Name</Label><Input value={perkName} onChange={e => setPerkName(e.target.value)} placeholder="e.g. Private Discord access" /></div>
                           <div><Label>Description (optional)</Label><Textarea value={perkDesc} onChange={e => setPerkDesc(e.target.value)} placeholder="Details about this perk..." /></div>
+                          <div>
+                            <Label>Type</Label>
+                            <select
+                              value={perkType}
+                              onChange={e => setPerkType(e.target.value)}
+                              className="w-full mt-1 h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            >
+                              <option value="standard">Standard</option>
+                              <option value="community">Community (Discord, Telegram, WhatsApp)</option>
+                              <option value="content">Content (Notion, Drive, private page)</option>
+                              <option value="discount">Discount / coupon</option>
+                            </select>
+                          </div>
+                          <div>
+                            <Label>Unlock link (optional)</Label>
+                            <Input
+                              value={perkUrl}
+                              onChange={e => setPerkUrl(e.target.value)}
+                              placeholder="https://discord.gg/your-invite"
+                            />
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Only revealed to active subscribers — shown on their Purchases page and your profile.
+                            </p>
+                          </div>
                           <Button onClick={() => handleAddPerk(sub.id)} className="w-full">Add Perk</Button>
                         </div>
                       </DialogContent>
