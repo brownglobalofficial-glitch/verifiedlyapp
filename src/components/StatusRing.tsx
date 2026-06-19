@@ -31,6 +31,21 @@ export default function StatusRing({
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
+  const [allViewed, setAllViewed] = useState(false);
+
+  const storageKey = `verifiedly_status_viewed_${creatorId}`;
+
+  const refreshViewed = (list: Status[]) => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const viewed: string[] = raw ? JSON.parse(raw) : [];
+      const everyViewed =
+        list.length > 0 && list.every((s) => viewed.includes(s.id));
+      setAllViewed(everyViewed);
+    } catch {
+      setAllViewed(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -41,27 +56,60 @@ export default function StatusRing({
         .eq("creator_id", creatorId)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: true });
-      if (!cancelled) setStatuses((data as any) || []);
+      if (!cancelled) {
+        const list = (data as any[]) || [];
+        setStatuses(list);
+        refreshViewed(list);
+      }
     })();
     return () => { cancelled = true; };
   }, [creatorId]);
 
   const hasStatus = statuses.length > 0;
 
-  // Mono-contrast ring: outer white + inner black (or inverse on dark)
-  // ensures the ring is visible against any avatar / background / logo.
+  // Mono-contrast ring. Bold when unseen, dimmed once all current statuses
+  // have been viewed (Instagram / WhatsApp-style).
   const ringWrapper = hasStatus
-    ? "p-[3px] rounded-full bg-foreground"
+    ? `p-[3px] rounded-full ${allViewed ? "bg-muted-foreground/40" : "bg-foreground"}`
     : "";
   const innerRing = hasStatus
     ? "p-[2px] rounded-full bg-background"
     : "";
 
+  const markViewed = (id: string) => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const viewed: string[] = raw ? JSON.parse(raw) : [];
+      if (!viewed.includes(id)) {
+        viewed.push(id);
+        localStorage.setItem(storageKey, JSON.stringify(viewed));
+      }
+    } catch { /* ignore */ }
+  };
+
+  const openViewer = () => {
+    if (!hasStatus) return;
+    setIdx(0);
+    setOpen(true);
+    markViewed(statuses[0].id);
+  };
+
+  const goNext = () => {
+    if (idx + 1 >= statuses.length) {
+      setOpen(false);
+      refreshViewed(statuses);
+    } else {
+      const next = idx + 1;
+      setIdx(next);
+      markViewed(statuses[next].id);
+    }
+  };
+
   return (
     <>
       <button
         type="button"
-        onClick={() => hasStatus && setOpen(true)}
+        onClick={openViewer}
         className={hasStatus ? "rounded-full focus:outline-none mx-auto block" : "rounded-full pointer-events-none mx-auto block"}
         aria-label={hasStatus ? "View status" : undefined}
       >
@@ -77,7 +125,13 @@ export default function StatusRing({
         </div>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) refreshViewed(statuses);
+        }}
+      >
         <DialogContent className="max-w-md p-0 bg-black text-white overflow-hidden">
           {statuses[idx] && (
             <div className="relative">
@@ -104,9 +158,7 @@ export default function StatusRing({
                 />
                 <button
                   className="flex-1"
-                  onClick={() =>
-                    idx + 1 >= statuses.length ? setOpen(false) : setIdx((i) => i + 1)
-                  }
+                  onClick={goNext}
                   aria-label="Next"
                 />
               </div>

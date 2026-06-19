@@ -27,7 +27,7 @@ type Sub = {
   creator_id: string;
   creator_username: string;
   creator_display: string;
-  perks: { perk_name: string; perk_description: string | null; unlock_url: string | null; perk_type: string | null }[];
+  perks: { perk_name: string; perk_description: string | null; unlock_url: string | null; unlock_code: string | null; perk_type: string | null }[];
   subscribed_at: string;
 };
 
@@ -78,7 +78,7 @@ export default function Purchases() {
           .in("id", activeSubIds);
         const { data: perkData } = await supabase
           .from("subscription_perks")
-          .select("subscription_id, perk_name, perk_description, unlock_url, perk_type, sort_order")
+          .select("subscription_id, perk_name, perk_description, unlock_url, unlock_code, perk_type, sort_order")
           .in("subscription_id", activeSubIds)
           .order("sort_order", { ascending: true });
         const perksBy: Record<string, any[]> = {};
@@ -276,6 +276,21 @@ export default function Purchases() {
                                       Open <ExternalLink className="w-3 h-3" />
                                     </a>
                                   </Button>
+                                </div>
+                              )}
+                              {pk.unlock_code && (
+                                <div className="mt-1 flex items-center gap-2">
+                                  <span className="text-[11px] text-muted-foreground">Code:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(pk.unlock_code!);
+                                      toast({ title: "Code copied", description: pk.unlock_code! });
+                                    }}
+                                    className="font-mono text-xs bg-foreground text-background px-2 py-0.5 rounded hover:opacity-80"
+                                  >
+                                    {pk.unlock_code}
+                                  </button>
                                 </div>
                               )}
                             </div>
