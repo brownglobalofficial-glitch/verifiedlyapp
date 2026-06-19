@@ -1118,8 +1118,10 @@ export type Database = {
           id: string
           perk_description: string | null
           perk_name: string
+          perk_type: string
           sort_order: number
           subscription_id: string
+          unlock_url: string | null
         }
         Insert: {
           created_at?: string
@@ -1127,8 +1129,10 @@ export type Database = {
           id?: string
           perk_description?: string | null
           perk_name: string
+          perk_type?: string
           sort_order?: number
           subscription_id: string
+          unlock_url?: string | null
         }
         Update: {
           created_at?: string
@@ -1136,8 +1140,10 @@ export type Database = {
           id?: string
           perk_description?: string | null
           perk_name?: string
+          perk_type?: string
           sort_order?: number
           subscription_id?: string
+          unlock_url?: string | null
         }
         Relationships: [
           {
