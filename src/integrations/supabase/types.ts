@@ -1121,6 +1121,7 @@ export type Database = {
           perk_type: string
           sort_order: number
           subscription_id: string
+          unlock_code: string | null
           unlock_url: string | null
         }
         Insert: {
@@ -1132,6 +1133,7 @@ export type Database = {
           perk_type?: string
           sort_order?: number
           subscription_id: string
+          unlock_code?: string | null
           unlock_url?: string | null
         }
         Update: {
@@ -1143,6 +1145,7 @@ export type Database = {
           perk_type?: string
           sort_order?: number
           subscription_id?: string
+          unlock_code?: string | null
           unlock_url?: string | null
         }
         Relationships: [

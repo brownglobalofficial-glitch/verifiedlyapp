@@ -1,0 +1,1 @@
+ALTER TABLE public.subscription_perks ADD COLUMN IF NOT EXISTS unlock_code text;
