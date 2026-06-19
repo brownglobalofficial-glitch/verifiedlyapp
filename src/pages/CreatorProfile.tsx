@@ -176,6 +176,7 @@ const CreatorProfile = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [perks, setPerks] = useState<Record<string, any[]>>({});
+  const [viewerActiveSubIds, setViewerActiveSubIds] = useState<string[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
   const [bioLinks, setBioLinks] = useState<any[]>([]);
   const [publicContent, setPublicContent] = useState<any[]>([]);
