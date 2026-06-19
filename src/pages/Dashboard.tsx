@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import StatusComposer from "@/components/dashboard/StatusComposer";
+import DashboardTour from "@/components/dashboard/DashboardTour";
 import {
   ExternalLink, LinkIcon, Palette, User as UserIcon, Eye, DollarSign, Users, ArrowRight, Sparkles,
 } from "lucide-react";
@@ -180,6 +181,7 @@ const Dashboard = () => {
 
         {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
       </div>
+      <DashboardTour />
     </DashboardShell>
   );
 };
