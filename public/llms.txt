@@ -1,15 +1,14 @@
 # Verifiedly
 
-> One link-in-bio for creators, athletes, and brands to monetize with tips, subscriptions, digital products, affiliates, and sponsorships. Payouts powered by Stripe. Keep up to 100% of every sale.
+> One link-in-bio for creators, athletes, and brands to monetize with tips, memberships, digital products, affiliates, and sponsorships. Payouts powered by Stripe. Keep up to 100% of every sale.
 
-Verifiedly gives creators a single shareable profile (verifiedly.app/username) that bundles every revenue stream — paid links, gated content, subscription tiers, one-off digital product sales, fan tips, and brand-deal applications — with funds routed directly to the creator's bank via Stripe Connect. Free plan keeps 90% of sales; Pro keeps 95%; Elite keeps 100%.
+Verifiedly gives creators a single shareable profile (verifiedly.app/username) that bundles every revenue stream — paid links, gated content, membership tiers, one-off digital product sales, fan tips, and brand-deal applications — with funds routed directly to the creator's bank via Stripe Connect. Free plan keeps 90% of sales; Pro ($9.99/mo) keeps 100%.
 
 ## Pages
 
 - [Home](/): Product overview, features, and pricing.
-- [Explore](/explore): Browse verified creators, digital products, and subscription tiers.
-- [Pricing](/#pricing): Free, Pro ($4.99/mo, 5% fee), and Elite ($19.99/mo, 0% fee) plans.
-- [Sign up](/signup): Create a creator, business, or fan account.
+- [Pricing](/#pricing): Free (10% fee) and Pro ($9.99/mo, 0% fee) plans.
+- [Sign up](/signup): Create a Verifiedly account.
 - [Log in](/login): Returning user sign-in.
 - [Terms of Service](/terms): Legal terms for using Verifiedly.
 - [Privacy Policy](/privacy): How creator and fan data is handled.
