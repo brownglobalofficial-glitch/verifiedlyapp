@@ -451,9 +451,11 @@ const CreatorProfile = () => {
                 {profile.category}
               </span>
             )}
-            <span className={`text-xs ${theme.muted} flex items-center gap-1`}>
-              <Users className="w-3 h-3" /> {profile?.follower_count || 0} followers
-            </span>
+            {(profile?.follower_count || 0) >= 100 && (
+              <span className={`text-xs ${theme.muted} flex items-center gap-1`}>
+                <Users className="w-3 h-3" /> {profile.follower_count.toLocaleString()} followers
+              </span>
+            )}
           </div>
 
           {showTrustPill && (
@@ -468,11 +470,24 @@ const CreatorProfile = () => {
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed whitespace-pre-wrap break-words`}>{profile.bio}</p>
           )}
 
-          <div className="flex items-center justify-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
             <FollowButton creatorId={profile?.id} />
             {profile?.has_payments && profile?.tips_enabled !== false && (
               <Button variant="outline" size="sm" onClick={() => setShowTipDialog(true)} className="gap-1.5 rounded-full">
-                <Coins className="w-4 h-4" /> Tip
+                <Coins className="w-4 h-4" /> {profile?.tip_button_label?.trim() || "Tip"}
+              </Button>
+            )}
+            {subscriptions.length > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const el = document.getElementById("memberships-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="gap-1.5 rounded-full"
+              >
+                <Sparkles className="w-4 h-4" /> {profile?.membership_button_label?.trim() || "Join"}
               </Button>
             )}
           </div>
@@ -619,7 +634,7 @@ const CreatorProfile = () => {
         )}
 
         {subscriptions.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
+          <motion.div id="memberships-section" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6 scroll-mt-20">
             <div className="flex items-center justify-between mb-3">
               <h3 className={`font-display font-semibold text-sm ${theme.text} flex items-center gap-2`}>
                 <Sparkles className="w-4 h-4" /> Memberships
