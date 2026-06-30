@@ -19,7 +19,6 @@ const Dashboard = lazy(routeLoaders["/dashboard"]);
 const ProfileSettings = lazy(routeLoaders["/dashboard/settings"]);
 const ManageProducts = lazy(routeLoaders["/dashboard/products"]);
 const ManageSubscriptions = lazy(routeLoaders["/dashboard/subscriptions"]);
-const Explore = lazy(routeLoaders["/explore"]);
 const CreatorProfile = lazy(routeLoaders["/creator-profile"]);
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const Analytics = lazy(routeLoaders["/dashboard/analytics"]);
@@ -120,7 +119,7 @@ const RouteOptimizer = () => {
         prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links", "/dashboard/analytics"]);
         redirectAuthedAway(session.user.id);
       } else {
-        prefetchIdle(["/login", "/signup", "/explore"]);
+        prefetchIdle(["/login", "/signup"]);
       }
     });
 
@@ -177,7 +176,6 @@ const App = () => (
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/dashboard/monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
             <Route path="/dashboard/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
-            <Route path="/explore" element={<Explore />} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />
             <Route path="/:username/p/:productId" element={<Product />} />

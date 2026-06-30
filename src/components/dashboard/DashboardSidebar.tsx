@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, DollarSign, Settings, LogOut, ExternalLink, Compass, ShoppingBag } from "lucide-react";
+import { User, ShieldCheck, DollarSign, Settings, LogOut, ExternalLink, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -14,14 +14,13 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logo from "@/assets/verifiedly-logo.webp";
+import logoMark from "@/assets/verifiedly-mark.png";
 
 const items = [
   { title: "Profile", url: "/dashboard", icon: User, end: true },
   { title: "Verification", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Monetization", url: "/dashboard/monetization", icon: DollarSign },
   { title: "My purchases", url: "/dashboard/purchases", icon: ShoppingBag },
-  { title: "Explore", url: "/explore", icon: Compass },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 
@@ -33,8 +32,9 @@ export default function DashboardSidebar({ username }: { username?: string }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
-        <NavLink to="/dashboard" className="flex items-center">
-          <img src={logo} alt="Verifiedly" className="h-7" />
+        <NavLink to="/dashboard" className="flex items-center gap-2">
+          <img src={logoMark} alt="Verifiedly" className="h-7 w-7" />
+          {!collapsed && <span className="font-display font-semibold text-sm">Verifiedly</span>}
         </NavLink>
       </SidebarHeader>
       <SidebarContent>

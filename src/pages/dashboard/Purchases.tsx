@@ -165,8 +165,7 @@ export default function Purchases() {
             <Card className="p-6 text-sm text-muted-foreground">Loading…</Card>
           ) : purchases.length === 0 ? (
             <Card className="p-6 text-sm text-muted-foreground">
-              Nothing yet.{" "}
-              <Link to="/explore" className="underline">Browse creators</Link> to find products.
+              Nothing yet — visit a creator's profile to find products.
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
