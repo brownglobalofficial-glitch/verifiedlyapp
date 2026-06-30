@@ -72,9 +72,9 @@ export default function Monetization() {
     },
     {
       icon: Users,
-      title: "Subscriptions",
-      desc: "Create paid subscriber tiers with exclusive content.",
-      cta: "Manage subscriptions",
+      title: "Memberships",
+      desc: "Create paid membership tiers with exclusive perks for your supporters.",
+      cta: "Manage memberships",
       href: "/dashboard/subscriptions",
     },
   ];

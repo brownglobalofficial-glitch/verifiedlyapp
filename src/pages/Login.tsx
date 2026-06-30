@@ -12,7 +12,7 @@ import { Eye, EyeOff } from "lucide-react";
 import EmailConfirmationBanner from "@/components/EmailConfirmationBanner";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,6 +27,18 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      let email = identifier.trim();
+      // If the user typed an @handle (no @ symbol or starts with @), resolve to email
+      if (!email.includes("@") || email.startsWith("@")) {
+        const handle = email.replace(/^@/, "");
+        const { data: lookup, error: lookupErr } = await supabase.functions.invoke("lookup-handle", { body: { handle } });
+        if (lookupErr || !lookup?.email) {
+          toast({ title: "Login failed", description: "No account with that handle. Try your email.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        email = lookup.email;
+      }
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         toast({ title: "Login failed", description: error.message, variant: "destructive" });
@@ -107,8 +119,16 @@ const Login = () => {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                <Label htmlFor="identifier">Email or @handle</Label>
+                <Input
+                  id="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="you@example.com or @yourhandle"
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value)}
+                  required
+                />
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>

@@ -22,16 +22,8 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8 font-body text-sm">
           <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
           <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-          <Link to="/explore" className="text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* Mobile-only Explore link so the page is reachable on phones */}
-          <Link
-            to="/explore"
-            className="md:hidden text-sm text-muted-foreground hover:text-foreground transition-colors px-1"
-          >
-            Explore
-          </Link>
           {user ? (
             <Link to="/dashboard">
               <Button size="sm" className="h-8 px-3 text-xs sm:text-sm sm:h-9 sm:px-4">Dashboard</Button>

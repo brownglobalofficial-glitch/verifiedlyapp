@@ -53,25 +53,15 @@ const FeaturedCreators = () => {
                   </Avatar>
                   <p className="font-semibold text-sm flex items-center justify-center gap-1">
                     {creator.display_name}
-                    {(creator.is_verified || creator.is_pro || creator.is_elite) && <VerifiedBadge className="w-4 h-4" />}
+                    {(creator.is_verified || (creator.trust_score ?? 0) >= 80) && <VerifiedBadge className="w-4 h-4" />}
                   </p>
                   <p className="text-xs text-muted-foreground">@{creator.username}</p>
-                  {creator.category && (
-                    <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground capitalize">
-                      {creator.category}
-                    </span>
-                  )}
                 </Card>
               </Link>
             </motion.div>
           ))}
         </div>
 
-        <div className="text-center mt-8">
-          <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors">
-            View all creators →
-          </Link>
-        </div>
       </div>
     </section>
   );
