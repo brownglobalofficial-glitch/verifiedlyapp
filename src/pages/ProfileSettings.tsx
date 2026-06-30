@@ -126,6 +126,8 @@ const ProfileSettings = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [themeColor, setThemeColor] = useState("default");
   const [tipsEnabled, setTipsEnabled] = useState(true);
+  const [tipButtonLabel, setTipButtonLabel] = useState("");
+  const [membershipButtonLabel, setMembershipButtonLabel] = useState("");
 
   // Bio Links
   const [links, setLinks] = useState<BioLink[]>([]);
@@ -164,6 +166,8 @@ const ProfileSettings = () => {
       setAvatarUrl(data.avatar_url || "");
       setThemeColor(data.theme_color || "default");
       setTipsEnabled(data.tips_enabled !== false);
+      setTipButtonLabel(data.tip_button_label || "");
+      setMembershipButtonLabel(data.membership_button_label || "");
       const sl = (data.social_links || {}) as Record<string, string>;
       setInstagram(sl.instagram || "");
       setTwitter(sl.twitter || "");
@@ -214,6 +218,8 @@ const ProfileSettings = () => {
       social_links: { instagram, twitter, youtube, tiktok, facebook },
       theme_color: themeColor,
       tips_enabled: tipsEnabled,
+      tip_button_label: tipButtonLabel.trim() || null,
+      membership_button_label: membershipButtonLabel.trim() || null,
     }).eq("id", profile.id);
 
     // Save contact_email to private data table
@@ -416,6 +422,26 @@ const ProfileSettings = () => {
                     onCheckedChange={setTipsEnabled}
                     aria-label="Toggle tips"
                   />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <div>
+                    <Label className="text-xs">Tip button label</Label>
+                    <Input
+                      value={tipButtonLabel}
+                      onChange={(e) => setTipButtonLabel(e.target.value.slice(0, 24))}
+                      placeholder="Tip"
+                      maxLength={24}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Membership button label</Label>
+                    <Input
+                      value={membershipButtonLabel}
+                      onChange={(e) => setMembershipButtonLabel(e.target.value.slice(0, 24))}
+                      placeholder="Join"
+                      maxLength={24}
+                    />
+                  </div>
                 </div>
               </div>
             )}
