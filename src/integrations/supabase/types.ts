@@ -792,6 +792,7 @@ export type Database = {
           is_pro: boolean | null
           is_verified: boolean | null
           link_layout: string
+          membership_button_label: string | null
           onboarding_completed: boolean | null
           payout_status_public: boolean
           referral_code: string | null
@@ -799,6 +800,7 @@ export type Database = {
           signal_breakdown_public: boolean
           social_links: Json | null
           theme_color: string | null
+          tip_button_label: string | null
           tips_enabled: boolean
           trust_score: number
           trust_score_opt_out: boolean
@@ -825,6 +827,7 @@ export type Database = {
           is_pro?: boolean | null
           is_verified?: boolean | null
           link_layout?: string
+          membership_button_label?: string | null
           onboarding_completed?: boolean | null
           payout_status_public?: boolean
           referral_code?: string | null
@@ -832,6 +835,7 @@ export type Database = {
           signal_breakdown_public?: boolean
           social_links?: Json | null
           theme_color?: string | null
+          tip_button_label?: string | null
           tips_enabled?: boolean
           trust_score?: number
           trust_score_opt_out?: boolean
@@ -858,6 +862,7 @@ export type Database = {
           is_pro?: boolean | null
           is_verified?: boolean | null
           link_layout?: string
+          membership_button_label?: string | null
           onboarding_completed?: boolean | null
           payout_status_public?: boolean
           referral_code?: string | null
@@ -865,6 +870,7 @@ export type Database = {
           signal_breakdown_public?: boolean
           social_links?: Json | null
           theme_color?: string | null
+          tip_button_label?: string | null
           tips_enabled?: boolean
           trust_score?: number
           trust_score_opt_out?: boolean
