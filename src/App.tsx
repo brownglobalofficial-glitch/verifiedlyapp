@@ -27,6 +27,7 @@ const Onboarding = lazy(routeLoaders["/onboarding"]);
 const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
+const ComparisonLinktree = lazy(() => import("./pages/ComparisonLinktree"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const ManageContent = lazy(routeLoaders["/dashboard/content"]);
 const Membership = lazy(routeLoaders["/membership"]);
