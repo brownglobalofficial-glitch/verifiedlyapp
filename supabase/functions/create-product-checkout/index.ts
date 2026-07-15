@@ -45,9 +45,10 @@ serve(async (req) => {
       .from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).maybeSingle();
     const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
+    // Fee tiers: Free 10%, Pro 3%, Elite 0% (legacy).
     let feePercent = 10;
     if (creator.is_elite) feePercent = 0;
-    else if (creator.is_pro) feePercent = 5;
+    else if (creator.is_pro) feePercent = 3;
 
     const amountCents = Math.round(product.price * 100);
     const applicationFee = Math.round(amountCents * (feePercent / 100));

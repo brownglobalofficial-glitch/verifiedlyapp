@@ -57,8 +57,8 @@ const Pricing = () => {
               MOST POPULAR
             </div>
             <h3 className="text-xl font-display font-semibold mb-2">Identity Verification</h3>
-            <p className="text-4xl font-display font-bold mb-1">$5.99<span className="text-lg text-muted-foreground font-normal"> once</span></p>
-            <p className="text-sm text-muted-foreground mb-6">Blue checkmark, forever</p>
+            <p className="text-4xl font-display font-bold mb-1">$4.99<span className="text-lg text-muted-foreground font-normal"> once</span></p>
+            <p className="text-sm text-muted-foreground mb-6">Blue checkmark, forever. Free with Pro.</p>
             <ul className="space-y-3 mb-8">
               {[
                 "Government ID + selfie check",
@@ -91,11 +91,12 @@ const Pricing = () => {
             </div>
             <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
             <p className="text-4xl font-display font-bold mb-1">$9.99<span className="text-lg opacity-60 font-normal">/mo</span></p>
-            <p className="text-sm opacity-60 mb-6">0% platform fee — keep 100% of your earnings</p>
+            <p className="text-sm opacity-60 mb-6">3% platform fee (down from 10%) + free ID verification</p>
             <ul className="space-y-3 mb-8">
               {[
                 "Everything in Free",
-                "0% platform fee on every sale",
+                "3% platform fee on every sale",
+                "Free identity verification ($4.99 value)",
                 "Paid subscription tiers + exclusive content",
                 "Advanced analytics",
                 "Priority support",

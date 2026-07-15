@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
   const { data: p } = await admin
     .from("profiles")
-    .select("username, display_name, avatar_url, is_pro, id_verified, verified_at, verified_country, verified_full_name, show_legal_name")
+    .select("username, display_name, avatar_url, is_pro, id_verified, verified_at, verified_country, verified_full_name, show_legal_name, verification_kind, verified_business_name")
     .eq("id", tok.user_id).maybeSingle();
   if (!p) return j({ error: "no_profile" }, 404);
 
@@ -41,6 +41,8 @@ Deno.serve(async (req) => {
     payload.id_verified = !!p.id_verified;
     payload.verified_at = p.verified_at || null;
     payload.tier = p.is_pro ? "pro" : "free";
+    payload.verification_kind = p.verification_kind || "individual";
+    if (p.verified_business_name) payload.business_name = p.verified_business_name;
   }
   if (scopes.includes("legal_name") && p.show_legal_name) {
     payload.legal_name = p.verified_full_name || null;

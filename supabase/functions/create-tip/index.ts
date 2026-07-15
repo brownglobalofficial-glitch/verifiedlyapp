@@ -38,9 +38,10 @@ serve(async (req) => {
     const stripeConnectAccountId = privateData?.stripe_connect_account_id;
 
     // Calculate platform fee based on tier
+    // Fee tiers: Free 10%, Pro 3%, Elite 0% (legacy).
     let feePercent = 10;
     if (creator.is_elite) feePercent = 0;
-    else if (creator.is_pro) feePercent = 5;
+    else if (creator.is_pro) feePercent = 3;
 
     const applicationFee = Math.round(amount * (feePercent / 100));
     logStep("Fee calculated", { feePercent, applicationFee });

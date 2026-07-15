@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Loader2, CheckCircle2, XCircle, Clock, Lock } from "lucide-react";
+import { ShieldCheck, Loader2, CheckCircle2, XCircle, Clock, Lock, User, Building2, Sparkles } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
@@ -15,14 +17,20 @@ const Verification = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [kind, setKind] = useState<"individual" | "business">("individual");
+  const [businessName, setBusinessName] = useState("");
+  const [businessCountry, setBusinessCountry] = useState("");
 
   const load = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { navigate("/login"); return; }
     const { data: p } = await supabase.from("profiles")
-      .select("id, username, verification_status, id_verified, verified_at, verified_full_name, verified_country, show_legal_name")
+      .select("id, username, verification_status, id_verified, verified_at, verified_full_name, verified_country, show_legal_name, is_pro, verification_kind, verified_business_name, verified_business_country")
       .eq("id", session.user.id).maybeSingle();
     setProfile(p);
+    if (p?.verification_kind === "business") setKind("business");
+    if (p?.verified_business_name) setBusinessName(p.verified_business_name);
+    if (p?.verified_business_country) setBusinessCountry(p.verified_business_country);
     setLoading(false);
   };
 
@@ -55,6 +63,11 @@ const Verification = () => {
     try {
       const { data, error } = await supabase.functions.invoke("create-identity-checkout");
       if (error) throw error;
+      if (data?.pro_bypass) {
+        // Pro subscriber — skip Checkout and go straight to the ID scan.
+        await startIdScan();
+        return;
+      }
       if (data?.url) window.location.href = data.url;
     } catch (e: any) {
       toast({ title: "Couldn't start", description: e.message || String(e), variant: "destructive" });
@@ -64,7 +77,13 @@ const Verification = () => {
   const startIdScan = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-identity-session");
+      const body: any = { verification_kind: kind };
+      if (kind === "business") {
+        if (!businessName.trim()) throw new Error("Please enter your business name.");
+        body.business_name = businessName.trim();
+        body.business_country = businessCountry.trim();
+      }
+      const { data, error } = await supabase.functions.invoke("create-identity-session", { body });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) window.location.href = data.url;
@@ -85,6 +104,8 @@ const Verification = () => {
 
   const status = profile?.verification_status || "unverified";
   const isVerified = !!profile?.id_verified;
+  const isPro = !!profile?.is_pro;
+  const priceLabel = isPro ? "Free with Pro" : "$4.99";
 
   return (
     <DashboardShell title="Verification">
@@ -151,11 +172,61 @@ const Verification = () => {
             ) : (
               <Button onClick={startCheckout} disabled={busy} size="lg">
                 {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                Verify my identity — $5.99
+                Verify my identity — {priceLabel}
               </Button>
             )}
           </div>
         </Card>
+
+        {/* Kind picker */}
+        {!isVerified && status !== "processing" && (
+          <Card className="p-6">
+            <h2 className="font-display font-semibold mb-1">Who is being verified?</h2>
+            <p className="text-xs text-muted-foreground mb-4">Pick individual for a personal profile. Pick business if this account represents a company or organization — the owner or representative still scans their government ID.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setKind("individual")}
+                className={`p-4 rounded-lg border text-left transition ${kind === "individual" ? "border-foreground bg-secondary" : "border-border hover:bg-secondary/50"}`}
+              >
+                <User className="w-5 h-5 mb-2" />
+                <p className="font-medium text-sm">Individual</p>
+                <p className="text-xs text-muted-foreground">Creator, athlete, artist, or personal profile.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setKind("business")}
+                className={`p-4 rounded-lg border text-left transition ${kind === "business" ? "border-foreground bg-secondary" : "border-border hover:bg-secondary/50"}`}
+              >
+                <Building2 className="w-5 h-5 mb-2" />
+                <p className="font-medium text-sm">Business</p>
+                <p className="text-xs text-muted-foreground">Company, brand, or organization. Owner verifies ID.</p>
+              </button>
+            </div>
+            {kind === "business" && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <Label htmlFor="bname">Business name</Label>
+                  <Input id="bname" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Acme Inc." />
+                </div>
+                <div>
+                  <Label htmlFor="bcountry">Country of registration</Label>
+                  <Input id="bcountry" value={businessCountry} onChange={(e) => setBusinessCountry(e.target.value)} placeholder="United States" />
+                </div>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Pro perk callout */}
+        {!isVerified && isPro && (
+          <Card className="p-4 bg-foreground text-background">
+            <div className="flex gap-2 items-start">
+              <Sparkles className="w-4 h-4 mt-0.5 shrink-0" />
+              <p className="text-sm">You're on Pro — identity verification is free. We'll skip the fee and take you straight to the ID scan.</p>
+            </div>
+          </Card>
+        )}
 
         {/* How it works */}
         {!isVerified && (
@@ -163,7 +234,7 @@ const Verification = () => {
             <h2 className="font-display font-semibold mb-4">How it works</h2>
             <ol className="space-y-3 text-sm">
               <li className="flex gap-3"><span className="w-6 h-6 rounded-full bg-foreground text-background text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
-                <div><p className="font-medium">Pay a one-time $5.99 verification fee</p><p className="text-xs text-muted-foreground">Covers the cost of Stripe Identity + a small platform fee. Non-refundable once the ID scan runs.</p></div>
+                <div><p className="font-medium">{isPro ? "Verification is free on Pro" : "Pay a one-time $4.99 verification fee"}</p><p className="text-xs text-muted-foreground">{isPro ? "Your Pro subscription includes ID verification at no extra cost." : "Covers the cost of Stripe Identity + a small platform fee. Non-refundable once the ID scan runs."}</p></div>
               </li>
               <li className="flex gap-3"><span className="w-6 h-6 rounded-full bg-foreground text-background text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
                 <div><p className="font-medium">Scan your government ID + a quick selfie</p><p className="text-xs text-muted-foreground">Handled entirely by Stripe Identity — takes about 2 minutes on your phone.</p></div>
