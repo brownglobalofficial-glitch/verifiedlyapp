@@ -31,6 +31,23 @@ serve(async (req) => {
     const li = session.line_items?.data?.[0];
     const product = (li?.price?.product as Stripe.Product | null) ?? null;
 
+    // Authenticate the caller and only expose the buyer email when it matches.
+    const sessionEmail = session.customer_details?.email ?? session.customer_email ?? null;
+    let authedEmail: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const anon = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data } = await anon.auth.getClaims(authHeader.replace("Bearer ", ""));
+        authedEmail = (data?.claims?.email as string | undefined)?.toLowerCase() ?? null;
+      } catch { /* ignore, treat as unauthenticated */ }
+    }
+    const canSeeEmail = !!sessionEmail && !!authedEmail && authedEmail === sessionEmail.toLowerCase();
+
     let creatorUsername: string | null = null;
     const creatorId = session.metadata?.creator_id;
     if (creatorId) {
@@ -47,7 +64,7 @@ serve(async (req) => {
       payment_status: session.payment_status,
       status: session.status,
       mode: session.mode,
-      customer_email: session.customer_details?.email ?? session.customer_email ?? null,
+      customer_email: canSeeEmail ? sessionEmail : null,
       amount_total: session.amount_total,
       currency: session.currency,
       product_name: product?.name ?? li?.description ?? null,
