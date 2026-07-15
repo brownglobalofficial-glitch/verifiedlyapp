@@ -787,6 +787,7 @@ export type Database = {
           domain_verified: boolean
           follower_count: number | null
           id: string
+          id_verified: boolean
           is_elite: boolean | null
           is_featured: boolean | null
           is_pro: boolean | null
@@ -797,8 +798,10 @@ export type Database = {
           payout_status_public: boolean
           referral_code: string | null
           referred_by: string | null
+          show_legal_name: boolean
           signal_breakdown_public: boolean
           social_links: Json | null
+          stripe_identity_session_id: string | null
           theme_color: string | null
           tip_button_label: string | null
           tips_enabled: boolean
@@ -807,7 +810,14 @@ export type Database = {
           trust_score_public: boolean
           updated_at: string
           username: string
+          verification_status: string
+          verified_at: string | null
+          verified_country: string | null
+          verified_dob: string | null
           verified_domain: string | null
+          verified_first_name: string | null
+          verified_full_name: string | null
+          verified_last_name: string | null
           verified_socials_public: boolean
           website: string | null
         }
@@ -822,6 +832,7 @@ export type Database = {
           domain_verified?: boolean
           follower_count?: number | null
           id: string
+          id_verified?: boolean
           is_elite?: boolean | null
           is_featured?: boolean | null
           is_pro?: boolean | null
@@ -832,8 +843,10 @@ export type Database = {
           payout_status_public?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
+          stripe_identity_session_id?: string | null
           theme_color?: string | null
           tip_button_label?: string | null
           tips_enabled?: boolean
@@ -842,7 +855,14 @@ export type Database = {
           trust_score_public?: boolean
           updated_at?: string
           username: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_country?: string | null
+          verified_dob?: string | null
           verified_domain?: string | null
+          verified_first_name?: string | null
+          verified_full_name?: string | null
+          verified_last_name?: string | null
           verified_socials_public?: boolean
           website?: string | null
         }
@@ -857,6 +877,7 @@ export type Database = {
           domain_verified?: boolean
           follower_count?: number | null
           id?: string
+          id_verified?: boolean
           is_elite?: boolean | null
           is_featured?: boolean | null
           is_pro?: boolean | null
@@ -867,8 +888,10 @@ export type Database = {
           payout_status_public?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
+          stripe_identity_session_id?: string | null
           theme_color?: string | null
           tip_button_label?: string | null
           tips_enabled?: boolean
@@ -877,7 +900,14 @@ export type Database = {
           trust_score_public?: boolean
           updated_at?: string
           username?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_country?: string | null
+          verified_dob?: string | null
           verified_domain?: string | null
+          verified_first_name?: string | null
+          verified_full_name?: string | null
+          verified_last_name?: string | null
           verified_socials_public?: boolean
           website?: string | null
         }
@@ -1478,6 +1508,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_age_over: {
+        Args: { _user_id: string; _years: number }
         Returns: boolean
       }
       move_to_dlq: {
