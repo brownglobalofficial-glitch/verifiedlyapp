@@ -179,6 +179,7 @@ const App = () => (
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />
             <Route path="/:username/p/:productId" element={<Product />} />
+            <Route path="/comparison/verifiedly-vs-linktree" element={<ComparisonLinktree />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
