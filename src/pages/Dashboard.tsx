@@ -9,7 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import DashboardTour from "@/components/dashboard/DashboardTour";
 import {
-  ExternalLink, LinkIcon, Palette, User as UserIcon, Eye, DollarSign, Users, ArrowRight, Sparkles,
+  ExternalLink, LinkIcon, Palette, User as UserIcon, Eye, DollarSign, Users, ArrowRight, Sparkles, CheckCircle2, Circle,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
@@ -19,18 +19,26 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ earnings: 0, views: 0, subs: 0 });
   const [loading, setLoading] = useState(true);
+  const [linkCount, setLinkCount] = useState(0);
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
       setUser(session.user);
-      const [{ data: p }, { data: earnings }, { count: views }, { count: subs }] = await Promise.all([
+      setEmailConfirmed(!!session.user.email_confirmed_at);
+      const [{ data: p }, { data: earnings }, { count: views }, { count: subs }, { count: lc }, { data: priv }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", session.user.id).maybeSingle(),
         supabase.from("earnings").select("amount").eq("creator_id", session.user.id),
         supabase.from("page_views").select("*", { count: "exact", head: true }).eq("creator_id", session.user.id),
         supabase.from("subscriber_events").select("*", { count: "exact", head: true }).eq("creator_id", session.user.id).eq("event_type", "subscribe"),
+        supabase.from("bio_links").select("*", { count: "exact", head: true }).eq("creator_id", session.user.id),
+        (supabase.from("creator_private_data" as any).select("stripe_connect_account_id").eq("id", session.user.id).maybeSingle() as any),
       ]);
       setProfile(p);
+      setLinkCount(lc || 0);
+      setStripeConnected(!!priv?.stripe_connect_account_id);
       setStats({
         earnings: (earnings || []).reduce((s: number, e: any) => s + Number(e.amount), 0),
         views: views || 0,
@@ -45,6 +53,18 @@ const Dashboard = () => {
   // Badge is earned only via Stripe Identity ID verification.
   const isVerified = !!profile?.id_verified;
   const isPro = !!profile?.is_pro;
+
+  // Profile completion checklist
+  const steps = [
+    { label: "Add a profile photo", done: !!profile?.avatar_url, to: "/dashboard/settings" },
+    { label: "Write a short bio (10+ chars)", done: !!profile?.bio && profile.bio.length >= 10, to: "/dashboard/settings" },
+    { label: "Add at least one link", done: linkCount >= 1, to: "/dashboard/links" },
+    { label: "Confirm your email", done: emailConfirmed, to: "/dashboard/settings" },
+    { label: "Verify your identity", done: isVerified, to: "/dashboard/verification" },
+    { label: "Connect Stripe payouts", done: stripeConnected, to: "/dashboard/monetization" },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
 
   return (
     <DashboardShell title="Profile">
@@ -73,15 +93,44 @@ const Dashboard = () => {
                 verifiedly.app/{username} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                isPro ? "bg-foreground text-background" : "bg-secondary text-secondary-foreground"
-              }`}>
-                {isPro ? "Pro" : "Free"}
-              </span>
-            </div>
           </div>
         </Card>
+
+        {/* Profile completion */}
+        {pct < 100 && (
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="font-display font-semibold text-sm">Complete your profile</h2>
+                <p className="text-xs text-muted-foreground">{doneCount} of {steps.length} done</p>
+              </div>
+              <span className="text-2xl font-display font-bold tabular-nums">{pct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden mb-4">
+              <div className="h-full bg-foreground transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <ul className="space-y-1.5">
+              {steps.map((s) => (
+                <li key={s.label}>
+                  <Link
+                    to={s.to}
+                    className={`flex items-center gap-2 text-sm py-1.5 px-2 -mx-2 rounded-md transition-colors ${
+                      s.done ? "text-muted-foreground" : "hover:bg-muted"
+                    }`}
+                  >
+                    {s.done ? (
+                      <CheckCircle2 className="w-4 h-4 text-foreground shrink-0" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                    <span className={s.done ? "line-through" : ""}>{s.label}</span>
+                    {!s.done && <ArrowRight className="w-3 h-3 ml-auto text-muted-foreground" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
 
         {/* Upgrade banner */}
         {!isPro && (

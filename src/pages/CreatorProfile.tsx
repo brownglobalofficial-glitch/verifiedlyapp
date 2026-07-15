@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import TrustScore from "@/components/TrustScore";
 import FollowButton from "@/components/FollowButton";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -455,13 +454,7 @@ const CreatorProfile = () => {
             )}
           </div>
 
-          {showTrustPill && (
-            <div className="flex justify-center mt-2">
-              <Link to={`/verify/${profile.username}`} aria-label="View verification details">
-                <TrustScore score={profile.trust_score} isElite={!!profile.is_elite} size="sm" />
-              </Link>
-            </div>
-          )}
+          {/* Trust Score removed — identity verification badge only. */}
 
           {profile?.bio && (
             <p className={`mt-3 text-sm ${theme.muted} max-w-xs mx-auto leading-relaxed whitespace-pre-wrap break-words`}>{profile.bio}</p>
@@ -529,8 +522,8 @@ const CreatorProfile = () => {
                 title: t === "elite" ? "You're now Verifiedly Elite 👑" : "You're now Verifiedly Pro ✓",
                 description:
                   t === "elite"
-                    ? "0% platform fee is active. View your plan and renewal date."
-                    : "Your verified badge is live and your fee just dropped to 5%.",
+                    ? "Your Pro perks are active. View your plan and renewal date."
+                    : "Your Pro plan is active — platform fee is now 3%.",
                 action: (
                   <ToastAction altText="Open billing" onClick={() => navigate("/dashboard/billing")}>
                     View billing

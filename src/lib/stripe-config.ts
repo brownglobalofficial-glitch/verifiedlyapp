@@ -10,10 +10,12 @@ export const STRIPE_TIERS = {
     fee_percent: 3,
     includes_id_verification: true,
   },
+  // Legacy tier — grandfathered for pre-existing subscribers only. Not
+  // advertised in the UI. Fee tables read `is_elite` at runtime to honor it.
   elite: {
     price_id: "price_1TSoiF1hrOAc8qE8R2dGTqHQ",
     product_id: "prod_URi8z4FUV491Gb",
-    name: "Elite",
+    name: "Elite (legacy)",
     price: 19.99,
     fee_percent: 0,
   },

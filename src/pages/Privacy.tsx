@@ -13,9 +13,11 @@ const Privacy = () => (
       <h3>Information You Provide</h3>
       <ul>
         <li><strong>Account Information:</strong> Name, email address, username, password</li>
+        <li><strong>Date of Birth:</strong> Collected at signup to confirm you are 18 or older. Stored securely and never displayed publicly.</li>
         <li><strong>Profile Information:</strong> Display name, biography, avatar image, social media links, category</li>
         <li><strong>Content:</strong> Digital products, bio links, subscription tiers, and other creator content</li>
         <li><strong>Payment Information:</strong> Processed securely by our third-party payment processor (Stripe). We do not store your full payment card details.</li>
+        <li><strong>Identity Verification Data:</strong> If you choose to verify your identity, the ID document image and selfie are collected and processed by <strong>Stripe Identity</strong> — not by us. We only receive and store the verification result (verified / not verified), your legal name, country, and date of birth. Business accounts also submit their business name and country of registration. Verification is optional and required only to earn the blue checkmark.</li>
         <li><strong>Communications:</strong> Messages sent through the Platform, support requests</li>
       </ul>
       <h3>Information Collected Automatically</h3>
@@ -46,7 +48,7 @@ const Privacy = () => (
       </ul>
 
       <h2>4. Data Security</h2>
-      <p>We implement industry-standard security measures including encryption in transit (TLS/SSL), secure password hashing, and row-level security on all database tables. However, no method of electronic transmission or storage is 100% secure, and we cannot guarantee absolute security.</p>
+      <p>We implement industry-standard security measures including encryption in transit (TLS/SSL), secure password hashing, row-level security on all database tables, and column-level access controls on sensitive fields (date of birth and identity data are restricted to service-role access only). ID document images and selfies are handled exclusively by Stripe Identity and never touch our servers. However, no method of electronic transmission or storage is 100% secure, and we cannot guarantee absolute security.</p>
 
       <h2>5. Data Retention</h2>
       <p>We retain your personal information for as long as your account is active or as needed to provide services. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law or for legitimate business purposes (e.g., fraud prevention).</p>
