@@ -368,11 +368,11 @@ const CreatorProfile = () => {
   const theme = THEME_STYLES[profile?.theme_color || "default"] || THEME_STYLES.default;
   const socialLinks = profile?.social_links || {};
   const activeSocials = Object.entries(socialLinks).filter(([, v]) => v);
-  const trustScore = profile?.trust_score ?? 0;
-  const isTrustVerified = trustScore >= 80 && !profile?.trust_score_opt_out;
-  // Badge is EARNED only — Trust Score >= 80. Pro/Elite do NOT grant the badge.
-  const isVerified = isTrustVerified;
-  const showTrustPill = (profile?.trust_score_public !== false) && !profile?.trust_score_opt_out && trustScore >= 60;
+  // Badge is EARNED only — via Stripe Identity ID check. Pro does NOT grant the badge.
+  const isVerified = !!profile?.id_verified;
+  const isTrustVerified = isVerified; // legacy alias used in Helmet strings below
+  const trustScore = 0;
+  const showTrustPill = false;
 
   const contentIcon = (type: string) => {
     if (type === "video") return <Video className="w-4 h-4" />;
@@ -443,6 +443,9 @@ const CreatorProfile = () => {
             {profile?.display_name || username}
             {isVerified && <VerifiedBadge className="w-5 h-5" />}
           </h1>
+          {isVerified && profile?.show_legal_name && profile?.verified_full_name && (
+            <p className={`text-xs ${theme.muted} mt-0.5`}>Legal name · {profile.verified_full_name}</p>
+          )}
           <p className={`text-sm ${theme.muted} mt-0.5`}>@{profile?.username}</p>
 
           <div className="flex items-center justify-center gap-3 mt-1.5">
