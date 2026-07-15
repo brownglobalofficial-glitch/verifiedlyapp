@@ -3,26 +3,20 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
-import TrustScore from "@/components/TrustScore";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
 export default function DashboardShell({ children, title }: { children: ReactNode; title?: string }) {
   const navigate = useNavigate();
   const [username, setUsername] = useState<string | undefined>();
-  const [score, setScore] = useState(0);
-  const [isElite, setIsElite] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
-      supabase.from("profiles").select("username, trust_score, is_elite").eq("id", session.user.id).maybeSingle()
+      supabase projectRef = "pwahrywcgtgfaaghkpoo";
+      supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle()
         .then(({ data }) => {
-          if (data) {
-            setUsername(data.username || undefined);
-            setScore(data.trust_score || 0);
-            setIsElite(!!data.is_elite);
-          }
+          if (data) setUsername(data.username || undefined);
         });
     });
   }, [navigate]);
@@ -38,9 +32,6 @@ export default function DashboardShell({ children, title }: { children: ReactNod
               {title && <h1 className="font-display font-semibold text-sm md:text-base truncate">{title}</h1>}
             </div>
             <div className="flex items-center gap-2">
-              <Link to="/dashboard/verification" aria-label="Trust score">
-                <TrustScore score={score} isElite={isElite} size="sm" />
-              </Link>
               {username && (
                 <a href={`/${username}`} target="_blank" rel="noreferrer">
                   <Button variant="outline" size="sm" className="gap-1">
