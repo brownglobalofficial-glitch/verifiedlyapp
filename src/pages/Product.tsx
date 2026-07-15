@@ -132,7 +132,7 @@ const Product = () => {
           <title>{`${product.name} · ${creator.display_name || creator.username} · Verifiedly`}</title>
           <meta
             name="description"
-            content={(product.description || `Buy ${product.name} from ${creator.display_name || creator.username} on Verifiedly.`).slice(0, 158)}
+            content={((product.description && product.description.length >= 50) ? product.description : `Buy ${product.name} from ${creator.display_name || creator.username} on Verifiedly — a verified creator profile with secure checkout and instant delivery.`).slice(0, 158)}
           />
           <link rel="canonical" href={`https://verifiedly.app/${creator.username}/p/${product.id}`} />
           <meta property="og:type" content="product" />
