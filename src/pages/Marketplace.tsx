@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Search, Megaphone, DollarSign, Handshake, Plus, ArrowLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
+import { Helmet } from "react-helmet-async";
 import { GridSkeleton } from "@/components/PageSkeleton";
 import type { User } from "@supabase/supabase-js";
 
@@ -127,10 +128,18 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Creator Marketplace — Verifiedly</title>
+        <meta name="description" content="Browse sponsorship and affiliate campaigns from brands on Verifiedly, or post your own to reach verified creators around the world." />
+        <link rel="canonical" href="https://verifiedly.app/dashboard/marketplace" />
+        <meta property="og:title" content="Creator Marketplace — Verifiedly" />
+        <meta property="og:description" content="Sponsorship and affiliate campaigns connecting verified creators with brands worldwide." />
+        <meta property="og:url" content="https://verifiedly.app/dashboard/marketplace" />
+      </Helmet>
       <nav className="border-b border-border h-16 flex items-center px-4">
         <div className="container mx-auto flex items-center gap-4">
           <Link to="/dashboard"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4" /></Button></Link>
-          <img src={logo} alt="Verifiedly" className="h-7" />
+          <img src={logo} alt="Verifiedly Logo" className="h-7" />
           <span className="font-display font-semibold">Marketplace</span>
         </div>
       </nav>

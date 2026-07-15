@@ -86,7 +86,7 @@ const Login = () => {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link to="/">
-            <img src={logo} alt="Verifiedly" className="h-8 mx-auto mb-6" />
+            <img src={logo} alt="Verifiedly Logo" className="h-8 mx-auto mb-6" />
           </Link>
           {!isPending && (
             <>

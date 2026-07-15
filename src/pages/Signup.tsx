@@ -112,7 +112,7 @@ const Signup = () => {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link to="/">
-            <img src={logo} alt="Verifiedly" className="h-8 mx-auto mb-6" />
+            <img src={logo} alt="Verifiedly Logo" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
           <p className="text-sm text-muted-foreground mt-1">Verify. Share. Earn.</p>

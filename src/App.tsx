@@ -27,6 +27,7 @@ const Onboarding = lazy(routeLoaders["/onboarding"]);
 const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
+const ComparisonLinktree = lazy(() => import("./pages/ComparisonLinktree"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const ManageContent = lazy(routeLoaders["/dashboard/content"]);
 const Membership = lazy(routeLoaders["/membership"]);
@@ -179,6 +180,7 @@ const App = () => (
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />
             <Route path="/:username/p/:productId" element={<Product />} />
+            <Route path="/comparison/verifiedly-vs-linktree" element={<ComparisonLinktree />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
