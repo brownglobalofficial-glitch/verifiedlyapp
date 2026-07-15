@@ -11,6 +11,23 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-TIP] ${step}${details ? ` - ${JSON.stringify(details)}` : ''}`);
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_AMOUNT_CENTS = 50_000; // $500 cap per tip session
+const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT = 10;
+const rateBuckets = new Map<string, number[]>();
+function rateLimited(key: string): boolean {
+  const now = Date.now();
+  const bucket = (rateBuckets.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (bucket.length >= RATE_LIMIT) {
+    rateBuckets.set(key, bucket);
+    return true;
+  }
+  bucket.push(now);
+  rateBuckets.set(key, bucket);
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,13 +42,34 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+    if (rateLimited(ip)) {
+      return new Response(JSON.stringify({ error: "Too many tip attempts. Please try again later." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 429,
+      });
+    }
+
     const { creatorId, amount } = await req.json();
-    if (!creatorId || !amount || amount < 100) throw new Error("creatorId and amount (min 100 cents) required");
+    if (!creatorId || typeof creatorId !== "string" || !UUID_RE.test(creatorId)) {
+      throw new Error("Valid creatorId required");
+    }
+    if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount < 100 || amount > MAX_AMOUNT_CENTS) {
+      throw new Error(`amount must be an integer between 100 and ${MAX_AMOUNT_CENTS} cents`);
+    }
     logStep("Request parsed", { creatorId, amount });
 
     // Get creator profile for display info + fee tier
-    const { data: creator } = await supabaseClient.from("profiles").select("is_pro, is_elite, display_name, username").eq("id", creatorId).single();
+    const { data: creator } = await supabaseClient
+      .from("profiles")
+      .select("is_pro, is_elite, display_name, username, tips_enabled")
+      .eq("id", creatorId)
+      .maybeSingle();
     if (!creator) throw new Error("Creator not found");
+    if (creator.tips_enabled === false) throw new Error("This creator is not accepting tips");
 
     // Get stripe connect account from private data
     const { data: privateData } = await supabaseClient.from("creator_private_data").select("stripe_connect_account_id").eq("id", creatorId).single();
