@@ -59,13 +59,6 @@ const Index = () => {
           </Link>
         </div>
 
-        {/* Meta separator */}
-        <div className="mt-14 flex items-center gap-2 opacity-30" aria-hidden="true">
-          <div className="w-1 h-1 bg-foreground rounded-full" />
-          <div className="w-16 h-px bg-foreground" />
-          <div className="w-1 h-1 bg-foreground rounded-full" />
-        </div>
-
         {/* Footer */}
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
