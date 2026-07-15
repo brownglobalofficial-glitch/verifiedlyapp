@@ -1,53 +1,61 @@
 
-## What I'll ship this pass
+## Scope this pass covers
 
-### Dashboard (`src/pages/Dashboard.tsx`)
-- Remove the Pro pill from the profile header card (public + dashboard views).
-- Remove the `TrustScore` badge from the top of the dashboard.
-- Add a **Profile completion** progress bar showing % done and the remaining checklist items: avatar, bio ≥ 10 chars, ≥ 1 link, verified email, verified identity, Stripe payouts connected (only if monetization enabled).
-- Copy audit: strip any leftover "0% fee", "Elite", "Trust Score" wording.
+Four independent tracks. I'll do them in this order so you're not picking 3 designs blind at once.
 
-### Public profile (`src/pages/CreatorProfile.tsx`)
-- Remove `<TrustScore …/>` from the profile header (identity badge from `id_verified` stays).
-- Remove the celebration copy that says "0% platform fee is active".
-- Remove the Pro pill entirely from public view (confirm previous change stuck).
+### 1. Fee Breakdown component (ship first, no design pick needed)
+A single reusable `<FeeBreakdown amount kind={"tip"|"product"|"membership"|"subscription"} />` card used in:
+- Monetization → Tips, Products, Memberships tabs (owner preview)
+- Product checkout confirm screen
+- Membership tier editor
 
-### Business verification
-- On `/dashboard/verification`, keep the Individual / Business toggle. Business path still uses the owner's Stripe Identity ID scan + selfie plus `verified_business_name` / `verified_business_country` — clarify the copy: "Business accounts verify the owner's identity. Your business name and country appear on your public profile once approved."
-- `oauth-userinfo` already emits `verification_kind` + `business_name` — no change.
+Shows, based on the seller's plan:
+- Buyer pays: `$X.XX USD` (or localized currency, see track 4)
+- Stripe processing: `~2.9% + $0.30` = `$Y.YY`
+- Verifiedly platform fee: `10%` (Free) or `3%` (Pro) = `$Z.ZZ`
+- **You receive: `$N.NN`**
+- Small "why these fees?" popover linking to `/pricing`
 
-### Stripe Identity actually charging + running
-- Verify `create-identity-checkout` returns a `url` for non-Pro users and `pro_bypass:true` for Pro. Fix the client to call `create-identity-session` immediately when `pro_bypass` is returned, and after the Checkout redirect returns with `?paid=1`. Show a clear error if either edge function returns non-2xx (surface `error` field to a toast).
-- Add explicit logging + a "Retry ID scan" button on `/dashboard/verification` when `verification_status = 'paid'` but no `stripe_identity_session_id` yet.
+Replaces the old owner-only `FeePreview` slider on public profiles (already removed from public view). Free-tier sellers see a subtle "Save $X.XX per sale on Pro →" nudge.
 
-### Fees copy (Free 10%, Pro 3%; no 0% anywhere)
-- `src/lib/stripe-config.ts`: remove the `elite` entry (or keep only as legacy read for old subscribers — no UI surface).
-- Sweep `create-tip`, `create-product-checkout`, `create-subscription-checkout`: keep the `is_elite → 0%` legacy path (grandfathered) but do NOT advertise it. Landing / Pricing / Dashboard show only Free 10% and Pro 3%.
-- Add a small "Fees" explainer on the Monetization page: "You (the seller) pay Stripe processing fees (~2.9% + 30¢) + Verifiedly's platform fee (10% Free / 3% Pro) out of each sale. Buyers pay the sticker price."
+### 2. Country-aware checkout + language (i18n track)
+Two sub-parts:
 
-### Secure digital downloads
-- `download-product` edge function: require auth, verify the requesting user has a completed `purchases` row for the product OR an active `subscriptions` row on a tier that includes the product. Return a short-lived signed URL from the `product-files` private bucket (60s TTL). Reject otherwise with 403.
-- Update `/dashboard/purchases` UI to call `download-product` (no direct storage URLs).
+**a. Country / currency at checkout**
+- Detect buyer country via `Accept-Language` + Stripe's IP-based locale on the Checkout Session (Stripe handles this natively when we pass `locale: "auto"` and don't hardcode `currency: "usd"`).
+- For MVP: keep listing prices in USD (seller sets USD), let Stripe present localized currency at Checkout via `automatic_payment_methods: { enabled: true }` + `locale: "auto"`. This unlocks local payment methods (iDEAL, Bancontact, SEPA, Klarna, Alipay, etc.) automatically per buyer country.
+- Show "Prices shown in USD. Your card will be charged in your local currency at checkout." under buy buttons.
+- Update `create-tip`, `create-product-checkout`, `create-subscription-checkout` edge functions to pass `locale: "auto"` and enable automatic payment methods.
 
-### Privacy page + linking
-- Rewrite `src/pages/Privacy.tsx` with BrownGlobal Holdings LLC, Stripe Identity data handling (DOB, ID doc, selfie retained by Stripe, not us), Cloud/DB storage, cookies, retention, deletion request via `support@verifiedly.app`.
-- Ensure Privacy + Terms links appear in: Signup footer, Login footer, Dashboard sidebar footer, ProfileSettings legal section.
+**b. UI language**
+- Add `react-i18next` with English + Spanish + French + Portuguese + German as day-1 locales (covers ~60% of non-English creator markets).
+- Language switcher in dashboard sidebar footer + splash footer. Detects `navigator.language` on first load, persists to `localStorage` + `profiles.preferred_locale`.
+- Translate: splash, login/signup, dashboard shell nav, verification page, monetization page, pricing page. Leave long-form legal (Terms/Privacy) English-only with a note.
 
-### ProfileSettings mobile-first refactor
-- Rewrite `src/pages/ProfileSettings.tsx` as a stacked card layout (Basics, Links, Theme, Legal) — single column on mobile, 2-col on ≥ md. Sticky "Save" bar at bottom on mobile. Remove Elite references.
+### 3. Splash + Auth redesign (design pick #1)
+Capture current splash, generate 3 directions locked to your existing B&W palette + Space Grotesk/Inter + minimalist layout. Directions vary in:
+- Composition (centered vs split vs asymmetric)
+- Density (empty poster vs signal-dense with proof points)
+- Motion register (static vs subtle vs cinematic)
+You pick one → I implement across `/` (Index), `/login`, `/signup`.
 
-### SEO per-profile
-- `CreatorProfile`: dynamic `<title>{display_name} (@{username}) · Verifiedly</title>`, meta description from bio (first 155 chars), canonical `https://verifiedly.app/{username}`, `og:title`, `og:description`, JSON-LD `Person` schema with `@id` and (if verified) `identifier` note.
+### 4. Dashboard shell redesign (design pick #2)
+Requires an authenticated screenshot. Two options:
+- **A.** You paste a screenshot of your current `/dashboard` on desktop + mobile, I use those as the reference.
+- **B.** I sign in a test account (need you to confirm one exists) and capture it myself.
 
-### Existing users
-- All migrations are additive / column-level — no data deletion. `is_elite = true` accounts keep their existing 0% grandfathered rate silently.
+Then 3 directions varying sidebar treatment, header density, and profile-completion card placement.
+
+### 5. ProfileSettings redesign (design pick #3)
+Same as above but for `/dashboard/settings`. 3 mobile-first directions: stacked cards, tabbed sheets, or accordion sections. Sticky save bar on mobile in all three.
 
 ---
 
-## Not in this pass — need your call
+## What I need from you before I start
 
-1. **International payouts beyond Stripe Connect.** Real options: **Paddle** (merchant-of-record, covers ~200 countries including places Stripe Connect Express doesn't payout to — e.g. most of Africa, parts of Asia/LatAm). Downsides: 5% + 50¢ per transaction (higher than Stripe), Paddle's brand appears on statements, restricts some product categories. **Wise Payouts** and **PayPal Payouts** are lower-friction but require our own KYC + money-transmitter posture — not viable for us near-term. My recommendation: keep Stripe Connect as primary, add Paddle as a fallback ONLY for countries Stripe Connect can't onboard. Want me to enable Paddle now or defer?
+1. **Ship order?** My recommendation: `[1] Fee Breakdown → [2] i18n → [3] Splash pick → [4] Dashboard pick → [5] Settings pick`. Reply with a different order if you want.
+2. **Dashboard screenshot** — paste one, or confirm I can use the test creator account for capture. Without it I can't run design directions on that surface.
+3. **Language list ok?** EN, ES, FR, PT, DE. Add/remove any.
+4. **Paddle fallback for countries Stripe Connect can't onboard** — still open from last pass. Yes/no?
 
-2. **"Look like top creator monetization platforms"** — too fuzzy to ship blindly. Want me to spin up 2-3 design directions for the dashboard shell + public profile in a follow-up, or is the current B&W minimalist direction locked?
-
-Reply "go" to ship everything in "What I'll ship this pass" and I'll implement it in one batch. Answer #1 and #2 in the same message if you want them included.
+Once you answer, I'll start with track 1 (Fee Breakdown) immediately since it needs no design pick, then queue up the design-direction rounds one at a time so you're only choosing between 3 previews per message.
