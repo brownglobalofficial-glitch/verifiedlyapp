@@ -31,7 +31,7 @@ import MembershipTiers from "@/components/MembershipTiers";
 import FeePreview from "@/components/FeePreview";
 import TierUpgradeCelebration from "@/components/TierUpgradeCelebration";
 import { ToastAction } from "@/components/ui/toast";
-import StatusRing from "@/components/StatusRing";
+import { Avatar as AvatarWrap } from "@/components/ui/avatar";
 
 type ThemeStyle = {
   bg: string;
@@ -418,24 +418,19 @@ const CreatorProfile = () => {
           transition={{ duration: 0.5 }}
           className="max-w-md mx-auto px-4 text-center relative"
         >
-          {profile?.is_pro && (
-            <span className="absolute top-0 right-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-foreground text-background">
-              Pro
-            </span>
-          )}
+          {/* Pro is a private/account state — never shown on public profiles. */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <div className="mb-4">
-              <StatusRing
-                creatorId={profile.id}
-                avatarUrl={profile?.avatar_url}
-                fallback={(profile?.display_name || username)?.[0]?.toUpperCase() || "?"}
-                sizeClass="w-24 h-24"
-                idleRingClass={theme.ring}
-              />
+              <Avatar className={`w-24 h-24 mx-auto ring-2 ${theme.ring}`}>
+                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile?.display_name || username} />}
+                <AvatarFallback className="text-3xl font-display font-bold">
+                  {(profile?.display_name || username)?.[0]?.toUpperCase() || "?"}
+                </AvatarFallback>
+              </Avatar>
             </div>
           </motion.div>
 
