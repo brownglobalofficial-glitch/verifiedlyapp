@@ -586,9 +586,9 @@ const CreatorProfile = () => {
 
         {publicContent.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-6">
-            <h3 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
+            <h2 className={`font-display font-semibold mb-3 text-sm ${theme.text} flex items-center gap-2`}>
               <Video className="w-4 h-4" /> Content
-            </h3>
+            </h2>
             <div className="space-y-3">
               {publicContent.map(item => (
                 <div
@@ -626,9 +626,9 @@ const CreatorProfile = () => {
         {subscriptions.length > 0 && (
           <motion.div id="memberships-section" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6 scroll-mt-20">
             <div className="flex items-center justify-between mb-3">
-              <h3 className={`font-display font-semibold text-sm ${theme.text} flex items-center gap-2`}>
+              <h2 className={`font-display font-semibold text-sm ${theme.text} flex items-center gap-2`}>
                 <Sparkles className="w-4 h-4" /> Memberships
-              </h3>
+              </h2>
               {subscriptions.length > 1 && (
                 <Link to={`/${profile?.username}/membership`} className={`text-xs ${theme.muted} hover:opacity-70 transition-opacity flex items-center gap-0.5`}>
                   Compare tiers <ChevronRight className="w-3 h-3" />
@@ -649,9 +649,9 @@ const CreatorProfile = () => {
 
         {products.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <h3 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
+            <h2 className={`font-display font-semibold mb-3 flex items-center gap-2 text-sm ${theme.text}`}>
               <ShoppingBag className="w-4 h-4" /> Shop
-            </h3>
+            </h2>
             <div className="grid grid-cols-2 gap-3">
               {products.map((product, i) => {
                 const isFree = Number(product.price) === 0;
