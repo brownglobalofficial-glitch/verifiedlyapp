@@ -32,7 +32,7 @@ const Index = () => {
         <div className="text-center mb-16 sm:mb-20">
           <img src={logoMark} alt="Verifiedly Logo" className="h-12 w-12 mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
-            Verifiedly — Verify, Share, and Earn
+            Verifiedly<span className="sr-only"> — Verify, Share, and Earn</span>
           </h1>
           <p className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">
             Verify · Share · Earn
