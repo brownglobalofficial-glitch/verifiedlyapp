@@ -31,7 +31,6 @@ import MembershipTiers from "@/components/MembershipTiers";
 import FeePreview from "@/components/FeePreview";
 import TierUpgradeCelebration from "@/components/TierUpgradeCelebration";
 import { ToastAction } from "@/components/ui/toast";
-import { Avatar as AvatarWrap } from "@/components/ui/avatar";
 
 type ThemeStyle = {
   bg: string;
