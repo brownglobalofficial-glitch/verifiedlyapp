@@ -8,8 +8,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Verifiedly Identity Verification fee — one-time $5.99
-const VERIFY_PRICE_ID = "price_1TtIKI1hrOAc8qE8f88l0kSW";
+// Verifiedly Identity Verification fee — one-time $4.99.
+// Free for Verifiedly Pro subscribers (short-circuited before Checkout).
+const VERIFY_PRICE_ID = "price_1TtYw41hrOAc8qE8bFdRF341";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -22,6 +23,24 @@ serve(async (req) => {
     const { data } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = data.user;
     if (!user?.email) throw new Error("Not authenticated");
+
+    // Pro subscribers get ID verification free — skip Checkout and mark as paid so
+    // the subsequent create-identity-session call can start the ID scan directly.
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const { data: prof } = await admin.from("profiles")
+      .select("is_pro, is_elite, id_verified, verification_status").eq("id", user.id).maybeSingle();
+    if (prof?.id_verified) throw new Error("Already verified");
+    if (prof?.is_pro || prof?.is_elite) {
+      if (prof.verification_status !== "paid" && prof.verification_status !== "processing") {
+        await admin.from("profiles").update({ verification_status: "paid" }).eq("id", user.id);
+      }
+      return new Response(JSON.stringify({ pro_bypass: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+      });
+    }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
     const origin = req.headers.get("origin") || "https://verifiedly.app";
