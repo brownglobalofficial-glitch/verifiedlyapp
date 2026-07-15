@@ -1,72 +1,90 @@
 
-## 1. New V icon as universal logo mark
+# Verifiedly Pivot: Identity-First Platform
 
-- Save the uploaded `Verifiedly_logo.png` as a Lovable asset and export it via a single `<VerifiedlyMark />` component (`src/components/VerifiedlyMark.tsx`) so every icon-only spot uses one source.
-- Use the **V mark** anywhere a square/compact icon is needed:
-  - Favicon + `apple-touch-icon` + PWA manifest (`index.html`, `public/`)
-  - OG/Twitter fallback image
-  - OAuth consent screen (`OAuthAuthorize.tsx`) — replace the generic ShieldCheck tile
-  - Sign-in / Sign-up header, AuthCallback card, loading spinners, 404
-  - Navbar mobile (collapsed) and dashboard sidebar collapsed state
-- Keep the **full wordmark** (existing text logo) for: desktop Navbar, Footer, landing Hero, email templates, marketing pages.
-- Document the rule in the component file so future spots pick the right variant.
+Reposition Verifiedly from "verified link-in-bio" to "verified identity for the internet." Real ID verification (Stripe Identity) is the single path to the blue badge. Users pay a one-time fee that covers Stripe's cost plus margin.
 
-## 2. Remove Explore everywhere
+## New positioning
 
-- Delete `src/pages/Explore.tsx` and its route in `src/App.tsx`.
-- Remove Explore links from: Navbar (desktop + mobile menu), Footer, Dashboard quick actions, landing CTAs, sitemap.xml, llms.txt, robots/SEO.
-- Replace any "Explore creators" CTA with a link to `/marketplace` (already exists) or just remove.
-- Remove the **"Everything you need to earn"** features block on the landing page (and any duplicates on Dashboard) — it's outdated.
+- **Tagline**: "Prove you're real. Once." (or similar — final copy in build)
+- **Product**: Verified identity profile + Sign in with Verifiedly (OAuth). Link-in-bio remains but is secondary.
+- **Badge**: Blue checkmark = government-ID verified via Stripe Identity. No other path.
+- **Pricing**: One-time verification fee ~$5.99 (Stripe Identity costs ~$1.50, ~$4.49 margin). Verifiedly Pro subscription ($9.99/mo) stays for 0% platform fee + Pro pill; **does not** grant a badge.
 
-## 3. Subscriptions → Memberships rename
+## What gets removed
 
-- Global terminology swap (UI strings only — keep DB table names and Stripe metadata stable to avoid migration churn):
-  - Dashboard sidebar: "Subscriptions" → "Memberships"
-  - `ManageSubscriptions.tsx` page title + route alias `/dashboard/memberships` (keep old route as redirect)
-  - `MembershipTiers.tsx` already named correctly — update copy ("Subscribe" → "Join", "Subscribed" → "Member")
-  - Purchases hub: "Active subscriptions" → "Active memberships"
-  - Profile section header on `CreatorProfile.tsx`: "Memberships"
-- Perks model stays the same (community link, content link, discount code) — no schema change.
+1. **Trust Score system entirely**
+   - Delete `/dashboard/verification` checklist, `TrustScore.tsx`, `PublicVerification.tsx` (`/verify/:username`), score badges everywhere.
+   - Drop DB columns: `profiles.trust_score`, `trust_score_public`, `signal_breakdown_public`, `verified_socials_public`, `payout_status_public`, `trust_score_opt_out`, `is_elite`.
+   - Drop tables: `verified_socials`, `trust_score_errors`, `verification_audit_log`, `verification_disputes`.
+   - Drop functions: `recompute_trust_score`, `recompute_all_trust_scores`.
+   - Retire `verify-social` edge function.
 
-## 4. Customizable Tip + Membership CTA buttons on profile
+2. **Marketplace / brand campaigns**
+   - Delete `/marketplace` route, `Marketplace.tsx`.
+   - Drop tables: `brand_campaigns`, `campaign_applications`.
+   - Remove from sidebar and landing.
 
-- Add two optional profile fields (single migration on `profiles`):
-  - `tip_button_label TEXT` (default `"Tip"`, max 24 chars)
-  - `membership_button_label TEXT` (default `"Memberships"`, max 24 chars)
-- Surface inputs in **Profile → About** tab of dashboard with live preview and character counter.
-- On `CreatorProfile.tsx`, render the tip button using the creator's custom label, and add a second button next to it that scrolls to the memberships section using `membership_button_label` — only shown when the creator has at least one active tier.
-- Both buttons share styling so they read as a paired CTA row; stack vertically on mobile (`<sm`) so nothing clips.
+3. **24h Status feature**
+   - Delete `StatusRing.tsx`, `StatusComposer.tsx`, `creator_status` table + storage policies.
+   - Remove ring from Explore/Profile/Dashboard.
 
-## 5. Follower count display rule
+4. **Custom domain verification** — no longer relevant (was a Trust Score signal). Keep the domain field on profile but drop the verification flow.
 
-- Hide follower count by default. Show it only when `followers_count >= 100` (threshold constant in `src/lib/profile-display.ts`).
-- Apply on `CreatorProfile.tsx` header and Marketplace/creator cards.
-- No setting toggle — keeps UX simple per memory rule.
+## What gets added
 
-## 6. Mobile + SEO polish
+1. **Stripe Identity verification flow**
+   - New edge function `create-identity-session` that creates a Stripe Identity VerificationSession + a $5.99 Checkout for the verification fee (charged first, session created on success).
+   - New edge function `stripe-identity-webhook` handling `identity.verification_session.verified` / `.requires_input` / `.canceled` → writes to `profiles`.
+   - New page `/dashboard/verification`: single "Verify my identity" CTA, shows status (unverified / pending / verified / failed) and what data is stored.
 
-- Audit mobile breakpoints on: `CreatorProfile` (header buttons, tier cards), `Dashboard` (sidebar drawer, tour coach-marks), `ManageSubscriptions` perk forms, `Purchases`, `OAuthAuthorize` consent.
-  - Common fixes: `flex-wrap`, `min-w-0`, `truncate`, `overflow-x-auto` on horizontal scrollers, larger tap targets (44px), safe-area padding on bottom CTA bars.
-- SEO pass:
-  - Update titles/meta-descriptions on key pages (Landing, Profile, Memberships, Developers) — keep <60/<160.
-  - Replace Explore references in `sitemap.xml`, `public/llms.txt`, `robots.txt`.
-  - Set OG image + favicon to the new V mark.
-  - Ensure single `<h1>` per page, semantic landmarks intact.
+2. **Real name on profile**
+   - New columns: `profiles.verified_full_name`, `verified_first_name`, `verified_last_name`, `verified_dob` (private), `verified_country`, `verification_status`, `verified_at`, `stripe_identity_session_id`.
+   - Profile settings toggle: "Show my legal name publicly" (default off). Public profile shows legal name next to display name when enabled.
 
-## 7. OAuth handle + password clarification
+3. **Age verification badge (OAuth-exposed)**
+   - New computed field `is_18_plus` / `is_21_plus` derived from `verified_dob`.
+   - `oauth-userinfo` returns `id_verified`, `age_over_18`, `age_over_21`, `verified_country`, `legal_name` (only if requested scope + user opted in).
+   - New OAuth scopes: `identity`, `age`, `age.21`, `legal_name`. Existing `trust` scope removed.
 
-The existing OAuth flow already does this — when a partner site calls `/oauth/authorize`, unauthenticated users get redirected to `/login` where they enter their Verifiedly **username (handle) + password**, then the consent screen appears. No code change needed beyond:
-- Update `Login.tsx` to accept either email **or** `@username` in the email field (lookup username → email via a tiny `lookup-handle` edge function) so partner-site sign-in matches the user's mental model.
-- Add helper text on the login form: "Use your Verifiedly handle or email."
+4. **Digital ID share card**
+   - New route `/verify/:username`: replaces old public verification page. Shows verified checkmark, display name, optional legal name, country flag, age band (if user opted in), QR code linking back.
 
-## Technical Notes
+## What stays
 
-- **Files created**: `src/components/VerifiedlyMark.tsx`, `src/lib/profile-display.ts`, `supabase/functions/lookup-handle/index.ts`, one migration adding two `profiles` columns.
-- **Files deleted**: `src/pages/Explore.tsx`.
-- **Files edited (major)**: `App.tsx`, `index.html`, `Navbar.tsx`, `Footer.tsx`, `Hero.tsx`, `Features.tsx` (remove block), `Dashboard.tsx`, `DashboardSidebar.tsx`, `CreatorProfile.tsx`, `MembershipTiers.tsx`, `ManageSubscriptions.tsx`, `Purchases.tsx`, `ProfileSettings.tsx` (or Profile About tab), `OAuthAuthorize.tsx`, `Login.tsx`, `Signup.tsx`, `AuthCallback.tsx`, `sitemap.xml`, `llms.txt`, `robots.txt`.
-- **No schema changes** beyond the two new optional profile columns. DB tables `subscription_tiers` / `subscription_perks` stay — rename is UI-only.
+- Link-in-bio (`/username`, bio_links, themes)
+- Tips + memberships + digital products + Stripe Connect payouts (unchanged)
+- Pro subscription ($9.99/mo, 0% fee)
+- Sign in with Verifiedly OAuth (updated scopes)
+- Explore (simplified — sort by verified first, then newest)
 
-## Open questions before I build
+## Dashboard sidebar (new)
 
-1. For the handle-or-email login, OK to add a tiny public edge function that maps `@username → email`? It's the only clean way without exposing the auth.users table to anon.
-2. Follower threshold — is **100** the right number, or do you want **500** / always-hidden?
+1. Profile (About / Links / Theme tabs)
+2. Verification (single ID check)
+3. Monetization (Tips / Products / Memberships)
+4. Purchases
+5. Settings
+
+## Landing page rewrite
+
+- **Hero**: "Prove you're real. Once. Verify once with your government ID. Get a checkmark that works everywhere — your profile, your links, and any site that supports Sign in with Verifiedly."
+- **Sections**: How verification works (3 steps: pay → scan ID + selfie → verified) · What you unlock (blue check, real-name option, age proof, SSO) · Pricing (one-time $5.99 verify + optional $9.99/mo Pro for creators who monetize) · Developers (Sign in with Verifiedly for your app).
+- Remove: Trust Score explainer, Marketplace mentions, Status/stories mentions.
+
+## Legal & privacy
+
+- Update Privacy Policy: Stripe Identity is a subprocessor, we store verification result + minimal PII (name, DOB, country), not the ID image.
+- Update Terms: one-time verification fee is non-refundable once Stripe Identity has run.
+- Age scopes on OAuth require user opt-in per-scope; documented on `/developers`.
+
+## Migration order (build phase)
+
+1. Stripe: create `$5.99 one-time` price for ID verification.
+2. DB migration: add new columns, drop old tables/columns/functions (destructive — one migration).
+3. Edge functions: `create-identity-session`, `stripe-identity-webhook`, update `oauth-userinfo`.
+4. Frontend: rewrite `/dashboard/verification`, replace `/verify/:username`, strip Trust Score / Status / Marketplace, update sidebar, update Explore, update landing + pricing + developers pages.
+5. Update memory (`mem://index.md`, product positioning, monetization rules, remove retired memories).
+
+## Open items to confirm before build
+
+None blocking — will proceed with $5.99 verification fee unless you say otherwise, keep Pro at $9.99/mo, and destructively drop Trust Score / Marketplace / Status data (no user-facing content lives in those tables today besides the profile fields being replaced).
