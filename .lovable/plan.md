@@ -1,90 +1,72 @@
+## Verifiedly refinement pass
 
-# Verifiedly Pivot: Identity-First Platform
+### 1. Pricing & fees
+- Change ID verification fee: **$5.99 → $4.99** (create new Stripe one-time price; swap `VERIFY_PRICE_ID` in `create-identity-checkout`).
+- Verifiedly Pro stays **$9.99/mo** but changes from 0% → **3% platform fee** (new Stripe subscription price). Update `src/lib/stripe-config.ts`, pricing page, upgrade modal, and any fee calc helpers.
+- Pro now **includes free ID verification**: if a Pro subscriber hasn't paid the $4.99 fee, skip Checkout in `Verification.tsx` and go straight to `create-identity-session`. Backend `create-identity-session` gets a Pro bypass alongside the existing admin bypass.
+- Free tier: still 10% platform fee.
 
-Reposition Verifiedly from "verified link-in-bio" to "verified identity for the internet." Real ID verification (Stripe Identity) is the single path to the blue badge. Users pay a one-time fee that covers Stripe's cost plus margin.
+### 2. Verification: Individual vs Business (single account type)
+- Signup flow unchanged — one universal account.
+- On `/dashboard/verification`, the unverified state shows two cards side-by-side:
+  - **Individual** → Stripe Identity (`document` + selfie, current flow).
+  - **Business** → Stripe Financial Connections / Identity for company (owner/representative also does an ID scan). Creates a business verification session via Stripe and stores `verification_kind = 'business' | 'individual'`, plus `verified_business_name`, `verified_business_country`, `verified_business_tax_id_last4`.
+- Public profile shows a business badge variant (same blue check, but tooltip reads "Verified business") when `verification_kind = 'business'`.
+- OAuth `identity` scope returns `verification_kind` so partner sites know person vs business.
 
-## New positioning
+### 3. Pro pill removal from public surfaces
+- Remove Pro pill from `CreatorProfile.tsx` header and Explore/FeaturedCreators cards. Keep the small "Pro" indicator only inside the dashboard (owner-only) so users know their own plan.
+- Public verified checkmark is strictly `id_verified = true`, unchanged.
 
-- **Tagline**: "Prove you're real. Once." (or similar — final copy in build)
-- **Product**: Verified identity profile + Sign in with Verifiedly (OAuth). Link-in-bio remains but is secondary.
-- **Badge**: Blue checkmark = government-ID verified via Stripe Identity. No other path.
-- **Pricing**: One-time verification fee ~$5.99 (Stripe Identity costs ~$1.50, ~$4.49 margin). Verifiedly Pro subscription ($9.99/mo) stays for 0% platform fee + Pro pill; **does not** grant a badge.
+### 4. Homepage → minimal splash
+- Replace current landing (`Index.tsx` renders Navbar/Hero/FeaturedCreators/Pricing/Footer) with a minimal splash: centered V logo, one-line tagline "Prove you're real. Once.", `Sign in` and `Sign up` buttons, tiny footer with Terms/Privacy links.
+- Move current pricing content to `/pricing` (accessible from footer). Keep `/developers` intact.
+- Signed-in users still auto-redirect to `/dashboard`.
 
-## What gets removed
+### 5. Monetization QA pass
+- **Stripe Connect**: add account-status refresh on `Monetization.tsx` mount + focus (already there — verify it clears "Connect" CTA immediately after webhook). Add explicit error surface if `charges_enabled = false`.
+- **Digital product download**: audit `download-product` edge function → confirm signed URL TTL, MIME headers, and `Purchases.tsx` shows a working "Download" button for each `purchases` row. Fix if broken.
+- **Membership perks**: audit `subscription_perks` delivery — active subscription must reveal locked `bio_links` (discord/content/discount) on the creator's public profile AND surface them in the buyer's `/dashboard/purchases`. Add a "Perks" section on Purchases showing link + code per active subscription.
+- **Tips**: verify `create-tip` uses destination charges to creator's Connect account with the platform fee (3% for Pro creators, 10% for Free).
+- **Non-Stripe payouts**: not adding this pass — Stripe Connect only. (Noted for future; Lovable-managed payments don't have a Connect alternative yet.)
 
-1. **Trust Score system entirely**
-   - Delete `/dashboard/verification` checklist, `TrustScore.tsx`, `PublicVerification.tsx` (`/verify/:username`), score badges everywhere.
-   - Drop DB columns: `profiles.trust_score`, `trust_score_public`, `signal_breakdown_public`, `verified_socials_public`, `payout_status_public`, `trust_score_opt_out`, `is_elite`.
-   - Drop tables: `verified_socials`, `trust_score_errors`, `verification_audit_log`, `verification_disputes`.
-   - Drop functions: `recompute_trust_score`, `recompute_all_trust_scores`.
-   - Retire `verify-social` edge function.
+### 6. Dashboard & edit profile polish; remove Status
+- Delete `StatusRing`, `StatusComposer`, `creator_status` table + storage policies. Remove ring from `CreatorProfile.tsx`.
+- Clean `ProfileSettings.tsx`: group into three cards (Basics: display name/username/bio/avatar · Links: bio_links manager · Theme: color/theme picker). Remove any leftover Trust Score toggles, category selector, follower-privacy toggles that are already deprecated.
+- Sidebar order: Profile · Verification · Monetization · Purchases · Settings.
+- Sidebar collapses cleanly on mobile (audit `DashboardShell` for viewport <768px).
 
-2. **Marketplace / brand campaigns**
-   - Delete `/marketplace` route, `Marketplace.tsx`.
-   - Drop tables: `brand_campaigns`, `campaign_applications`.
-   - Remove from sidebar and landing.
+### 7. Legal & 18+ (light touch this pass)
+- Signup: add DOB field (required) — client-side enforce 18+ before allowing account creation. Store `date_of_birth` on `profiles` (private column, service-role only).
+- Update `Terms.tsx` / `Privacy.tsx` copy to reflect: BrownGlobal Holdings LLC, one-time $4.99 non-refundable verification fee, 3% Pro fee, Stripe Identity + Financial Connections as subprocessors, 18+ requirement, no under-18 accounts.
 
-3. **24h Status feature**
-   - Delete `StatusRing.tsx`, `StatusComposer.tsx`, `creator_status` table + storage policies.
-   - Remove ring from Explore/Profile/Dashboard.
+### 8. Cache/versioning
+- Existing service-worker unregister + cache clear in `main.tsx` stays. Bump asset hash version so this deploy invalidates old clients.
 
-4. **Custom domain verification** — no longer relevant (was a Trust Score signal). Keep the domain field on profile but drop the verification flow.
+---
 
-## What gets added
+### Technical details
 
-1. **Stripe Identity verification flow**
-   - New edge function `create-identity-session` that creates a Stripe Identity VerificationSession + a $5.99 Checkout for the verification fee (charged first, session created on success).
-   - New edge function `stripe-identity-webhook` handling `identity.verification_session.verified` / `.requires_input` / `.canceled` → writes to `profiles`.
-   - New page `/dashboard/verification`: single "Verify my identity" CTA, shows status (unverified / pending / verified / failed) and what data is stored.
+**DB migration (one file):**
+- `ALTER TABLE profiles ADD COLUMN verification_kind text CHECK (verification_kind IN ('individual','business')) DEFAULT 'individual'`
+- `ADD COLUMN verified_business_name text`, `verified_business_country text`, `verified_business_tax_id_last4 text`, `date_of_birth date`
+- Column-level revoke `date_of_birth` from anon/authenticated.
+- `DROP TABLE creator_status CASCADE` + storage bucket cleanup.
 
-2. **Real name on profile**
-   - New columns: `profiles.verified_full_name`, `verified_first_name`, `verified_last_name`, `verified_dob` (private), `verified_country`, `verification_status`, `verified_at`, `stripe_identity_session_id`.
-   - Profile settings toggle: "Show my legal name publicly" (default off). Public profile shows legal name next to display name when enabled.
+**Stripe:**
+- Create new products: `$4.99` one-time (ID verify), `$9.99/mo` Pro v2 (3% fee semantic — the fee is enforced at charge time in edge functions, not on the price).
+- Store new price IDs in `src/lib/stripe-config.ts` and the identity checkout function.
+- Update `create-tip`, `create-product-checkout`, `create-subscription-checkout` fee logic: Pro → 3%, Free → 10%.
 
-3. **Age verification badge (OAuth-exposed)**
-   - New computed field `is_18_plus` / `is_21_plus` derived from `verified_dob`.
-   - `oauth-userinfo` returns `id_verified`, `age_over_18`, `age_over_21`, `verified_country`, `legal_name` (only if requested scope + user opted in).
-   - New OAuth scopes: `identity`, `age`, `age.21`, `legal_name`. Existing `trust` scope removed.
+**Edge functions to touch:**
+- `create-identity-checkout` (price change + Pro bypass)
+- `create-identity-session` (Pro bypass, business branch)
+- `stripe-webhook` (handle business verification events + new subscription price)
+- `create-tip`, `create-product-checkout`, `create-subscription-checkout` (3% fee for Pro creators)
+- `oauth-userinfo` (add `verification_kind`)
 
-4. **Digital ID share card**
-   - New route `/verify/:username`: replaces old public verification page. Shows verified checkmark, display name, optional legal name, country flag, age band (if user opted in), QR code linking back.
+**Files to delete:** `src/components/StatusRing.tsx`, `src/components/dashboard/StatusComposer.tsx`, related refs in `CreatorProfile.tsx` and `Dashboard.tsx`.
 
-## What stays
+**Out of scope this pass (queued for next):** Instagram/YouTube/TikTok OAuth APIs (skipped — you chose handles-as-links), PayPal/crypto payouts (skipped — Stripe Connect only), full legal rewrite audit (light copy pass only), international payment rails beyond Stripe.
 
-- Link-in-bio (`/username`, bio_links, themes)
-- Tips + memberships + digital products + Stripe Connect payouts (unchanged)
-- Pro subscription ($9.99/mo, 0% fee)
-- Sign in with Verifiedly OAuth (updated scopes)
-- Explore (simplified — sort by verified first, then newest)
-
-## Dashboard sidebar (new)
-
-1. Profile (About / Links / Theme tabs)
-2. Verification (single ID check)
-3. Monetization (Tips / Products / Memberships)
-4. Purchases
-5. Settings
-
-## Landing page rewrite
-
-- **Hero**: "Prove you're real. Once. Verify once with your government ID. Get a checkmark that works everywhere — your profile, your links, and any site that supports Sign in with Verifiedly."
-- **Sections**: How verification works (3 steps: pay → scan ID + selfie → verified) · What you unlock (blue check, real-name option, age proof, SSO) · Pricing (one-time $5.99 verify + optional $9.99/mo Pro for creators who monetize) · Developers (Sign in with Verifiedly for your app).
-- Remove: Trust Score explainer, Marketplace mentions, Status/stories mentions.
-
-## Legal & privacy
-
-- Update Privacy Policy: Stripe Identity is a subprocessor, we store verification result + minimal PII (name, DOB, country), not the ID image.
-- Update Terms: one-time verification fee is non-refundable once Stripe Identity has run.
-- Age scopes on OAuth require user opt-in per-scope; documented on `/developers`.
-
-## Migration order (build phase)
-
-1. Stripe: create `$5.99 one-time` price for ID verification.
-2. DB migration: add new columns, drop old tables/columns/functions (destructive — one migration).
-3. Edge functions: `create-identity-session`, `stripe-identity-webhook`, update `oauth-userinfo`.
-4. Frontend: rewrite `/dashboard/verification`, replace `/verify/:username`, strip Trust Score / Status / Marketplace, update sidebar, update Explore, update landing + pricing + developers pages.
-5. Update memory (`mem://index.md`, product positioning, monetization rules, remove retired memories).
-
-## Open items to confirm before build
-
-None blocking — will proceed with $5.99 verification fee unless you say otherwise, keep Pro at $9.99/mo, and destructively drop Trust Score / Marketplace / Status data (no user-facing content lives in those tables today besides the profile fields being replaced).
+Approve to build?
