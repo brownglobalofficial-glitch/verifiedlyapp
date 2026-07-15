@@ -39,7 +39,7 @@ const Index = () => {
 
         {/* Positioning */}
         <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
-          Your verified profile for everything you <span className="text-foreground font-medium">share</span> and <span className="text-foreground font-medium">sell</span> — one check, one badge, every platform.
+          Your verified profile for everything you <span className="text-foreground font-medium">share</span> and <span className="text-foreground font-medium">sell</span> — one profile, every platform.
         </p>
 
         {/* Actions */}
