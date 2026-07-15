@@ -13,7 +13,6 @@ export default function DashboardShell({ children, title }: { children: ReactNod
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
-      supabase projectRef = "pwahrywcgtgfaaghkpoo";
       supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle()
         .then(({ data }) => {
           if (data) setUsername(data.username || undefined);
