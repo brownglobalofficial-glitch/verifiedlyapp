@@ -115,7 +115,7 @@ const Signup = () => {
             <img src={logo} alt="Verifiedly" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">One link. Every way to get paid.</p>
+          <p className="text-sm text-muted-foreground mt-1">Verify. Share. Earn.</p>
         </div>
 
         <div className="space-y-3">
