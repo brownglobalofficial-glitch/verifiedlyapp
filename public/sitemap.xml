@@ -10,4 +10,12 @@
   <url><loc>https://verifiedly.app/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>https://verifiedly.app/privacy</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
   <url><loc>https://verifiedly.app/refunds</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://verifiedly.app/developers</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://verifiedly.app/pro</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://verifiedly.app/dashboard/settings</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://verifiedly.app/dashboard/products</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://verifiedly.app/dashboard/subscriptions</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://verifiedly.app/dashboard/analytics</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://verifiedly.app/dashboard/marketplace</loc><changefreq>weekly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://verifiedly.app/comparison/verifiedly-vs-linktree</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 </urlset>
