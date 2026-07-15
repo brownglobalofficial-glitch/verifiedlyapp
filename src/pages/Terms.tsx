@@ -1,7 +1,16 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const Terms = () => (
   <div className="min-h-screen bg-background py-12 px-4">
+    <Helmet>
+      <title>Terms of Service — Verifiedly</title>
+      <meta name="description" content="The Verifiedly Terms of Service covering account eligibility, subscription tiers, identity verification, refunds, and creator content ownership." />
+      <link rel="canonical" href="https://verifiedly.app/terms" />
+      <meta property="og:title" content="Terms of Service — Verifiedly" />
+      <meta property="og:description" content="Rules of the road for using Verifiedly: accounts, subscriptions, identity verification, and creator content." />
+      <meta property="og:url" content="https://verifiedly.app/terms" />
+    </Helmet>
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
       <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Terms of Service</h1>

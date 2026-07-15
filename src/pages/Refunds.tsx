@@ -1,7 +1,16 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const Refunds = () => (
   <div className="min-h-screen bg-background py-12 px-4">
+    <Helmet>
+      <title>Refund Policy — Verifiedly</title>
+      <meta name="description" content="Who refunds what on Verifiedly: creators are the merchant of record for their sales, while Verifiedly handles refunds for platform subscriptions." />
+      <link rel="canonical" href="https://verifiedly.app/refunds" />
+      <meta property="og:title" content="Refund Policy — Verifiedly" />
+      <meta property="og:description" content="How refunds work on Verifiedly for creator products, tips, subscriptions, and platform plans." />
+      <meta property="og:url" content="https://verifiedly.app/refunds" />
+    </Helmet>
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
       <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Refund Policy</h1>

@@ -1,7 +1,16 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 const Privacy = () => (
   <div className="min-h-screen bg-background py-12 px-4">
+    <Helmet>
+      <title>Privacy Policy — Verifiedly</title>
+      <meta name="description" content="How Verifiedly collects, uses, and protects your personal information, including Stripe Identity verification data and account details." />
+      <link rel="canonical" href="https://verifiedly.app/privacy" />
+      <meta property="og:title" content="Privacy Policy — Verifiedly" />
+      <meta property="og:description" content="How Verifiedly collects, uses, and protects your personal information across the platform." />
+      <meta property="og:url" content="https://verifiedly.app/privacy" />
+    </Helmet>
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
       <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Privacy Policy</h1>
