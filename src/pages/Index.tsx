@@ -23,14 +23,16 @@ const Index = () => {
         <meta name="description" content="Your verified profile for everything you share and sell. One government-ID check, one blue badge, everywhere on the internet." />
         <meta property="og:title" content="Verifiedly — Verify. Share. Earn." />
         <meta property="og:description" content="Your verified profile for everything you share and sell." />
+        <meta property="og:url" content="https://verifiedly.app/" />
+        <link rel="canonical" href="https://verifiedly.app/" />
       </Helmet>
 
       <main className="w-full max-w-sm flex flex-col items-center">
         {/* Brand */}
         <div className="text-center mb-16 sm:mb-20">
-          <img src={logoMark} alt="Verifiedly" className="h-12 w-12 mx-auto mb-5" />
+          <img src={logoMark} alt="Verifiedly Logo" className="h-12 w-12 mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
-            Verifiedly
+            Verifiedly — Verify, Share, and Earn
           </h1>
           <p className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">
             Verify · Share · Earn
