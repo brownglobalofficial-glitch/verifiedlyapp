@@ -94,7 +94,7 @@ const Developers = () => {
 
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur h-14 flex items-center px-4">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Verifiedly" className="h-6" /></Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Verifiedly Logo" className="h-6" /></Link>
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Home</Link>
         </div>
       </header>
