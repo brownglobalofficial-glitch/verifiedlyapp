@@ -62,6 +62,8 @@ serve(async (req) => {
         quantity: 1,
       }],
       mode: "payment",
+      locale: "auto",
+      billing_address_collection: "auto",
       success_url: `${req.headers.get("origin")}/${creator.username}?tip=success`,
       cancel_url: `${req.headers.get("origin")}/${creator.username}`,
       metadata: {

@@ -7,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, Users, DollarSign, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ConnectPayoutsModal from "@/components/monetization/ConnectPayoutsModal";
+import FeeBreakdown from "@/components/FeeBreakdown";
 
 export default function Monetization() {
   const [chargesEnabled, setChargesEnabled] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
   const [connectOpen, setConnectOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isPro, setIsPro] = useState(false);
+  const [isElite, setIsElite] = useState(false);
 
   const load = async (opts: { sync?: boolean } = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -28,6 +31,10 @@ export default function Monetization() {
       .maybeSingle() as any);
     setHasAccount(!!data?.stripe_connect_account_id);
     setChargesEnabled(!!data?.stripe_charges_enabled);
+    const { data: prof } = await supabase
+      .from("profiles").select("is_pro, is_elite").eq("id", session.user.id).maybeSingle();
+    setIsPro(!!prof?.is_pro);
+    setIsElite(!!prof?.is_elite);
     setLoading(false);
   };
 
@@ -114,19 +121,27 @@ export default function Monetization() {
         <Card className="p-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Platform fee</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Your platform fee</p>
               <p className="font-display font-bold text-2xl mt-1">
-                10% <span className="text-sm font-normal text-muted-foreground">on Free</span>
-                <span className="mx-2 text-muted-foreground">→</span>
-                0% <span className="text-sm font-normal text-muted-foreground">on Pro</span>
+                {isElite ? "0%" : isPro ? "3%" : "10%"}{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  on {isElite ? "Elite (legacy)" : isPro ? "Pro" : "Free"}
+                </span>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Stripe processing fees (~2.9% + 30¢) apply on both plans.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Free 10% · Pro 3%. Stripe processing (~2.9% + 30¢) applies on top for both plans.
+              </p>
             </div>
-            <Link to="/dashboard/upgrade">
-              <Button size="sm" variant="outline" className="gap-1">Compare plans <ArrowRight className="w-3 h-3" /></Button>
-            </Link>
+            {!isPro && !isElite && (
+              <Link to="/dashboard/upgrade">
+                <Button size="sm" variant="outline" className="gap-1">Lower to 3% <ArrowRight className="w-3 h-3" /></Button>
+              </Link>
+            )}
           </div>
         </Card>
+
+        {/* Fee breakdown preview at a common sale amount */}
+        <FeeBreakdown amountUsd={20} kind="product" isPro={isPro} isElite={isElite} />
 
         {/* Feature cards */}
         <div>
