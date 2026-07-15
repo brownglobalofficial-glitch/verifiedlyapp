@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import StatusComposer from "@/components/dashboard/StatusComposer";
 import DashboardTour from "@/components/dashboard/DashboardTour";
 import {
   ExternalLink, LinkIcon, Palette, User as UserIcon, Eye, DollarSign, Users, ArrowRight, Sparkles,
@@ -43,7 +42,8 @@ const Dashboard = () => {
 
   const username = profile?.username || "creator";
   const displayName = profile?.display_name || user?.user_metadata?.display_name || "there";
-  const isVerified = (profile?.trust_score ?? 0) >= 80;
+  // Badge is earned only via Stripe Identity ID verification.
+  const isVerified = !!profile?.id_verified;
   const isPro = !!profile?.is_pro;
 
   return (
@@ -94,7 +94,7 @@ const Dashboard = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="font-display font-semibold text-sm">Go Pro — $9.99/mo</p>
-                    <p className="text-xs text-muted-foreground truncate">Drop your platform fee from 10% to 0%. Keep 100% of every sale.</p>
+                    <p className="text-xs text-muted-foreground truncate">Drop your platform fee from 10% to 3% + free ID verification.</p>
                   </div>
                 </div>
                 <Button size="sm" className="gap-2 shrink-0">
@@ -121,8 +121,6 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
-
-        {user && <StatusComposer userId={user.id} />}
 
         {/* Tabs: About / Links / Theme */}
         <Tabs defaultValue="about" className="w-full">

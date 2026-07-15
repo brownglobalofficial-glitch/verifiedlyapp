@@ -47,9 +47,10 @@ serve(async (req) => {
     if (!stripeConnectAccountId) throw new Error("This creator hasn't connected Stripe yet — they need to complete payouts setup.");
 
     // Calculate platform fee
+    // Fee tiers: Free 10%, Pro 3%, Elite 0% (legacy).
     let feePercent = 10;
     if (creator.is_elite) feePercent = 0;
-    else if (creator.is_pro) feePercent = 5;
+    else if (creator.is_pro) feePercent = 3;
 
     // Annual = monthly price * 10 (~17% off / 2 months free)
     const monthlyAmountCents = Math.round(sub.price * 100);

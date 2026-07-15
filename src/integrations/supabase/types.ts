@@ -274,41 +274,6 @@ export type Database = {
         }
         Relationships: []
       }
-      creator_status: {
-        Row: {
-          caption: string | null
-          created_at: string
-          creator_id: string
-          expires_at: string
-          id: string
-          image_url: string
-        }
-        Insert: {
-          caption?: string | null
-          created_at?: string
-          creator_id: string
-          expires_at?: string
-          id?: string
-          image_url: string
-        }
-        Update: {
-          caption?: string | null
-          created_at?: string
-          creator_id?: string
-          expires_at?: string
-          id?: string
-          image_url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "creator_status_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       earnings: {
         Row: {
           amount: number
@@ -783,6 +748,7 @@ export type Database = {
           category: string | null
           comp_tier: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           domain_verified: boolean
           follower_count: number | null
@@ -810,8 +776,12 @@ export type Database = {
           trust_score_public: boolean
           updated_at: string
           username: string
+          verification_kind: string | null
           verification_status: string
           verified_at: string | null
+          verified_business_country: string | null
+          verified_business_name: string | null
+          verified_business_tax_id_last4: string | null
           verified_country: string | null
           verified_dob: string | null
           verified_domain: string | null
@@ -828,6 +798,7 @@ export type Database = {
           category?: string | null
           comp_tier?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           domain_verified?: boolean
           follower_count?: number | null
@@ -855,8 +826,12 @@ export type Database = {
           trust_score_public?: boolean
           updated_at?: string
           username: string
+          verification_kind?: string | null
           verification_status?: string
           verified_at?: string | null
+          verified_business_country?: string | null
+          verified_business_name?: string | null
+          verified_business_tax_id_last4?: string | null
           verified_country?: string | null
           verified_dob?: string | null
           verified_domain?: string | null
@@ -873,6 +848,7 @@ export type Database = {
           category?: string | null
           comp_tier?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           domain_verified?: boolean
           follower_count?: number | null
@@ -900,8 +876,12 @@ export type Database = {
           trust_score_public?: boolean
           updated_at?: string
           username?: string
+          verification_kind?: string | null
           verification_status?: string
           verified_at?: string | null
+          verified_business_country?: string | null
+          verified_business_name?: string | null
+          verified_business_tax_id_last4?: string | null
           verified_country?: string | null
           verified_dob?: string | null
           verified_domain?: string | null

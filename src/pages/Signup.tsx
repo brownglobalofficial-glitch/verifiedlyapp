@@ -17,6 +17,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [dob, setDob] = useState(""); // YYYY-MM-DD, must be 18+
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
   const returnTo = searchParams.get("returnTo") || "";
@@ -58,6 +59,17 @@ const Signup = () => {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
       return;
     }
+    if (!dob) {
+      toast({ title: "Date of birth required", description: "You must be 18 or older to use Verifiedly.", variant: "destructive" });
+      return;
+    }
+    const dobDate = new Date(dob);
+    const eighteenYearsAgo = new Date();
+    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+    if (isNaN(dobDate.getTime()) || dobDate > eighteenYearsAgo) {
+      toast({ title: "Must be 18 or older", description: "Verifiedly is not available to users under 18.", variant: "destructive" });
+      return;
+    }
     if (!agreedTerms) {
       toast({ title: "Terms required", description: "You must agree to the Terms of Service and Privacy Policy.", variant: "destructive" });
       return;
@@ -76,6 +88,7 @@ const Signup = () => {
             display_name: displayName,
             account_type: "creator",
             referred_by: referralCode,
+            date_of_birth: dob,
           },
         },
       });
@@ -151,6 +164,11 @@ const Signup = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+          </div>
+          <div>
+            <Label htmlFor="dob">Date of birth</Label>
+            <Input id="dob" type="date" value={dob} onChange={e => setDob(e.target.value)} required max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0,10)} />
+            <p className="text-xs text-muted-foreground mt-1">You must be 18 or older to use Verifiedly.</p>
           </div>
 
           {referralCode && (

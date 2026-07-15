@@ -5,7 +5,10 @@ export const STRIPE_TIERS = {
     product_id: "prod_UiZxt9S0G6T6LU",
     name: "Pro",
     price: 9.99,
-    fee_percent: 0,
+    // Pro creators pay a 3% platform fee (down from 10% Free) AND receive
+    // free ID verification as part of their subscription.
+    fee_percent: 3,
+    includes_id_verification: true,
   },
   elite: {
     price_id: "price_1TSoiF1hrOAc8qE8R2dGTqHQ",
@@ -21,6 +24,13 @@ export const STRIPE_TIERS = {
     price: 0,
     fee_percent: 10,
   },
+} as const;
+
+// One-time Stripe Identity verification fee. Grants the blue checkmark.
+// Non-refundable once the ID scan runs. Free for Verifiedly Pro subscribers.
+export const IDENTITY_VERIFICATION = {
+  price_id: "price_1TtYw41hrOAc8qE8bFdRF341",
+  amount_usd: 4.99,
 } as const;
 
 export type SubscriptionTier = keyof typeof STRIPE_TIERS;
