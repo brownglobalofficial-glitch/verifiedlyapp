@@ -20,10 +20,10 @@ const Hero = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary mb-8"
           >
             <VerifiedBadge className="w-4 h-4" />
-            <span className="text-sm font-medium text-muted-foreground">Verified identity + payments</span>
+            <span className="text-sm font-medium text-muted-foreground">Real ID verified · powered by Stripe Identity</span>
           </motion.div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.15] mb-6">
-            One verified link.
+            Prove you're real.
             <br />
             <motion.span
               className="text-gradient inline-block pb-2"
@@ -31,7 +31,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Every way to get paid.
+              Once. Everywhere.
             </motion.span>
           </h1>
           <motion.p
@@ -40,8 +40,8 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            One profile that proves who you are and gets you paid.
-            Sell products, run subscriptions, and accept tips — paid out directly by Stripe.
+            Verify your identity once with your government ID. Get a checkmark that works
+            on your profile, your links, and any app that supports Sign in with Verifiedly.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -51,7 +51,7 @@ const Hero = () => {
           >
             <Link to="/signup">
               <Button size="lg" className="text-base px-8 h-12 gap-2">
-                Claim your link <ArrowRight className="w-4 h-4" />
+                Get verified <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <a href="#pricing">
@@ -66,7 +66,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Free forever • No credit card required • Stripe-powered payouts
+            Free account · $5.99 one-time to verify · No subscription required
           </motion.p>
         </motion.div>
 
@@ -80,10 +80,10 @@ const Hero = () => {
           <div className="bg-secondary rounded-2xl border border-border p-6 sm:p-8 md:p-12">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 text-center">
               {[
-                { value: "$0", label: "To get started" },
-                { value: "0%", label: "Platform fee on Pro" },
-                { value: "<2 min", label: "To launch your page" },
-                { value: "Stripe", label: "Direct payouts" },
+                { value: "$5.99", label: "One-time to verify" },
+                { value: "Gov ID", label: "Real identity check" },
+                { value: "<2 min", label: "To complete scan" },
+                { value: "Stripe", label: "Identity + payouts" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}

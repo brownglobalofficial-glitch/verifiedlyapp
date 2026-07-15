@@ -17,10 +17,10 @@ const Pricing = () => {
           <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Simple, honest pricing</h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start free. Go Pro to drop the platform fee to zero. The verified badge is always earned — never paid for.
+            Free account. One-time fee to verify your identity. Optional Pro subscription if you monetize.
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-2 gap-5 sm:gap-6 max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
           {/* Free */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -33,7 +33,7 @@ const Pricing = () => {
             <p className="text-4xl font-display font-bold mb-1">$0<span className="text-lg text-muted-foreground font-normal">/mo</span></p>
             <p className="text-sm text-muted-foreground mb-6">10% platform fee on earnings</p>
             <ul className="space-y-3 mb-8">
-              {["Public profile + link-in-bio", "Sell digital products & accept tips", "Earn the verified badge", "Basic analytics"].map(f => (
+              {["Public profile + link-in-bio", "Sell digital products & accept tips", "Sign in with Verifiedly (OAuth)", "Basic analytics"].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
                   <Check className="w-4 h-4 text-[hsl(var(--success))]" />
                   {f}
@@ -42,6 +42,39 @@ const Pricing = () => {
             </ul>
             <Link to="/signup">
               <Button variant="outline" className="w-full">Start free</Button>
+            </Link>
+          </motion.div>
+
+          {/* Verify */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.05 }}
+            className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300"
+          >
+            <div className="absolute -top-3 left-6 bg-foreground text-background px-3 py-1 rounded-full text-xs font-semibold">
+              MOST POPULAR
+            </div>
+            <h3 className="text-xl font-display font-semibold mb-2">Identity Verification</h3>
+            <p className="text-4xl font-display font-bold mb-1">$5.99<span className="text-lg text-muted-foreground font-normal"> once</span></p>
+            <p className="text-sm text-muted-foreground mb-6">Blue checkmark, forever</p>
+            <ul className="space-y-3 mb-8">
+              {[
+                "Government ID + selfie check",
+                "Verified blue checkmark on your profile",
+                "Real name on profile (optional)",
+                "Age verification for partner apps",
+                "Powered by Stripe Identity",
+              ].map(f => (
+                <li key={f} className="flex items-center gap-2 text-sm">
+                  <Check className="w-4 h-4 text-[hsl(var(--success))]" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link to="/signup">
+              <Button className="w-full">Get verified</Button>
             </Link>
           </motion.div>
 
@@ -65,7 +98,6 @@ const Pricing = () => {
                 "0% platform fee on every sale",
                 "Paid subscription tiers + exclusive content",
                 "Advanced analytics",
-                "Priority verification reviews",
                 "Priority support",
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
@@ -82,7 +114,9 @@ const Pricing = () => {
 
         {/* Fee comparison table */}
         <p className="text-center text-xs text-muted-foreground mt-10 max-w-2xl mx-auto">
-          Payments processed by Stripe. Standard Stripe processing fees (~2.9% + 30¢) apply on all plans and are separate from Verifiedly's platform fee.
+          The verified badge is only granted through Stripe Identity — never for a Pro subscription.
+          Payments processed by Stripe. Standard Stripe processing fees (~2.9% + 30¢) apply on sales.
+          Identity verification fee is non-refundable once the ID scan runs.
         </p>
       </div>
     </section>

@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
   const { data: p } = await admin
     .from("profiles")
-    .select("username, display_name, avatar_url, trust_score, trust_score_opt_out, is_pro")
+    .select("username, display_name, avatar_url, is_pro, id_verified, verified_at, verified_country, verified_full_name, show_legal_name")
     .eq("id", tok.user_id).maybeSingle();
   if (!p) return j({ error: "no_profile" }, 404);
 
@@ -35,11 +35,26 @@ Deno.serve(async (req) => {
     display_name: p.display_name,
     avatar_url: p.avatar_url,
   };
-  if (scopes.includes("trust")) {
-    // Verified is EARNED only: Trust Score ≥ 80 and not opted out. Pro does NOT grant verified.
-    payload.trust_score = p.trust_score ?? 0;
-    payload.verified = (p.trust_score ?? 0) >= 80 && !p.trust_score_opt_out;
+  // Identity: earned via Stripe Identity ID check only. Pro does NOT grant verified.
+  if (scopes.includes("identity") || scopes.includes("trust")) {
+    payload.verified = !!p.id_verified;
+    payload.id_verified = !!p.id_verified;
+    payload.verified_at = p.verified_at || null;
     payload.tier = p.is_pro ? "pro" : "free";
+  }
+  if (scopes.includes("legal_name") && p.show_legal_name) {
+    payload.legal_name = p.verified_full_name || null;
+  }
+  if (scopes.includes("age") && p.id_verified) {
+    const { data: over18 } = await admin.rpc("is_age_over", { _user_id: tok.user_id, _years: 18 });
+    payload.age_over_18 = !!over18;
+  }
+  if (scopes.includes("age.21") && p.id_verified) {
+    const { data: over21 } = await admin.rpc("is_age_over", { _user_id: tok.user_id, _years: 21 });
+    payload.age_over_21 = !!over21;
+  }
+  if ((scopes.includes("identity") || scopes.includes("country")) && p.verified_country) {
+    payload.country = p.verified_country;
   }
   if (scopes.includes("email")) {
     const { data: u } = await admin.auth.admin.getUserById(tok.user_id);
