@@ -23,10 +23,10 @@ const Terms = () => (
       <p>The Platform offers the following tiers:</p>
       <ul>
         <li><strong>Free:</strong> Basic access with a 10% platform fee on transactions.</li>
-        <li><strong>Verifiedly Pro ($4.99/mo):</strong> Reduced 5% platform fee, verified badge, subscription tiers, and priority support.</li>
-        <li><strong>Verifiedly Elite ($19.99/mo):</strong> 0% platform fees, verified badge, all Pro features, priority listing, and exclusive perks.</li>
+        <li><strong>Verifiedly Pro ($9.99/mo):</strong> Reduced 3% platform fee, paid subscription tiers, advanced analytics, and free identity verification. Pro does <em>not</em> grant a verified badge on its own.</li>
+        <li><strong>Identity Verification ($4.99 one-time):</strong> Government-ID + selfie check via Stripe Identity. Grants the blue verified badge. Non-refundable once the ID scan runs. Free for Verifiedly Pro subscribers.</li>
       </ul>
-      <p>Subscription fees are billed monthly and are non-refundable except as required by applicable law. We reserve the right to change pricing with 30 days' notice.</p>
+      <p>Subscription fees are billed monthly and are non-refundable except as required by applicable law. The one-time identity verification fee is non-refundable once the Stripe Identity scan has been initiated. We reserve the right to change pricing with 30 days' notice.</p>
 
       <h2>6. Creator Content</h2>
       <p>Creators retain full ownership of all content they upload to the Platform. By posting content, you grant BrownGlobal Holdings LLC a non-exclusive, worldwide, royalty-free, sublicensable license to display, distribute, and promote your content on and in connection with the Platform.</p>
@@ -50,7 +50,7 @@ const Terms = () => (
       </ul>
 
       <h2>10. Payments & Fees</h2>
-      <p>All payments are processed through Stripe, Inc. and Stripe Connect. By using Verifiedly, creators and buyers also agree to the <a href="https://stripe.com/legal/connect-account" target="_blank" rel="noopener noreferrer">Stripe Connected Account Agreement</a> and the <a href="https://stripe.com/legal/ssa" target="_blank" rel="noopener noreferrer">Stripe Services Agreement</a>. Platform fees (10% Free / 5% Pro / 0% Elite) are deducted automatically as application fees on each transaction. BrownGlobal Holdings LLC is not the merchant of record for creator sales — creators are the merchants of record for their own products, subscriptions, and tips, and are solely responsible for fulfillment, customer service, applicable taxes, and any chargebacks or disputes on those sales.</p>
+      <p>All payments are processed through Stripe, Inc. and Stripe Connect. By using Verifiedly, creators and buyers also agree to the <a href="https://stripe.com/legal/connect-account" target="_blank" rel="noopener noreferrer">Stripe Connected Account Agreement</a> and the <a href="https://stripe.com/legal/ssa" target="_blank" rel="noopener noreferrer">Stripe Services Agreement</a>. Platform fees (10% Free / 3% Pro) are deducted automatically as application fees on each transaction. Identity verification uses Stripe Identity, a Stripe service; Stripe collects and stores the government-ID document and selfie under its own privacy policy. BrownGlobal Holdings LLC is not the merchant of record for creator sales — creators are the merchants of record for their own products, subscriptions, and tips, and are solely responsible for fulfillment, customer service, applicable taxes, and any chargebacks or disputes on those sales.</p>
 
       <h2>10a. Creator Payouts</h2>
       <p>Payouts to creators are made directly by Stripe to the bank account connected via Stripe Connect Express, on Stripe's standard rolling payout schedule (typically every 2 business days for US accounts; varies by country). Verifiedly does not hold creator funds. Stripe may delay, reserve, or withhold payouts as described in the Stripe Connected Account Agreement, including for risk review, disputes, refunds, or compliance reasons. Creators are responsible for keeping their Stripe account, tax forms (e.g., W-9 / W-8BEN, 1099-K where applicable), and bank details up to date. Failure to complete Stripe identity verification will prevent payouts.</p>
