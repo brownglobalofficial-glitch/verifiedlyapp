@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logoMark from "@/assets/verifiedly-mark.png";
+import { ArrowRight } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,31 +17,63 @@ const Index = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
-        <title>Verifiedly — Prove you're real. Once.</title>
-        <meta name="description" content="Government-ID verified identity for the internet. One check, blue badge everywhere." />
+        <title>Verifiedly — Verify. Share. Earn.</title>
+        <meta name="description" content="Your verified profile for everything you share and sell. One government-ID check, one blue badge, everywhere on the internet." />
+        <meta property="og:title" content="Verifiedly — Verify. Share. Earn." />
+        <meta property="og:description" content="Your verified profile for everything you share and sell." />
       </Helmet>
-      <main className="w-full max-w-sm text-center space-y-8">
-        <img src={logoMark} alt="Verifiedly" className="h-14 w-14 mx-auto" />
-        <div className="space-y-2">
-          <h1 className="text-3xl font-display font-bold tracking-tight">Prove you're real.</h1>
-          <p className="text-sm text-muted-foreground">Verified identity + link-in-bio for creators, businesses, and people who show up as themselves.</p>
+
+      <main className="w-full max-w-sm flex flex-col items-center">
+        {/* Brand */}
+        <div className="text-center mb-16 sm:mb-20">
+          <img src={logoMark} alt="Verifiedly" className="h-12 w-12 mx-auto mb-5" />
+          <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
+            Verifiedly
+          </h1>
+          <p className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">
+            Verify · Share · Earn
+          </p>
         </div>
-        <div className="space-y-2">
-          <Link to="/signup" className="block">
-            <Button size="lg" className="w-full">Create account</Button>
+
+        {/* Positioning */}
+        <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
+          Your verified profile for everything you <span className="text-foreground font-medium">share</span> and <span className="text-foreground font-medium">sell</span> — one check, one badge, every platform.
+        </p>
+
+        {/* Actions */}
+        <div className="w-full space-y-3">
+          <Link
+            to="/signup"
+            className="group relative flex items-center justify-center w-full bg-foreground text-background py-4 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:bg-foreground/90"
+          >
+            <span>Create profile</span>
+            <ArrowRight className="absolute right-6 w-4 h-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
           </Link>
-          <Link to="/login" className="block">
-            <Button size="lg" variant="outline" className="w-full">Sign in</Button>
+          <Link
+            to="/login"
+            className="flex items-center justify-center w-full bg-transparent border-2 border-foreground text-foreground py-4 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:bg-foreground hover:text-background"
+          >
+            Sign in
           </Link>
         </div>
+
+        {/* Meta separator */}
+        <div className="mt-14 flex items-center gap-2 opacity-30" aria-hidden="true">
+          <div className="w-1 h-1 bg-foreground rounded-full" />
+          <div className="w-16 h-px bg-foreground" />
+          <div className="w-1 h-1 bg-foreground rounded-full" />
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
+          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+        </footer>
       </main>
-      <footer className="mt-16 text-xs text-muted-foreground flex gap-4">
-        <Link to="/terms" className="hover:text-foreground">Terms</Link>
-        <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-        <Link to="/developers" className="hover:text-foreground">Developers</Link>
-      </footer>
     </div>
   );
 };
