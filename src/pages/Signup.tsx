@@ -165,6 +165,11 @@ const Signup = () => {
               </button>
             </div>
           </div>
+          <div>
+            <Label htmlFor="dob">Date of birth</Label>
+            <Input id="dob" type="date" value={dob} onChange={e => setDob(e.target.value)} required max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0,10)} />
+            <p className="text-xs text-muted-foreground mt-1">You must be 18 or older to use Verifiedly.</p>
+          </div>
 
           {referralCode && (
             <div className="bg-secondary rounded-lg p-3">
