@@ -100,6 +100,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : customerEmail,
       line_items: [lineItem],
       mode: "subscription",
+      locale: "auto",
+      billing_address_collection: "auto",
       success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/${creator.username}`,
       metadata: {
