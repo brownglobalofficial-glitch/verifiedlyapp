@@ -94,6 +94,11 @@ serve(async (req) => {
       customer_email: customerId ? undefined : customerEmail,
       line_items: [lineItem],
       mode: "payment",
+      // International: let Stripe present local currency + payment methods
+      // (iDEAL, Bancontact, SEPA, Klarna, Alipay, etc.) based on buyer geo.
+      locale: "auto",
+      automatic_tax: { enabled: false },
+      billing_address_collection: "auto",
       success_url: `${req.headers.get("origin")}/${creator.username}?purchase=success&product=${productId}`,
       cancel_url: `${req.headers.get("origin")}/${creator.username}`,
       metadata: {
