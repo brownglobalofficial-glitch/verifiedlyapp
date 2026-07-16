@@ -58,7 +58,7 @@ const FeePreview = ({ currentTier, ownerId, viewerId }: Props) => {
   const amount = selected?.kind === "tip" ? tipAmount : (selected?.price ?? 0);
 
   const rows = useMemo(() => {
-    return (["free", "pro", "elite"] as const).map((id) => {
+    return (["free", "pro"] as const).map((id) => {
       const fee = STRIPE_TIERS[id].fee_percent;
       const platformCut = (amount * fee) / 100;
       const net = amount - platformCut;
@@ -67,7 +67,6 @@ const FeePreview = ({ currentTier, ownerId, viewerId }: Props) => {
   }, [amount]);
 
   const proSavings = rows[0].platformCut - rows[1].platformCut;
-  const eliteSavings = rows[0].platformCut - rows[2].platformCut;
 
   if (!isOwner) return null;
 
@@ -166,12 +165,11 @@ const FeePreview = ({ currentTier, ownerId, viewerId }: Props) => {
         })}
       </div>
 
-      {currentTier === "free" && (proSavings > 0 || eliteSavings > 0) && (
+      {currentTier === "free" && proSavings > 0 && (
         <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground mb-2">
             On this {selected?.kind === "tip" ? "tip" : "sale"} you'd keep an extra
-            {" "}<span className="font-semibold text-foreground">${proSavings.toFixed(2)}</span> with Pro
-            {" "}or <span className="font-semibold text-foreground">${eliteSavings.toFixed(2)}</span> with Elite.
+            {" "}<span className="font-semibold text-foreground">${proSavings.toFixed(2)}</span> with Pro.
           </p>
           <Link to="/dashboard/upgrade">
             <Button size="sm" className="w-full gap-2">
