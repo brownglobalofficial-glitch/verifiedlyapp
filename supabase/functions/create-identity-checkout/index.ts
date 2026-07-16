@@ -31,10 +31,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     const { data: prof } = await admin.from("profiles")
-      .select("is_pro, is_elite, id_verified, verification_status").eq("id", user.id).maybeSingle();
+      .select("is_pro, is_elite, id_verified, verification_status, pro_identity_check_used")
+      .eq("id", user.id).maybeSingle();
     if (prof?.id_verified) throw new Error("Already verified");
-    if (prof?.is_pro || prof?.is_elite) {
-      if (prof.verification_status !== "paid" && prof.verification_status !== "processing") {
+
+    // Pro/Elite subscribers get ONE included identity check on activation.
+    // Once that check reaches a terminal state (verified/failed/canceled) the
+    // included entitlement is consumed and further attempts require the $4.99
+    // paid flow. Support can flip pro_identity_check_used back to false to
+    // grant a manual replacement.
+    const proEligible = (prof?.is_pro || prof?.is_elite) && !prof?.pro_identity_check_used;
+    if (proEligible) {
+      if (prof!.verification_status !== "paid" && prof!.verification_status !== "processing") {
         await admin.from("profiles").update({ verification_status: "paid" }).eq("id", user.id);
       }
       return new Response(JSON.stringify({ pro_bypass: true }), {
