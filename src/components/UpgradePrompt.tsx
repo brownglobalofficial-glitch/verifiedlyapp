@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, Crown, Zap } from "lucide-react";
+import { Check, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { STRIPE_TIERS } from "@/lib/stripe-config";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ const UpgradePrompt = ({ currentTier, trigger }: UpgradePromptProps) => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleCheckout = async (tier: "pro" | "elite") => {
+  const handleCheckout = async (tier: "pro") => {
     setLoading(tier);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -37,22 +37,15 @@ const UpgradePrompt = ({ currentTier, trigger }: UpgradePromptProps) => {
       id: "free" as const,
       name: "Free",
       price: "$0",
-      features: ["Basic link-in-bio", "Digital products", "10% platform fee"],
+      features: ["Link-in-bio profile", "Digital products & tips", "10% platform fee"],
       icon: null,
     },
     {
       id: "pro" as const,
       name: "Pro",
-      price: "$4.99/mo",
-      features: ["Verified badge", "5% platform fee", "Priority support", "Custom themes", "Analytics"],
+      price: "$9.99/mo",
+      features: ["3% platform fee", "One identity check included", "Paid subscriptions", "Advanced analytics", "Priority support"],
       icon: <VerifiedBadge className="w-5 h-5" />,
-    },
-    {
-      id: "elite" as const,
-      name: "Elite",
-      price: "$19.99/mo",
-      features: ["Verified badge", "0% platform fee", "Featured placement", "Dedicated support", "Early access", "Custom branding"],
-      icon: <Crown className="w-5 h-5 text-amber-500" />,
     },
   ];
 
@@ -74,17 +67,17 @@ const UpgradePrompt = ({ currentTier, trigger }: UpgradePromptProps) => {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-display">Choose Your Plan</DialogTitle>
           </DialogHeader>
-          <div className="grid md:grid-cols-3 gap-4 mt-4">
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
             {tiers.map(tier => {
               const isCurrent = tier.id === currentTier;
               return (
                 <Card
                   key={tier.id}
-                  className={`p-5 relative ${isCurrent ? "border-2 border-primary ring-2 ring-primary/20" : "border"} ${tier.id === "elite" ? "bg-gradient-to-b from-amber-50/50 to-background dark:from-amber-950/20" : ""}`}
+                  className={`p-5 relative ${isCurrent ? "border-2 border-primary ring-2 ring-primary/20" : "border"}`}
                 >
                   {isCurrent && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-0.5 rounded-full font-medium">
@@ -107,8 +100,8 @@ const UpgradePrompt = ({ currentTier, trigger }: UpgradePromptProps) => {
                   {tier.id !== "free" && !isCurrent && (
                     <Button
                       className="w-full"
-                      variant={tier.id === "elite" ? "default" : "outline"}
-                      onClick={() => handleCheckout(tier.id)}
+                      variant="outline"
+                      onClick={() => handleCheckout(tier.id as "pro")}
                       disabled={loading === tier.id}
                     >
                       {loading === tier.id ? "Loading..." : `Upgrade to ${tier.name}`}
