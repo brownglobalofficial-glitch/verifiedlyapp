@@ -20,7 +20,7 @@ const Refunds = () => (
         This policy explains who is responsible for refunds on Verifiedly. In short:
         <strong> creators are the merchants of record for everything they sell</strong>,
         and <strong>BrownGlobal Holdings LLC</strong> (the Platform) is the merchant of
-        record only for Platform subscription plans (Pro and Elite).
+        record only for the Verifiedly Pro subscription plan.
       </p>
 
       <h2>1. Quick Summary</h2>
@@ -34,7 +34,7 @@ const Refunds = () => (
         </thead>
         <tbody>
           <tr>
-            <td>Platform plan (Pro, Elite)</td>
+            <td>Verifiedly Pro plan</td>
             <td>Verifiedly</td>
             <td>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a></td>
           </tr>
@@ -46,7 +46,7 @@ const Refunds = () => (
         </tbody>
       </table>
 
-      <h2>2. Platform Subscriptions (Pro &amp; Elite)</h2>
+      <h2>2. Platform Subscriptions (Verifiedly Pro)</h2>
       <p>
         If you upgrade to a paid Verifiedly plan, the Platform charges your card directly.
       </p>
