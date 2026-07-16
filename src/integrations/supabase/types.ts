@@ -762,6 +762,7 @@ export type Database = {
           membership_button_label: string | null
           onboarding_completed: boolean | null
           payout_status_public: boolean
+          pro_identity_check_used: boolean
           referral_code: string | null
           referred_by: string | null
           show_legal_name: boolean
@@ -812,6 +813,7 @@ export type Database = {
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
           payout_status_public?: boolean
+          pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
           show_legal_name?: boolean
@@ -862,6 +864,7 @@ export type Database = {
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
           payout_status_public?: boolean
+          pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
           show_legal_name?: boolean
