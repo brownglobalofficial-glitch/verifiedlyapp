@@ -15,7 +15,6 @@ export default function Monetization() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isPro, setIsPro] = useState(false);
-  const [isElite, setIsElite] = useState(false);
 
   const load = async (opts: { sync?: boolean } = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -32,9 +31,8 @@ export default function Monetization() {
     setHasAccount(!!data?.stripe_connect_account_id);
     setChargesEnabled(!!data?.stripe_charges_enabled);
     const { data: prof } = await supabase
-      .from("profiles").select("is_pro, is_elite").eq("id", session.user.id).maybeSingle();
+      .from("profiles").select("is_pro").eq("id", session.user.id).maybeSingle();
     setIsPro(!!prof?.is_pro);
-    setIsElite(!!prof?.is_elite);
     setLoading(false);
   };
 
@@ -123,16 +121,16 @@ export default function Monetization() {
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Your platform fee</p>
               <p className="font-display font-bold text-2xl mt-1">
-                {isElite ? "0%" : isPro ? "3%" : "10%"}{" "}
+                {isPro ? "3%" : "10%"}{" "}
                 <span className="text-sm font-normal text-muted-foreground">
-                  on {isElite ? "Elite (legacy)" : isPro ? "Pro" : "Free"}
+                  on {isPro ? "Pro" : "Free"}
                 </span>
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Free 10% · Pro 3%. Stripe processing (~2.9% + 30¢) applies on top for both plans.
               </p>
             </div>
-            {!isPro && !isElite && (
+            {!isPro && (
               <Link to="/dashboard/upgrade">
                 <Button size="sm" variant="outline" className="gap-1">Lower to 3% <ArrowRight className="w-3 h-3" /></Button>
               </Link>
@@ -141,7 +139,7 @@ export default function Monetization() {
         </Card>
 
         {/* Fee breakdown preview at a common sale amount */}
-        <FeeBreakdown amountUsd={20} kind="product" isPro={isPro} isElite={isElite} />
+        <FeeBreakdown amountUsd={20} kind="product" isPro={isPro} />
 
         {/* Feature cards */}
         <div>

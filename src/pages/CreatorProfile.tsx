@@ -385,14 +385,14 @@ const CreatorProfile = () => {
           <title>{`${profile.display_name || profile.username} (@${profile.username})${isTrustVerified ? " · Verified" : ""} · Verifiedly`}</title>
           <meta
             name="description"
-            content={(profile.bio || `${profile.display_name || profile.username} on Verifiedly${isTrustVerified ? " — verified identity, Trust Score " + trustScore + "/100." : "."} Links, products, subscriptions.`).slice(0, 158)}
+            content={(profile.bio || `${profile.display_name || profile.username} on Verifiedly${isTrustVerified ? " — identity verified." : "."} Links, products, subscriptions.`).slice(0, 158)}
           />
           <link rel="canonical" href={`https://verifiedly.app/${profile.username}`} />
           <meta property="og:type" content="profile" />
           <meta property="og:title" content={`${profile.display_name || profile.username}${isTrustVerified ? " · Verified on Verifiedly" : " on Verifiedly"}`} />
           <meta
             property="og:description"
-            content={(profile.bio || `Tips, subscriptions, and products from ${profile.display_name || profile.username}.${isTrustVerified ? " Verified Trust Score " + trustScore + "/100." : ""}`).slice(0, 200)}
+            content={(profile.bio || `Tips, subscriptions, and products from ${profile.display_name || profile.username}.${isTrustVerified ? " Identity verified via Stripe Identity." : ""}`).slice(0, 200)}
           />
           <meta property="og:url" content={`https://verifiedly.app/${profile.username}`} />
           {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}

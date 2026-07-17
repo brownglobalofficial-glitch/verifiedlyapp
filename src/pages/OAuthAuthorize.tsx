@@ -7,9 +7,14 @@ import { ShieldCheck, ArrowRight } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 const SCOPE_LABELS: Record<string, string> = {
-  profile: "Your username, display name and avatar",
-  trust:   "Your Trust Score and verified socials",
-  email:   "Your email address",
+  openid:     "A stable user id",
+  profile:    "Your username, display name and avatar",
+  identity:   "Whether your identity is verified (and when)",
+  email:      "Your email address",
+  legal_name: "Your verified legal name",
+  age:        "Whether you are over 18",
+  "age.21":   "Whether you are over 21",
+  country:    "Your verified country",
 };
 
 const OAuthAuthorize = () => {

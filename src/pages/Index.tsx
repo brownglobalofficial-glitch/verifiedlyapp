@@ -61,6 +61,11 @@ const Index = () => {
           </Link>
         </div>
 
+        {/* Proof line */}
+        <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
+          ID verification powered by Stripe Identity · Tips, products and memberships.
+        </p>
+
         {/* Footer */}
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
