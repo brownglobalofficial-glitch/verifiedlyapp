@@ -110,8 +110,8 @@ const Developers = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Sign in with Verifiedly — Developer Docs</title>
-        <meta name="description" content="Add 'Sign in with Verifiedly' to your app. OAuth 2.0 + userinfo with Trust Score, verified status, and creator profile." />
+        <title>Sign in with Verifiedly — Developer Docs (Beta)</title>
+        <meta name="description" content="Add 'Sign in with Verifiedly' to your app. OAuth 2.0 with PKCE, identity verification status, and consented profile fields." />
         <link rel="canonical" href="https://verifiedly.app/developers" />
         <meta property="og:title" content="Sign in with Verifiedly — Developer Docs" />
         <meta property="og:url" content="https://verifiedly.app/developers" />
@@ -125,11 +125,13 @@ const Developers = () => {
       </header>
 
       <div className="container mx-auto px-4 py-10 max-w-3xl">
-        <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Developers</span>
+        <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Developers · Beta</span>
         <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight mb-3">Sign in with Verifiedly</h1>
         <p className="text-base text-muted-foreground mb-8">
-          Let creators sign in to your app with their Verifiedly identity. You get a verified
-          handle, avatar, Trust Score, and tier in a single OAuth 2.0 flow.
+          Let people sign in to your app with their Verifiedly identity. You receive a stable
+          user id, handle, avatar, and — only if the user consents — their identity verification
+          status and age/country claims. The developer program is currently in beta; first-party
+          BrownGlobal integrations (GSN, Globalis) are the initial supported clients.
         </p>
 
         <Card className="p-6 mb-6">
@@ -162,8 +164,26 @@ const Developers = () => {
           <ul className="text-sm space-y-2">
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">openid</code> — sub (stable user id)</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> — username, display_name, avatar_url</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">trust</code> — trust_score, tier, verified boolean</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — verified email address (request only if you need it)</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> — verified, id_verified, verified_at, verification_kind</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — email address (request only if needed)</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">age</code> — age_over_18 / age_over_21 booleans</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">legal_name</code> — verified legal name (only if user opted in on their profile)</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">country</code> — verified country code</li>
+          </ul>
+          <p className="text-xs text-muted-foreground mt-3">
+            Verifiedly does not expose a "trust score", subscription tier, or endorsement signal via OAuth.
+            Identity claims confirm identity only — not honesty, safety, or quality.
+          </p>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Security requirements</h2>
+          <ul className="text-sm space-y-2 list-disc list-inside">
+            <li><strong>state</strong> is required on every authorize request and must be verified on the callback (CSRF).</li>
+            <li>Public clients (SPA / mobile) must use <strong>Authorization Code + PKCE (S256)</strong> and no <code>client_secret</code>.</li>
+            <li>Confidential clients exchange the code from a server; the <code>client_secret</code> must never appear in a <code>VITE_*</code> variable or browser bundle.</li>
+            <li>Authorize, token, and userinfo endpoints are rate-limited per client and per IP.</li>
+            <li>Authorization codes are single-use and are consumed atomically at token exchange.</li>
           </ul>
         </Card>
 
@@ -199,8 +219,9 @@ const Developers = () => {
           <h2 className="font-display font-semibold mb-3">Step 3 — Allowed redirect URIs</h2>
           <p className="text-sm text-muted-foreground mb-2">The <code>gsn_app</code> client accepts only these callback URLs:</p>
           <ul className="text-sm space-y-1 list-disc list-inside">
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://gsn.lovable.app/auth/callback</code></li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">http://localhost:8080/auth/callback</code></li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://gsnmedia.app/auth/callback</code> (production)</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://globalismaps.lovable.app/auth/callback</code> (Globalis preview)</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">http://localhost:8080/auth/callback</code> (development only)</li>
           </ul>
           <p className="text-xs text-muted-foreground mt-3">Need another URL (custom domain, staging)? Email support@verifiedly.app to add it.</p>
         </Card>
@@ -217,12 +238,12 @@ const Developers = () => {
           <h2 className="font-display font-semibold mb-3">Step 5 — Handle the callback</h2>
           <p className="text-sm text-muted-foreground">
             A reference implementation lives at <Link to="/auth/callback" className="underline">/auth/callback</Link>{" "}
-            (<code className="text-xs bg-muted px-1 py-0.5 rounded">src/pages/AuthCallback.tsx</code>). It exchanges the
-            <code className="text-xs bg-muted px-1 py-0.5 rounded mx-1">code</code> for an access token, calls{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code>, and verifies that the granted
-            scopes include both <code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> and{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">trust</code> before signing the user in. Copy that file
-            into the GSN repo as a starting point.
+            (<code className="text-xs bg-muted px-1 py-0.5 rounded">src/pages/AuthCallback.tsx</code>). It validates{" "}
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">state</code>, exchanges the{" "}
+            <code className="text-xs bg-muted px-1 py-0.5 rounded">code</code> for an access token server-side,
+            calls <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code>, and checks that the
+            returned scopes include <code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code>
+            and <code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> before signing the user in.
           </p>
         </Card>
 
