@@ -35,12 +35,12 @@ Deno.serve(async (req) => {
     display_name: p.display_name,
     avatar_url: p.avatar_url,
   };
-  // Identity: earned via Stripe Identity ID check only. Pro does NOT grant verified.
-  if (scopes.includes("identity") || scopes.includes("trust")) {
+  // Identity: earned via Stripe Identity ID check only. Pro does NOT grant verified,
+  // and Pro tier is NOT exposed as an identity signal via OAuth.
+  if (scopes.includes("identity")) {
     payload.verified = !!p.id_verified;
     payload.id_verified = !!p.id_verified;
     payload.verified_at = p.verified_at || null;
-    payload.tier = p.is_pro ? "pro" : "free";
     payload.verification_kind = p.verification_kind || "individual";
     if (p.verified_business_name) payload.business_name = p.verified_business_name;
   }
