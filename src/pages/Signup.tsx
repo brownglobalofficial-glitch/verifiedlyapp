@@ -100,8 +100,12 @@ const Signup = () => {
         `/login?confirmed=pending&email=${encodeURIComponent(email)}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
         { replace: true }
       );
-    } catch (err: any) {
-      toast({ title: "Signup failed", description: err?.message ?? "Unknown error", variant: "destructive" });
+    } catch (err: unknown) {
+      toast({
+        title: "Signup failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -115,7 +119,7 @@ const Signup = () => {
             <img src={logo} alt="Verifiedly Logo" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Verify. Share. Earn.</p>
+          <p className="text-sm text-muted-foreground mt-1">Create. Verify. Share.</p>
         </div>
 
         <div className="space-y-3">

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import logoMark from "@/assets/verifiedly-mark.png";
 import { ArrowRight } from "lucide-react";
 
@@ -19,10 +18,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
-        <title>Verifiedly — Verify. Share. Earn.</title>
-        <meta name="description" content="Your verified profile for everything you share and sell. One government-ID check, one blue badge, everywhere on the internet." />
-        <meta property="og:title" content="Verifiedly — Verify. Share. Earn." />
-        <meta property="og:description" content="Your verified profile for everything you share and sell." />
+        <title>Verifiedly — Create. Verify. Share.</title>
+        <meta name="description" content="Your official profile online. Share who you are, what you do, and the places people can find you." />
+        <meta property="og:title" content="Verifiedly — Create. Verify. Share." />
+        <meta property="og:description" content="Your official profile online." />
         <meta property="og:url" content="https://verifiedly.app/" />
         <link rel="canonical" href="https://verifiedly.app/" />
       </Helmet>
@@ -32,16 +31,16 @@ const Index = () => {
         <div className="text-center mb-16 sm:mb-20">
           <img src={logoMark} alt="Verifiedly Logo" className="h-12 w-12 mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
-            Verifiedly<span className="sr-only"> — Verify, Share, and Earn</span>
+            Verifiedly<span className="sr-only"> — Create, Verify, and Share</span>
           </h1>
           <p className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">
-            Verify · Share · Earn
+            Create · Verify · Share
           </p>
         </div>
 
         {/* Positioning */}
         <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
-          Your <span className="text-foreground font-medium">verified identity</span> profile — one link that shows who you actually are, everywhere on the internet.
+          Your <span className="text-foreground font-medium">official profile</span> online — one clear place to share who you are and what you do.
         </p>
 
         {/* Actions */}
@@ -61,9 +60,9 @@ const Index = () => {
           </Link>
         </div>
 
-        {/* Proof line */}
+        {/* Trust line */}
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          ID verification powered by Stripe Identity · $12.99 one-time.
+          Add your links, accomplishments, work, education, and credentials. Identity verification is optional.
         </p>
 
         {/* Footer */}

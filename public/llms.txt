@@ -1,19 +1,22 @@
 # Verifiedly
 
-> One link-in-bio for creators, athletes, and brands to monetize with tips, memberships, digital products, affiliates, and sponsorships. Payouts powered by Stripe. Keep up to 100% of every sale.
+> Your official profile online.
 
-Verifiedly gives creators a single shareable profile (verifiedly.app/username) that bundles every revenue stream — paid links, gated content, membership tiers, one-off digital product sales, fan tips, and brand-deal applications — with funds routed directly to the creator's bank via Stripe Connect. Free plan keeps 90% of sales; Pro ($9.99/mo) keeps 100%.
+Verifiedly gives people and organizations one clear, shareable profile for their identity, work, education, accomplishments, credentials, projects, and official links.
 
-## Pages
+Core principles:
+- A single public profile at verifiedly.app/handle.
+- One identity-verification badge with no public trust score or paid Pro badge.
+- Structured information instead of posts, followers, or a public feed.
+- Credentials and accomplishments are supplied by the profile owner unless an official supporting source is linked.
+- No creator product marketplace, memberships, or tipping system.
 
-- [Home](/): Product overview, features, and pricing.
-- [Pricing](/#pricing): Free (10% fee) and Pro ($9.99/mo, 0% fee) plans.
-- [Sign up](/signup): Create a Verifiedly account.
-- [Log in](/login): Returning user sign-in.
-- [Terms of Service](/terms): Legal terms for using Verifiedly.
-- [Privacy Policy](/privacy): How creator and fan data is handled.
-- [Refund Policy](/refunds): Refund eligibility and process for digital purchases.
+Primary routes:
+- / — product entry page
+- /signup — create a profile
+- /login — sign in
+- /pricing — current pricing
+- /developers — Sign in with Verifiedly information
+- /handle — a public Verifiedly profile
 
-## Optional
-
-- [Forgot password](/forgot-password): Password reset request.
+Verifiedly is operated by BrownGlobal Holdings LLC.

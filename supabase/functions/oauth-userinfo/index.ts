@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // GET with Authorization: Bearer <verifiedly access token>
-// -> { sub, username, display_name, avatar_url, trust_score, verified, tier, email? }
+// -> consented profile and identity claims for the access-token scopes.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
   const { data: p } = await admin
     .from("profiles")
-    .select("username, display_name, avatar_url, is_pro, id_verified, verified_at, verified_country, verified_full_name, show_legal_name, verification_kind, verified_business_name")
+    .select("username, display_name, avatar_url, id_verified, verified_at, verified_country, verified_full_name, show_legal_name, verification_kind, verified_business_name")
     .eq("id", tok.user_id).maybeSingle();
   if (!p) return j({ error: "no_profile" }, 404);
 
@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
     display_name: p.display_name,
     avatar_url: p.avatar_url,
   };
-  // Identity: earned via Stripe Identity ID check only. Pro does NOT grant verified,
-  // and Pro tier is NOT exposed as an identity signal via OAuth.
+  // Identity is earned through the configured identity check only. Subscription
+  // or legacy account tiers are never exposed as identity signals.
   if (scopes.includes("identity")) {
     payload.verified = !!p.id_verified;
     payload.id_verified = !!p.id_verified;

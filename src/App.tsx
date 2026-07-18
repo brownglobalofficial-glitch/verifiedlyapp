@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { lazy, Suspense, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageSkeleton from "@/components/PageSkeleton";
-import { routeLoaders, prefetchIdle } from "@/lib/route-prefetch";
+import { routeLoaders, prefetchIdle, prefetchPath } from "@/lib/route-prefetch";
 import AuthGuard from "@/components/AuthGuard";
 
 const Index = lazy(routeLoaders["/"]);
@@ -17,42 +17,41 @@ const ForgotPassword = lazy(routeLoaders["/forgot-password"]);
 const ResetPassword = lazy(routeLoaders["/reset-password"]);
 const Dashboard = lazy(routeLoaders["/dashboard"]);
 const ProfileSettings = lazy(routeLoaders["/dashboard/settings"]);
-const ManageProducts = lazy(routeLoaders["/dashboard/products"]);
-const ManageSubscriptions = lazy(routeLoaders["/dashboard/subscriptions"]);
 const CreatorProfile = lazy(routeLoaders["/creator-profile"]);
-const Marketplace = lazy(() => import("./pages/Marketplace"));
-const Analytics = lazy(routeLoaders["/dashboard/analytics"]);
 const ManageLinks = lazy(routeLoaders["/dashboard/links"]);
 const Onboarding = lazy(routeLoaders["/onboarding"]);
 const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
-const ComparisonLinktree = lazy(() => import("./pages/ComparisonLinktree"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
-const ManageContent = lazy(routeLoaders["/dashboard/content"]);
-const Membership = lazy(routeLoaders["/membership"]);
-const Product = lazy(routeLoaders["/product"]);
-const Payouts = lazy(() => import("./pages/dashboard/Payouts"));
-const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
-const UpgradePro = lazy(() => import("./pages/UpgradePro"));
-const Billing = lazy(() => import("./pages/dashboard/Billing"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
-const PublicVerification = lazy(() => import("./pages/PublicVerification"));
-const PrivacyControls = lazy(() => import("./pages/dashboard/PrivacyControls"));
-const Disputes = lazy(() => import("./pages/dashboard/Disputes"));
-const VerificationAdmin = lazy(() => import("./pages/admin/VerificationAdmin"));
 const Developers = lazy(() => import("./pages/Developers"));
-const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
-const Purchases = lazy(() => import("./pages/dashboard/Purchases"));
 const Pricing = lazy(() => import("./pages/Pricing"));
-const Documents = lazy(() => import("./pages/dashboard/Documents"));
 
 const queryClient = new QueryClient();
 
 // Handles OAuth redirect + warms likely next routes so navigation feels instant.
 const AUTH_PAGES = new Set(["/login", "/signup"]);
+const RETIRED_DASHBOARD_PATHS = [
+  "/dashboard/products",
+  "/dashboard/subscriptions",
+  "/dashboard/analytics",
+  "/dashboard/marketplace",
+  "/dashboard/content",
+  "/dashboard/payouts",
+  "/dashboard/privacy-controls",
+  "/dashboard/disputes",
+  "/dashboard/monetization",
+  "/dashboard/purchases",
+  "/dashboard/documents",
+];
+
+const LegacyProfileRedirect = () => {
+  const { username } = useParams<{ username: string }>();
+  return <Navigate to={username ? `/${username}` : "/"} replace />;
+};
 
 const RouteOptimizer = () => {
   const navigate = useNavigate();
@@ -67,7 +66,7 @@ const RouteOptimizer = () => {
       const href = anchor.getAttribute("href");
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
       const path = href.split("?")[0].split("#")[0];
-      import("@/lib/route-prefetch").then(({ prefetchPath }) => prefetchPath(path));
+      prefetchPath(path);
     };
     document.addEventListener("mouseover", handler, { passive: true });
     document.addEventListener("focusin", handler, { passive: true });
@@ -76,9 +75,7 @@ const RouteOptimizer = () => {
     const redirectAuthedAway = async (userId: string) => {
       // Only redirect if currently sitting on /login or /signup
       if (!AUTH_PAGES.has(window.location.pathname)) return;
-      let accountType: string | null = null;
       // Universal account: everyone lands in /dashboard.
-      void accountType;
       void userId;
       navigate("/dashboard", { replace: true });
     };
@@ -89,8 +86,6 @@ const RouteOptimizer = () => {
           "/dashboard",
           "/dashboard/settings",
           "/dashboard/links",
-          "/dashboard/analytics",
-          "/dashboard/products",
         ]);
         const provider = session.user.app_metadata?.provider;
         // Only force onboarding redirect on first sign-in (not every page load),
@@ -119,7 +114,7 @@ const RouteOptimizer = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links", "/dashboard/analytics"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links"]);
         redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
@@ -155,35 +150,27 @@ const App = () => (
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/settings" element={<ProfileSettings />} />
-            <Route path="/dashboard/products" element={<ManageProducts />} />
-            <Route path="/dashboard/subscriptions" element={<ManageSubscriptions />} />
-            <Route path="/dashboard/analytics" element={<Analytics />} />
-            <Route path="/dashboard/marketplace" element={<Marketplace />} />
-            <Route path="/dashboard/links" element={<ManageLinks />} />
-            <Route path="/dashboard/content" element={<ManageContent />} />
-            <Route path="/dashboard/admin" element={<Admin />} />
-            <Route path="/dashboard/payouts" element={<Payouts />} />
-            <Route path="/dashboard/upgrade" element={<AuthGuard><UpgradePro /></AuthGuard>} />
-            <Route path="/dashboard/billing" element={<AuthGuard><Billing /></AuthGuard>} />
+            <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+            <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
+            <Route path="/dashboard/links" element={<AuthGuard><ManageLinks /></AuthGuard>} />
+            <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
-            <Route path="/dashboard/privacy-controls" element={<AuthGuard><PrivacyControls /></AuthGuard>} />
-            <Route path="/dashboard/disputes" element={<AuthGuard><Disputes /></AuthGuard>} />
-            <Route path="/admin/verification" element={<AuthGuard><VerificationAdmin /></AuthGuard>} />
+            <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/verify/:username" element={<PublicVerification />} />
-            <Route path="/pro" element={<AuthGuard><UpgradePro /></AuthGuard>} />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            <Route path="/dashboard/monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
-            <Route path="/dashboard/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
-            <Route path="/dashboard/documents" element={<AuthGuard><Documents /></AuthGuard>} />
+            <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
+            <Route path="/pro" element={<Navigate to="/pricing" replace />} />
+            <Route path="/subscription/success" element={<Navigate to="/dashboard" replace />} />
+            {RETIRED_DASHBOARD_PATHS.map((path) => (
+              <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
+            ))}
             <Route path="/:username" element={<CreatorProfile />} />
-            <Route path="/:username/membership" element={<Membership />} />
-            <Route path="/:username/p/:productId" element={<Product />} />
-            <Route path="/comparison/verifiedly-vs-linktree" element={<ComparisonLinktree />} />
+            <Route path="/:username/membership" element={<LegacyProfileRedirect />} />
+            <Route path="/:username/p/:productId" element={<LegacyProfileRedirect />} />
+            <Route path="/comparison/verifiedly-vs-linktree" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -19,7 +19,13 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Not authenticated" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
     const { data } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = data.user;
     if (!user?.email) throw new Error("Not authenticated");

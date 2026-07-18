@@ -17,7 +17,7 @@ const Pricing = () => {
           <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Simple, honest pricing</h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Two plans. One optional identity check. No hidden surprises.
+            A free official profile. One optional identity check.
           </p>
         </motion.div>
         <div className="grid md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl mx-auto">
@@ -31,9 +31,9 @@ const Pricing = () => {
           >
             <h3 className="text-xl font-display font-semibold mb-2">Free</h3>
             <p className="text-4xl font-display font-bold mb-1">$0<span className="text-lg text-muted-foreground font-normal">/mo</span></p>
-            <p className="text-sm text-muted-foreground mb-6">Public verified profile + link-in-bio</p>
+            <p className="text-sm text-muted-foreground mb-6">Your public official profile</p>
             <ul className="space-y-3 mb-8">
-              {["Identity-first public profile", "Link-in-bio + custom sections", "Sign in with Verifiedly (OAuth)", "Basic profile analytics"].map(f => (
+              {["Personal or organization profile", "Official links and social profiles", "Work, education, accomplishments, credentials, and projects", "Sign in with Verifiedly (OAuth)"].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
                   <Check className="w-4 h-4 text-[hsl(var(--success))]" />
                   {f}
@@ -45,7 +45,7 @@ const Pricing = () => {
             </Link>
           </motion.div>
 
-          {/* Pro */}
+          {/* Optional identity check */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -54,18 +54,17 @@ const Pricing = () => {
             className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300 bg-foreground text-background"
           >
             <div className="absolute -top-3 left-6 bg-background text-foreground px-3 py-1 rounded-full text-xs font-semibold">
-              MOST COMPLETE
+              OPTIONAL
             </div>
-            <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
-            <p className="text-4xl font-display font-bold mb-1">$4.99<span className="text-lg opacity-60 font-normal">/mo</span></p>
-            <p className="text-sm opacity-60 mb-6">Document vault, custom domain, more</p>
+            <h3 className="text-xl font-display font-semibold mb-2">Identity Verification</h3>
+            <p className="text-4xl font-display font-bold mb-1">$12.99<span className="text-lg opacity-60 font-normal">/attempt</span></p>
+            <p className="text-sm opacity-60 mb-6">Government ID and selfie check by Stripe Identity</p>
             <ul className="space-y-3 mb-8">
               {[
-                "Everything in Free",
-                "Private document vault (diplomas, licenses, certs)",
-                "Custom domain on your profile",
-                "Advanced profile analytics",
-                "Priority support",
+                "Available after you create a free profile",
+                "Stripe handles the ID document and selfie",
+                "A successful check adds one public Verified badge",
+                "The badge confirms identity—not every profile claim",
               ].map(f => (
                 <li key={f} className="flex items-center gap-2 text-sm">
                   <Check className="w-4 h-4" />
@@ -74,28 +73,26 @@ const Pricing = () => {
               ))}
             </ul>
             <Link to="/signup">
-              <Button variant="outline" className="w-full border-background text-foreground bg-background hover:bg-background/90">Go Pro</Button>
+              <Button variant="outline" className="w-full border-background text-foreground bg-background hover:bg-background/90">Create profile first</Button>
             </Link>
           </motion.div>
         </div>
 
-        {/* Identity verification add-on */}
         <div className="mt-10 max-w-4xl mx-auto rounded-xl border border-border bg-secondary/40 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center flex-shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <p className="font-display font-semibold text-sm">Identity Verification · $12.99 per attempt</p>
+            <p className="font-display font-semibold text-sm">Pay only if you choose to verify</p>
             <p className="text-xs text-muted-foreground mt-1">
-              One government-ID + selfie check via Stripe Identity. The fee purchases a verification attempt — not a guaranteed badge.
+              Creating, completing, and sharing a profile is free. There are no creator sales fees, memberships, or required subscriptions in this version.
             </p>
           </div>
-          <Link to="/signup"><Button size="sm" variant="outline">Verify identity</Button></Link>
+          <Link to="/signup"><Button size="sm" variant="outline">Start free</Button></Link>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6 max-w-2xl mx-auto">
-          The badge is granted only when a Stripe Identity check succeeds, and remains while the account
-          stays eligible and in good standing (re-verification may be required). Pro does not grant a badge.
+          The verification fee purchases a check attempt, not a guaranteed result. Re-verification may be required later.
         </p>
       </div>
     </section>

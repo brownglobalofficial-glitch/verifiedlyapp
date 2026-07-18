@@ -5,131 +5,35 @@ const Refunds = () => (
   <div className="min-h-screen bg-background py-12 px-4">
     <Helmet>
       <title>Refund Policy — Verifiedly</title>
-      <meta name="description" content="Who refunds what on Verifiedly: creators are the merchant of record for their sales, while Verifiedly handles refunds for platform subscriptions." />
+      <meta name="description" content="Refund policy for optional Verifiedly identity-verification attempts." />
       <link rel="canonical" href="https://verifiedly.app/refunds" />
       <meta property="og:title" content="Refund Policy — Verifiedly" />
-      <meta property="og:description" content="How refunds work on Verifiedly for creator products, tips, subscriptions, and platform plans." />
+      <meta property="og:description" content="Refund policy for optional Verifiedly identity-verification attempts." />
       <meta property="og:url" content="https://verifiedly.app/refunds" />
     </Helmet>
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
       <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
       <h1>Refund Policy</h1>
-      <p className="text-muted-foreground"><em>Last updated: April 20, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 18, 2026</em></p>
 
-      <p>
-        This policy explains who is responsible for refunds on Verifiedly. In short:
-        <strong> creators are the merchants of record for everything they sell</strong>,
-        and <strong>BrownGlobal Holdings LLC</strong> (the Platform) is the merchant of
-        record only for the Verifiedly Pro subscription plan.
-      </p>
+      <h2>1. Free Profiles</h2>
+      <p>Creating, completing, and sharing a Verifiedly profile is free, so there is no profile subscription charge to refund in this version.</p>
 
-      <h2>1. Quick Summary</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>What you bought</th>
-            <th>Who refunds it</th>
-            <th>How to request</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Verifiedly Pro plan</td>
-            <td>Verifiedly</td>
-            <td>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a></td>
-          </tr>
-          <tr>
-            <td>A creator's product, tip, or subscription</td>
-            <td>The creator</td>
-            <td>Contact the creator first; escalate to us if unresolved</td>
-          </tr>
-        </tbody>
-      </table>
+      <h2>2. Identity Verification Attempts</h2>
+      <p>The current identity verification fee is <strong>$12.99 per attempt</strong>. It pays for an attempt to complete a government-ID and selfie check through Stripe Identity. Payment does not guarantee that Stripe will approve the check or that a badge will be issued.</p>
+      <p>Once an identity check has been initiated, the fee is generally non-refundable because the third-party verification service has been used. This does not limit refund rights that cannot be waived under applicable law.</p>
 
-      <h2>2. Platform Subscriptions (Verifiedly Pro)</h2>
-      <p>
-        If you upgrade to a paid Verifiedly plan, the Platform charges your card directly.
-      </p>
-      <ul>
-        <li>
-          <strong>14-day refund window.</strong> You can request a full refund within 14 days
-          of your initial upgrade if you have not made meaningful use of paid features.
-        </li>
-        <li>
-          <strong>Renewals.</strong> Recurring monthly charges are non-refundable once the new
-          billing period has started, but you can cancel any time and keep access until the
-          end of the period.
-        </li>
-        <li>
-          <strong>How to request.</strong> Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with
-          the email on your account. We respond within 5 business days.
-        </li>
-      </ul>
+      <h2>3. Before a Check Starts</h2>
+      <p>If you paid but did not begin the identity check, contact <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the email on your account and the approximate payment date. We will review the payment status and whether the verification service was used.</p>
 
-      <h2>3. Creator Sales (Products, Tips, Subscriptions)</h2>
-      <p>
-        When you buy a digital product, send a tip, or subscribe to a creator's tier, you
-        are buying directly from that creator. They are the seller and merchant of record.
-        Verifiedly only provides the technology and payment rails (via Stripe Connect).
-      </p>
-      <ul>
-        <li>
-          <strong>Refund authority.</strong> Only the creator can approve a refund for their
-          own sales. The Platform cannot unilaterally refund a creator's earnings.
-        </li>
-        <li>
-          <strong>Step 1 — Contact the creator.</strong> Use the contact information on the
-          creator's profile or any receipt you received. Allow them up to 7 days to respond.
-        </li>
-        <li>
-          <strong>Step 2 — Escalate to us.</strong> If the creator does not respond, the
-          product is materially different from what was described, or the file was never
-          delivered, email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with
-          your purchase details. We will mediate and, where appropriate, remove the listing
-          and assist with a chargeback.
-        </li>
-        <li>
-          <strong>Tips.</strong> Tips are voluntary gifts and are generally non-refundable
-          unless the creator agrees.
-        </li>
-        <li>
-          <strong>Recurring subscriptions to creators.</strong> You can cancel any time from
-          your fan dashboard. Cancellations stop future renewals but do not refund the
-          current period unless the creator agrees.
-        </li>
-      </ul>
+      <h2>4. Duplicate, Unauthorized, or Technical Charges</h2>
+      <p>Contact us promptly if you believe you were charged more than once, did not authorize a charge, or could not access the identity check because of a Verifiedly or Stripe technical failure. Include only non-sensitive transaction details. Do not email an ID image, selfie, full card number, or password.</p>
 
-      <h2>4. Digital Goods Disclosure</h2>
-      <p>
-        Most items sold on Verifiedly are digital goods that are delivered immediately upon
-        purchase. By completing checkout, you acknowledge that you are receiving digital
-        content right away and that statutory rights to withdraw from a purchase of digital
-        content may not apply once the download begins, except as required by your local
-        consumer-protection laws.
-      </p>
+      <h2>5. Processing</h2>
+      <p>Approved refunds are returned to the original payment method. Banks and card networks control how long the credit takes to appear.</p>
 
-      <h2>5. Chargebacks &amp; Disputes</h2>
-      <p>
-        If you file a chargeback with your bank instead of contacting the creator or us
-        first, Stripe will deduct the disputed amount from the creator's account along with
-        a dispute fee. We strongly encourage you to reach out first so we can resolve the
-        issue without involving your bank.
-      </p>
-
-      <h2>6. Fraud, Abuse &amp; Policy Violations</h2>
-      <p>
-        We may issue refunds, reverse payouts, or remove listings without the creator's
-        consent if we determine in good faith that a sale involves fraud, intellectual
-        property infringement, illegal content, or any other violation of our Terms of
-        Service.
-      </p>
-
-      <h2>7. Contact</h2>
-      <p>
-        Refund questions: <a href="mailto:support@verifiedly.app">support@verifiedly.app</a>
-        <br />
-        Operated by BrownGlobal Holdings LLC.
-      </p>
+      <h2>6. Contact</h2>
+      <p>Refund questions: <a href="mailto:support@verifiedly.app">support@verifiedly.app</a><br />Operated by BrownGlobal Holdings LLC.</p>
     </div>
   </div>
 );

@@ -195,7 +195,9 @@ const ManageLinks = () => {
         .eq("id", session.user.id)
         .maybeSingle();
       if (prof?.username) setUsername(prof.username);
-      if (prof && (prof as any).link_layout) setLinkLayout((prof as any).link_layout);
+      if (prof?.link_layout === "compact" || prof?.link_layout === "cards") {
+        setLinkLayout(prof.link_layout);
+      }
       fetchLinks(session.user.id);
     });
   }, [navigate]);
@@ -203,7 +205,7 @@ const ManageLinks = () => {
   const handleLayoutChange = async (layout: "compact" | "cards") => {
     if (!userId) return;
     setLinkLayout(layout);
-    await supabase.from("profiles").update({ link_layout: layout } as any).eq("id", userId);
+    await supabase.from("profiles").update({ link_layout: layout }).eq("id", userId);
     setPreviewKey((k) => k + 1);
   };
 

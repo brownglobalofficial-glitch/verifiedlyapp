@@ -1,16 +1,15 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { Building2, Camera, Check, ChevronLeft, ChevronRight, Plus, Trash2, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-react";
 import logo from "@/assets/verifiedly-logo.webp";
-import { motion, AnimatePresence } from "framer-motion";
 
 const THEMES = [
   { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
@@ -19,362 +18,417 @@ const THEMES = [
   { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]" },
   { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]" },
   { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
-];
+] as const;
 
-const CREATOR_CATEGORIES = [
-  "Player", "Musician", "Artist", "Influencer",
-  "Coach", "Trainer", "Content Creator",
-  "Podcaster", "Streamer", "Photographer",
-  "Entrepreneur", "Writer", "Designer", "Developer",
-  "Fitness", "Chef", "Educator",
-];
+type AccountType = "creator" | "business";
+type ProfileLink = { title: string; url: string; icon: string };
 
-const BUSINESS_CATEGORIES = [
-  "Brand", "Agency", "Team", "Organization",
-  "Startup", "Non-Profit", "E-Commerce", "Media Company",
-];
+const normalizeUrl = (value: string) => {
+  const candidate = value.trim();
+  if (!candidate) return null;
+  try {
+    const parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : "Please try again.";
 
 const Onboarding = () => {
-  const [step, setStep] = useState(0);
-  const [userId, setUserId] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [isOAuth, setIsOAuth] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState(0);
+  const [userId, setUserId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Step 0: Account type & category
-  const [accountType, setAccountType] = useState("creator");
-  const [category, setCategory] = useState("");
-
-  // Step 1: Profile basics (includes username for OAuth users)
+  const [accountType, setAccountType] = useState<AccountType>("creator");
   const [username, setUsername] = useState("");
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [category, setCategory] = useState("");
   const [bio, setBio] = useState("");
+  const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [instagram, setInstagram] = useState("");
-  const [twitter, setTwitter] = useState("");
+  const [linkedin, setLinkedin] = useState("");
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
 
-  // Step 2: Links
-  const [links, setLinks] = useState<{ title: string; url: string; icon: string }[]>([]);
+  const [links, setLinks] = useState<ProfileLink[]>([]);
   const [newLinkTitle, setNewLinkTitle] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
-  const [newLinkIcon, setNewLinkIcon] = useState("");
-
-  // Step 3: Theme
   const [theme, setTheme] = useState("default");
 
-  const steps = ["Profile", "Links", "Theme"];
+  const steps = ["Official profile", "Important links", "Appearance"];
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { navigate("/login"); return; }
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+
       setUserId(session.user.id);
-      const provider = session.user.app_metadata?.provider;
-      const oauthUser = !!(provider && provider !== "email");
-      setIsOAuth(oauthUser);
-      
       setDisplayName(
         session.user.user_metadata?.display_name ||
         session.user.user_metadata?.full_name ||
         session.user.user_metadata?.name ||
-        ""
+        "",
       );
-      setAccountType(session.user.user_metadata?.account_type || "creator");
-      setCategory(session.user.user_metadata?.category || "");
-      
-      if (oauthUser && session.user.user_metadata?.avatar_url) {
-        setAvatarUrl(session.user.user_metadata.avatar_url);
-      }
 
-      supabase.from("profiles").select("username, avatar_url").eq("id", session.user.id).maybeSingle().then(({ data }) => {
-        if (data) {
-          const autoGenerated = data.username && /^[a-f0-9]{32}$/.test(data.username);
-          if (!autoGenerated && data.username) {
-            setUsername(data.username);
-          }
-          if (data.avatar_url) setAvatarUrl(data.avatar_url);
-        }
-      });
+      const { data } = await supabase
+        .from("profiles")
+        .select("username, display_name, bio, category, account_type, avatar_url, website, social_links, theme_color")
+        .eq("id", session.user.id)
+        .maybeSingle();
 
-    });
+      if (!data) return;
+      const autoGenerated = /^[a-f0-9]{32}$/.test(data.username || "");
+      if (!autoGenerated && data.username) setUsername(data.username);
+      if (data.display_name) setDisplayName(data.display_name);
+      if (data.bio) setBio(data.bio);
+      if (data.category) setCategory(data.category);
+      if (data.account_type === "business") setAccountType("business");
+      if (data.avatar_url) setAvatarUrl(data.avatar_url);
+      if (data.website) setWebsite(data.website);
+      if (data.theme_color) setTheme(data.theme_color);
+
+      const socials = (data.social_links || {}) as Record<string, string>;
+      setInstagram(socials.instagram || "");
+      setLinkedin(socials.linkedin || "");
+      setYoutube(socials.youtube || "");
+      setTiktok(socials.tiktok || "");
+    };
+
+    load();
   }, [navigate]);
 
-  // Username availability check
   useEffect(() => {
-    if (username.length < 3) { setUsernameAvailable(null); return; }
-    setCheckingUsername(true);
-    const timer = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles").select("id").eq("username", username.toLowerCase()).neq("id", userId).maybeSingle();
-      setUsernameAvailable(!data);
-      setCheckingUsername(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [username, userId]);
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 2MB.", variant: "destructive" });
+    if (!userId || username.length < 3) {
+      setUsernameAvailable(null);
       return;
     }
+
+    setCheckingUsername(true);
+    const timer = window.setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .neq("id", userId)
+        .maybeSingle();
+      setUsernameAvailable(!error && !data);
+      setCheckingUsername(false);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [username, userId]);
+
+  const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      toast({ title: "Choose an image under 2 MB", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/avatar.${ext}`;
-    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${userId}/avatar.${extension}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) {
+      setUploading(false);
+      toast({ title: "Photo not uploaded", description: error.message, variant: "destructive" });
+      return;
+    }
+
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = `${publicUrl}?t=${Date.now()}`;
-    await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
-    setAvatarUrl(url);
+    const nextAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+    await supabase.from("profiles").update({ avatar_url: nextAvatarUrl }).eq("id", userId);
+    setAvatarUrl(nextAvatarUrl);
     setUploading(false);
   };
 
   const addLink = () => {
-    if (!newLinkTitle.trim() || !newLinkUrl.trim()) return;
-    let url = newLinkUrl.trim();
-    if (!url.startsWith("http")) url = `https://${url}`;
-    setLinks([...links, { title: newLinkTitle.trim(), url, icon: newLinkIcon.trim() || "🔗" }]);
-    setNewLinkTitle(""); setNewLinkUrl(""); setNewLinkIcon("");
-  };
-
-  const removeLink = (i: number) => setLinks(links.filter((_, idx) => idx !== i));
-
-  const handleFinish = async () => {
-    if (username.length < 3) {
-      toast({ title: "Username required", description: "Choose a username with at least 3 characters.", variant: "destructive" });
-      setStep(1);
+    const url = normalizeUrl(newLinkUrl);
+    if (!newLinkTitle.trim() || !url) {
+      toast({ title: "Enter a link title and a valid web address", variant: "destructive" });
       return;
     }
-    if (usernameAvailable === false) {
-      toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
-      setStep(1);
+    setLinks((current) => [...current, { title: newLinkTitle.trim(), url, icon: "link" }]);
+    setNewLinkTitle("");
+    setNewLinkUrl("");
+  };
+
+  const finish = async () => {
+    if (!userId || username.length < 3 || usernameAvailable !== true || !displayName.trim()) {
+      setStep(0);
+      toast({ title: "Complete the required profile fields", variant: "destructive" });
+      return;
+    }
+
+    const normalizedWebsite = website.trim() ? normalizeUrl(website) : null;
+    if (website.trim() && !normalizedWebsite) {
+      setStep(0);
+      toast({ title: "Enter a valid official website", variant: "destructive" });
       return;
     }
 
     setSaving(true);
     try {
-      // Use upsert so this works even if the profile row is missing
-      // (e.g. trigger failed silently or user signed up before trigger fix).
-      const { error: profileErr } = await supabase.from("profiles").upsert({
+      const socialLinks = Object.fromEntries(
+        Object.entries({ instagram, linkedin, youtube, tiktok }).filter(([, value]) => value.trim()),
+      );
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         username: username.toLowerCase(),
-        display_name: displayName,
-        bio,
+        display_name: displayName.trim(),
+        bio: bio.trim() || null,
+        category: category.trim() || null,
         account_type: accountType,
-        category: category || null,
-        social_links: { instagram, twitter, youtube, tiktok },
+        avatar_url: avatarUrl || null,
+        website: normalizedWebsite,
+        social_links: socialLinks,
         theme_color: theme,
         onboarding_completed: true,
       }, { onConflict: "id" });
-      if (profileErr) throw profileErr;
+      if (profileError) throw profileError;
 
-      if (links.length > 0) {
-        const { error: linksErr } = await supabase.from("bio_links").insert(
-          links.map((l, i) => ({
-            creator_id: userId, title: l.title, url: l.url,
-            icon: l.icon || null, sort_order: i,
-          }))
+      if (links.length) {
+        const { error: linksError } = await supabase.from("bio_links").insert(
+          links.map((link, position) => ({
+            creator_id: userId,
+            title: link.title,
+            url: link.url,
+            icon: link.icon,
+            sort_order: position,
+          })),
         );
-        if (linksErr) throw linksErr;
+        if (linksError) throw linksError;
       }
 
-      toast({ title: "You're all set! 🎉", description: "Your profile is live." });
+      toast({ title: "Your official profile is ready" });
       navigate("/dashboard");
-    } catch (err: any) {
-      console.error("Onboarding finish error:", err);
-      toast({ title: "Setup failed", description: err.message || "Could not complete setup. Please try again.", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Setup not completed", description: errorMessage(error), variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const canProceed = () => {
-    if (step === 0) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
-    return true;
-  };
-
-  const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
-  void categories;
+  const canContinue = step !== 0 || (
+    displayName.trim().length > 0 &&
+    username.length >= 3 &&
+    usernameAvailable === true &&
+    !checkingUsername
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border h-16 flex items-center px-4">
-        <div className="container mx-auto flex items-center">
+        <div className="container mx-auto max-w-2xl">
           <img src={logo} alt="Verifiedly" className="h-7" />
         </div>
       </nav>
 
-      <div className="container mx-auto max-w-2xl px-4 pt-8">
-        <div className="flex items-center gap-2 mb-2">
-          {steps.map((_, i) => (
-            <div key={i} className="flex-1">
-              <div className={`h-2 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
+      <main className="container mx-auto max-w-2xl flex-1 px-4 py-8">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Create. Verify. Share.</p>
+          <h1 className="mt-2 text-3xl font-display font-bold">Build your official profile</h1>
+          <p className="mt-2 text-sm text-muted-foreground">A clear page for who you are, what you do, and where to find you.</p>
+        </div>
+
+        <div className="mb-8 grid grid-cols-3 gap-2">
+          {steps.map((label, index) => (
+            <div key={label}>
+              <div className={`h-1.5 rounded-full ${index <= step ? "bg-foreground" : "bg-muted"}`} />
+              <p className={`mt-2 text-[11px] ${index === step ? "font-medium text-foreground" : "text-muted-foreground"}`}>{label}</p>
             </div>
           ))}
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground mb-8">
-          {steps.map((s, i) => (
-            <span key={s} className={i === step ? "text-foreground font-medium" : ""}>{s}</span>
-          ))}
-        </div>
-      </div>
 
-      <div className="container mx-auto max-w-2xl px-4 flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {step === 0 && (
-              <div className="space-y-6">
+        {step === 0 && (
+          <div className="space-y-6">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setAccountType("creator")}
+                className={`rounded-xl border p-4 text-left transition ${accountType === "creator" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
+              >
+                <UserRound className="mb-3 h-5 w-5" />
+                <p className="font-semibold">Me</p>
+                <p className="mt-1 text-xs text-muted-foreground">A profile for an individual.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountType("business")}
+                className={`rounded-xl border p-4 text-left transition ${accountType === "business" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
+              >
+                <Building2 className="mb-3 h-5 w-5" />
+                <p className="font-semibold">An organization</p>
+                <p className="mt-1 text-xs text-muted-foreground">A page for a business, club, team, or group.</p>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button type="button" className="group relative rounded-full" onClick={() => fileInputRef.current?.click()} aria-label="Upload profile photo">
+                <Avatar className="h-20 w-20">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+                  <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Camera className="h-5 w-5 text-background" />
+                </span>
+              </button>
+              <div>
+                <p className="text-sm font-medium">Profile photo or logo</p>
+                <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "Optional · image up to 2 MB"}</p>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            </div>
+
+            <div>
+              <Label htmlFor="username">Handle *</Label>
+              <div className="relative mt-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
+                  className="pl-[110px]"
+                  placeholder="yourname"
+                  minLength={3}
+                  maxLength={30}
+                />
+              </div>
+              {username.length >= 3 && (
+                <p className={`mt-1 text-xs ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-emerald-600" : "text-destructive"}`}>
+                  {checkingUsername ? "Checking…" : usernameAvailable ? "Available" : "That handle is already taken"}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="display-name">{accountType === "business" ? "Organization name" : "Display name"} *</Label>
+                <Input id="display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1" maxLength={80} />
+              </div>
+              <div>
+                <Label htmlFor="category">Professional label</Label>
+                <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder="Player, founder, club…" maxLength={60} />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="bio">One-line introduction</Label>
+                <Textarea id="bio" value={bio} onChange={(event) => setBio(event.target.value)} className="mt-1 min-h-20" placeholder="A clear sentence about who you are or what your organization does." maxLength={180} />
+                <p className="mt-1 text-right text-[11px] text-muted-foreground">{bio.length}/180</p>
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="website">Official website</Label>
+                <Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://example.com" inputMode="url" maxLength={500} />
+              </div>
+            </div>
+
+            <Card className="p-4">
+              <p className="text-sm font-medium">Social profiles</p>
+              <p className="mt-1 text-xs text-muted-foreground">Optional links help people find your official accounts. They are not treated as identity verification.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Input value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="Instagram handle or URL" maxLength={500} />
+                <Input value={linkedin} onChange={(event) => setLinkedin(event.target.value)} placeholder="LinkedIn handle or URL" maxLength={500} />
+                <Input value={youtube} onChange={(event) => setYoutube(event.target.value)} placeholder="YouTube handle or URL" maxLength={500} />
+                <Input value={tiktok} onChange={(event) => setTiktok(event.target.value)} placeholder="TikTok handle or URL" maxLength={500} />
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-display font-semibold">Add your most important links</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Keep this focused. You can add or reorder links later.</p>
+            </div>
+            <Card className="space-y-3 p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
-                  <p className="text-muted-foreground mt-1">Tell your audience who you are</p>
+                  <Label htmlFor="link-title">Label</Label>
+                  <Input id="link-title" value={newLinkTitle} onChange={(event) => setNewLinkTitle(event.target.value)} className="mt-1" placeholder="Portfolio" maxLength={80} />
                 </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> Your username becomes your public link — <span className="font-mono">verifiedly.app/yourname</span>. Pick something short and memorable.
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                    <Avatar className="w-20 h-20">
-                      {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-                      <AvatarFallback className="text-2xl font-display font-bold">
-                        {displayName?.[0]?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-5 h-5 text-background" />
-                    </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">{uploading ? "Uploading..." : "Upload a profile photo"}</p>
-                </div>
-
                 <div>
-                  <Label>Username *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
-                    <Input
-                      value={username}
-                      onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
-                      required
-                      className="pl-[110px]"
-                      placeholder="username"
-                    />
-                  </div>
-                  {username.length >= 3 && (
-                    <p className={`text-xs mt-1 ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-primary" : "text-destructive"}`}>
-                      {checkingUsername ? "Checking..." : usernameAvailable ? "✓ Available" : "✗ Username taken"}
-                    </p>
-                  )}
-                </div>
-
-                <div><Label>Display Name *</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your Name" /></div>
-                <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell your fans about yourself..." /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Instagram</Label><Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" /></div>
-                  <div><Label>Twitter / X</Label><Input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" /></div>
-                  <div><Label>YouTube</Label><Input value={youtube} onChange={e => setYoutube(e.target.value)} placeholder="Channel URL" /></div>
-                  <div><Label>TikTok</Label><Input value={tiktok} onChange={e => setTiktok(e.target.value)} placeholder="@username" /></div>
+                  <Label htmlFor="link-url">Web address</Label>
+                  <Input id="link-url" value={newLinkUrl} onChange={(event) => setNewLinkUrl(event.target.value)} className="mt-1" placeholder="https://…" inputMode="url" maxLength={500} />
                 </div>
               </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">Add your links</h1>
-                  <p className="text-muted-foreground mt-1">These will appear on your profile as clickable cards</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> Start with 3–5 of your most important links (latest content, store, socials). You can reorder and add more anytime.
-                </div>
-
-                <Card className="p-4 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div><Label>Title</Label><Input value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="My Latest Video" /></div>
-                    <div><Label>URL</Label><Input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} placeholder="https://..." /></div>
+              <Button type="button" onClick={addLink} variant="outline" className="gap-2"><Plus className="h-4 w-4" /> Add link</Button>
+            </Card>
+            <div className="space-y-2">
+              {links.map((link, index) => (
+                <Card key={`${link.url}-${index}`} className="flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{link.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{link.url}</p>
                   </div>
-                  <div className="flex gap-3 items-end">
-                    <div><Label>Icon (emoji)</Label><Input value={newLinkIcon} onChange={e => setNewLinkIcon(e.target.value)} placeholder="🔗" className="w-20" /></div>
-                    <Button onClick={addLink} disabled={!newLinkTitle.trim() || !newLinkUrl.trim()} className="gap-1"><Plus className="w-4 h-4" /> Add</Button>
-                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setLinks((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${link.title}`}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </Card>
+              ))}
+              {!links.length && <p className="py-8 text-center text-sm text-muted-foreground">Links are optional. You can skip this step.</p>}
+            </div>
+          </div>
+        )}
 
-                <div className="space-y-2">
-                  {links.map((link, i) => (
-                    <Card key={i} className="p-3 flex items-center gap-3">
-                      <span>{link.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{link.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeLink(i)}><Trash2 className="w-4 h-4" /></Button>
-                    </Card>
-                  ))}
-                  {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. You can always add them later.</p>}
-                </div>
-              </div>
-            )}
+        {step === 2 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-display font-semibold">Choose a clean appearance</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Your content stays structured and professional in every theme.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {THEMES.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTheme(item.id)}
+                  className={`rounded-xl border-2 p-3 text-left transition ${theme === item.id ? "border-foreground" : "border-border hover:border-muted-foreground"}`}
+                >
+                  <div className={`${item.bg} flex h-20 items-end justify-center rounded-lg border border-border/50 p-2`}>
+                    <div className={`${item.accent} h-2.5 w-12 rounded-full`} />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-sm font-medium">
+                    {item.label}{theme === item.id && <Check className="h-4 w-4" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <Card className="border-dashed p-4 text-sm text-muted-foreground">
+              Your page starts unverified. Identity verification is a separate optional step, and the Verified badge only means the account holder's identity was checked.
+            </Card>
+          </div>
+        )}
+      </main>
 
-            {step === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">Choose your theme</h1>
-                  <p className="text-muted-foreground mt-1">Pick a style for your public profile</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> You can switch themes anytime from Profile Settings — try a few and see what feels right.
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {THEMES.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTheme(t.id)}
-                      className={`rounded-xl border-2 p-4 text-center transition-all ${theme === t.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
-                    >
-                      <div className={`${t.bg} rounded-lg h-20 mb-2 flex items-end justify-center p-2`}>
-                        <div className={`${t.accent} rounded-full h-3 w-12`} />
-                      </div>
-                      <p className="text-sm font-medium">{t.label}</p>
-                      {theme === t.id && <Check className="w-4 h-4 mx-auto mt-1 text-primary" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      <div className="border-t border-border bg-background sticky bottom-0">
-        <div className="container mx-auto max-w-2xl px-4 py-4 flex justify-between">
-          <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={step === 0} className="gap-1">
-            <ChevronLeft className="w-4 h-4" /> Back
+      <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
+        <div className="container mx-auto flex max-w-2xl justify-between px-4 py-4">
+          <Button type="button" variant="ghost" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0} className="gap-1">
+            <ChevronLeft className="h-4 w-4" /> Back
           </Button>
           {step < steps.length - 1 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gap-1">
-              Next <ChevronRight className="w-4 h-4" />
+            <Button type="button" onClick={() => setStep((current) => current + 1)} disabled={!canContinue} className="gap-1">
+              Next <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={handleFinish} disabled={saving} className="gap-1">
-              {saving ? "Setting up..." : "Finish Setup"} <Check className="w-4 h-4" />
+            <Button type="button" onClick={finish} disabled={saving} className="gap-2">
+              {saving ? "Creating…" : "Create profile"} <Check className="h-4 w-4" />
             </Button>
           )}
         </div>
-      </div>
+      </footer>
     </div>
   );
 };

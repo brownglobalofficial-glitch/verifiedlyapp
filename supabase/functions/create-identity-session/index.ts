@@ -15,7 +15,13 @@ serve(async (req) => {
   try {
     const anon = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
     const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Not authenticated" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
     const { data } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = data.user;
     if (!user) throw new Error("Not authenticated");
@@ -33,7 +39,12 @@ serve(async (req) => {
 
     const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin");
     const isAdmin = !!(roles && roles.length > 0);
-    if (!isAdmin && profile.verification_status !== "paid" && profile.verification_status !== "processing") {
+    if (
+      !isAdmin &&
+      profile.verification_status !== "paid" &&
+      profile.verification_status !== "processing" &&
+      profile.verification_status !== "requires_input"
+    ) {
       throw new Error("Payment required. Please complete the verification fee first.");
     }
 

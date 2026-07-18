@@ -14,16 +14,9 @@ export const routeLoaders = {
   "/privacy": () => import("@/pages/Privacy"),
   "/dashboard": () => import("@/pages/Dashboard"),
   "/dashboard/settings": () => import("@/pages/ProfileSettings"),
-  "/dashboard/products": () => import("@/pages/ManageProducts"),
-  "/dashboard/subscriptions": () => import("@/pages/ManageSubscriptions"),
-  "/dashboard/analytics": () => import("@/pages/Analytics"),
-  "/dashboard/marketplace": () => import("@/pages/Marketplace"),
   "/dashboard/links": () => import("@/pages/ManageLinks"),
-  "/dashboard/content": () => import("@/pages/ManageContent"),
   "/dashboard/admin": () => import("@/pages/Admin"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),
-  "/membership": () => import("@/pages/Membership"),
-  "/product": () => import("@/pages/Product"),
 } as const;
 
 export type PrefetchKey = keyof typeof routeLoaders;
@@ -43,17 +36,18 @@ export const prefetchPath = (path: string) => {
     prefetchRoute(path as PrefetchKey);
     return;
   }
-  // Dynamic routes like /:username, /:username/membership, /:username/p/:productId
+  // Public and retired profile subroutes all use the profile chunk.
   const segs = path.split("/").filter(Boolean);
   if (segs.length === 1) prefetchRoute("/creator-profile");
-  else if (segs.length === 2 && segs[1] === "membership") prefetchRoute("/membership");
-  else if (segs.length === 3 && segs[1] === "p") prefetchRoute("/product");
+  else if (segs.length >= 2 && (segs[1] === "membership" || segs[1] === "p")) prefetchRoute("/creator-profile");
 };
 
 // Prefetch a curated set during browser idle time.
 export const prefetchIdle = (keys: PrefetchKey[]) => {
   const run = () => keys.forEach(prefetchRoute);
-  const w = window as any;
+  const w = window as Window & {
+    requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+  };
   if (typeof w.requestIdleCallback === "function") {
     w.requestIdleCallback(run, { timeout: 2000 });
   } else {
