@@ -41,7 +41,7 @@ const Index = () => {
 
         {/* Positioning */}
         <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
-          Your verified profile for everything you <span className="text-foreground font-medium">share</span> and <span className="text-foreground font-medium">sell</span> — one profile, every platform.
+          Your <span className="text-foreground font-medium">verified identity</span> profile — one link that shows who you actually are, everywhere on the internet.
         </p>
 
         {/* Actions */}
@@ -63,7 +63,7 @@ const Index = () => {
 
         {/* Proof line */}
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          ID verification powered by Stripe Identity · Tips, products and memberships.
+          ID verification powered by Stripe Identity · $12.99 one-time.
         </p>
 
         {/* Footer */}
