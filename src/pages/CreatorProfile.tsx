@@ -171,20 +171,20 @@ const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<any>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  const [perks, setPerks] = useState<Record<string, any[]>>({});
-  const [viewerActiveSubIds, setViewerActiveSubIds] = useState<string[]>([]);
-  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  // Commerce (products/subs/tips) is retired in the identity-first pivot.
+  // Kept as consts so downstream code compiles without behavior changes.
+  const products: any[] = [];
+  const subscriptions: any[] = [];
+  const perks: Record<string, any[]> = {};
+  const viewerActiveSubIds: string[] = [];
+  const memberCounts: Record<string, number> = {};
   const [bioLinks, setBioLinks] = useState<any[]>([]);
-  const [publicContent, setPublicContent] = useState<any[]>([]);
+  const publicContent: any[] = [];
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [buyingProduct, setBuyingProduct] = useState<any>(null);
-  const [_buyingSub, setBuyingSub] = useState<any>(null); // retained for handleSubscribe close-noop
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [tipAmount, setTipAmount] = useState(500);
   const [showTipDialog, setShowTipDialog] = useState(false);
+  const tipAmount = 500;
+  const checkoutLoading = false;
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -197,67 +197,11 @@ const CreatorProfile = () => {
       const { data: prof } = await supabase
         .from("profiles").select("*").eq("username", username.toLowerCase()).maybeSingle();
       if (!prof) { setNotFound(true); setLoading(false); return; }
-      const { data: hasPayments } = await (supabase.rpc as any)("creator_has_payments", { _creator_id: prof.id });
-      setProfile({ ...prof, has_payments: !!hasPayments });
+      setProfile({ ...prof, has_payments: false });
       supabase.from("page_views").insert({ creator_id: prof.id }).then(() => {});
-      const [{ data: prods }, { data: subs }, { data: blinks }, { data: content }] = await Promise.all([
-        supabase.from("products").select("*").eq("creator_id", prof.id).eq("is_published", true),
-        supabase.from("subscriptions").select("*").eq("creator_id", prof.id).eq("is_active", true),
-        supabase.from("bio_links").select("*").eq("creator_id", prof.id).eq("is_active", true).order("sort_order", { ascending: true }),
-        supabase.from("creator_content").select("*").eq("creator_id", prof.id).eq("is_published", true).order("created_at", { ascending: false }),
-      ]);
-      setProducts(prods || []);
-      setSubscriptions(subs || []);
+      const { data: blinks } = await supabase
+        .from("bio_links").select("*").eq("creator_id", prof.id).eq("is_active", true).order("sort_order", { ascending: true });
       setBioLinks(blinks || []);
-      setPublicContent(content || []);
-
-      if (subs && subs.length > 0) {
-        const { data: allPerks } = await supabase
-          .from("subscription_perks")
-          .select("*, unlock_url, perk_type")
-          .in("subscription_id", subs.map(s => s.id))
-          .order("sort_order", { ascending: true });
-        const grouped: Record<string, any[]> = {};
-        (allPerks || []).forEach(p => {
-          if (!grouped[p.subscription_id]) grouped[p.subscription_id] = [];
-          grouped[p.subscription_id].push(p);
-        });
-        setPerks(grouped);
-
-        // Member counts per tier (count of 'subscribe' events minus 'unsubscribe')
-        const { data: events } = await supabase
-          .from("subscriber_events")
-          .select("subscription_id, event_type")
-          .in("subscription_id", subs.map(s => s.id));
-        const counts: Record<string, number> = {};
-        (events || []).forEach((e: any) => {
-          if (!e.subscription_id) return;
-          counts[e.subscription_id] = (counts[e.subscription_id] || 0) + (e.event_type === "subscribe" ? 1 : -1);
-        });
-        // clamp at 0
-        Object.keys(counts).forEach(k => { if (counts[k] < 0) counts[k] = 0; });
-        setMemberCounts(counts);
-
-        // Determine which of these tiers the viewer is actively subscribed to
-        const { data: { session } } = await supabase.auth.getSession();
-        const vid = session?.user?.id;
-        if (vid) {
-          const { data: myEvents } = await supabase
-            .from("subscriber_events")
-            .select("subscription_id, event_type, created_at")
-            .eq("subscriber_id", vid)
-            .in("subscription_id", subs.map(s => s.id))
-            .order("created_at", { ascending: false });
-          const latest = new Map<string, string>();
-          (myEvents || []).forEach((e: any) => {
-            if (!e.subscription_id) return;
-            if (!latest.has(e.subscription_id)) latest.set(e.subscription_id, e.event_type);
-          });
-          setViewerActiveSubIds(
-            [...latest.entries()].filter(([, t]) => t === "subscribe").map(([id]) => id)
-          );
-        }
-      }
       setLoading(false);
     };
     fetchData();
@@ -274,68 +218,17 @@ const CreatorProfile = () => {
   };
 
   const handleTip = async (amount: number) => {
-    if (!viewerId) {
-      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-    setCheckoutLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-tip", {
-        body: { creatorId: profile.id, amount },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-      setShowTipDialog(false);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to start tip", variant: "destructive" });
-    }
-    setCheckoutLoading(false);
+    void amount;
+    setShowTipDialog(false);
   };
 
   const handleBuyProduct = async (product: any) => {
-    if (!viewerId) {
-      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-    if (product.price === 0 && product.file_url) {
-      window.open(product.file_url, "_blank");
-      return;
-    }
-    setCheckoutLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-product-checkout", {
-        body: { productId: product.id, creatorId: profile.id },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-      setBuyingProduct(null);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to start checkout", variant: "destructive" });
-    }
-    setCheckoutLoading(false);
+    void product;
   };
 
   const handleSubscribe = async (sub: any, interval: "month" | "year" = "month") => {
-    if (!viewerId) {
-      navigate(`/signup?type=fan&returnTo=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-    if (!profile?.has_payments) {
-      toast({ title: "Not available", description: "This creator hasn't set up payments yet.", variant: "destructive" });
-      return;
-    }
-    setCheckoutLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-subscription-checkout", {
-        body: { subscriptionId: sub.id, creatorId: profile.id, interval },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-      setBuyingSub(null);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to start subscription", variant: "destructive" });
-    }
-    setCheckoutLoading(false);
+    void sub;
+    void interval;
   };
 
   if (loading) return (
