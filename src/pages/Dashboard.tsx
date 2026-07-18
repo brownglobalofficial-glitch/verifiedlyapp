@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { ExternalLink, LinkIcon, Save, ShieldCheck } from "lucide-react";
+import { ExternalLink, Eye, Globe, LinkIcon, Save, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ProfileSectionsEditor from "@/components/profile/ProfileSectionsEditor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,6 +70,7 @@ const Dashboard = () => {
   const [linkCount, setLinkCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [busySectionId, setBusySectionId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -142,7 +144,7 @@ const Dashboard = () => {
   }, [form.bio, form.displayName, linkCount, profile?.avatar_url, profile?.id_verified, sections]);
 
   const saveProfile = async () => {
-    if (!profile) return;
+    if (!profile) return false;
     setSavingProfile(true);
     const { error } = await supabase
       .from("profiles")
@@ -161,7 +163,7 @@ const Dashboard = () => {
 
     if (error) {
       toast({ title: "Profile not saved", description: error.message, variant: "destructive" });
-      return;
+      return false;
     }
 
     setProfile({
@@ -175,7 +177,8 @@ const Dashboard = () => {
         Object.entries(form.socialLinks).filter(([, value]) => value.trim().length > 0),
       ),
     });
-    toast({ title: "Profile saved", description: "Your public page has been updated." });
+    toast({ title: "Profile published", description: "Your public page has been updated." });
+    return true;
   };
 
   const addSection = async (kind: ProfileSectionKind) => {
@@ -283,6 +286,11 @@ const Dashboard = () => {
 
   const displayName = form.displayName || user?.user_metadata?.display_name || "Your profile";
   const profileUrl = `/${profile?.username || ""}`;
+  const previewSocials = Object.entries(form.socialLinks).filter(([, value]) => value.trim());
+  const publishFromPreview = async () => {
+    const published = await saveProfile();
+    if (published) setPreviewOpen(false);
+  };
 
   return (
     <DashboardShell title="Profile">
@@ -382,11 +390,61 @@ const Dashboard = () => {
             <Button asChild variant="ghost" size="sm">
               <Link to="/dashboard/settings">Change photo or theme</Link>
             </Button>
-            <Button onClick={saveProfile} disabled={savingProfile} className="gap-2">
-              <Save className="h-4 w-4" /> {savingProfile ? "Saving…" : "Save profile"}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} className="gap-2">
+                <Eye className="h-4 w-4" /> Preview
+              </Button>
+              <Button onClick={saveProfile} disabled={savingProfile} className="gap-2">
+                <Save className="h-4 w-4" /> {savingProfile ? "Publishing…" : "Publish now"}
+              </Button>
+            </div>
           </div>
         </Card>
+
+
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Preview your public profile</DialogTitle>
+              <DialogDescription>
+                This is a draft preview of the header details you entered. Publish when it looks right to make it live on Verifiedly.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-2xl border bg-neutral-50 p-4 text-neutral-950 sm:p-6">
+              <div className="rounded-xl border bg-white p-5 text-center shadow-sm">
+                <Avatar className="mx-auto h-20 w-20 ring-4 ring-neutral-200">
+                  {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
+                  <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <h3 className="text-2xl font-display font-bold">{displayName}</h3>
+                  {profile?.id_verified && <VerifiedBadge className="h-5 w-5" label={form.accountType === "business" ? "Account holder verified" : "Identity verified"} />}
+                </div>
+                <p className="mt-1 text-sm text-neutral-500">@{profile?.username}</p>
+                {(form.category || form.accountType === "business") && (
+                  <p className="mt-3 text-sm font-medium text-neutral-600">{form.category || "Organization"}</p>
+                )}
+                {form.bio && <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed">{form.bio}</p>}
+                {(previewSocials.length > 0 || form.website.trim()) && (
+                  <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-neutral-600">
+                    {previewSocials.map(([platform]) => (
+                      <span key={platform} className="rounded-full border px-3 py-1 capitalize">{platform === "twitter" ? "X / Twitter" : platform}</span>
+                    ))}
+                    {form.website.trim() && <span className="inline-flex items-center gap-1 rounded-full border px-3 py-1"><Globe className="h-3 w-3" /> Website</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)}>Keep editing</Button>
+              <Button type="button" onClick={publishFromPreview} disabled={savingProfile} className="gap-2">
+                <Save className="h-4 w-4" /> {savingProfile ? "Publishing…" : "Publish to live profile"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <ProfileSectionsEditor
           sections={sections}
