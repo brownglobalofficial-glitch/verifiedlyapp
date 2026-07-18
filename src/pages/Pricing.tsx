@@ -9,10 +9,10 @@ const Pricing = () => (
   <div className="min-h-screen bg-background">
     <Helmet>
       <title>Pricing · Verifiedly</title>
-      <meta name="description" content="Free ($0, 10% platform fee), Verifiedly Pro ($9.99/mo, 3% platform fee), and a one-time $4.99 identity check." />
+      <meta name="description" content="Free ($0, verified public profile), Verifiedly Pro ($4.99/mo, vault + custom domain), and a one-time $12.99 identity check." />
       <link rel="canonical" href="https://verifiedly.app/pricing" />
       <meta property="og:title" content="Pricing · Verifiedly" />
-      <meta property="og:description" content="Free, Pro ($9.99/mo, 3% fee) and a one-time $4.99 identity check." />
+      <meta property="og:description" content="Free, Pro ($4.99/mo) and a one-time $12.99 identity check." />
       <meta property="og:url" content="https://verifiedly.app/pricing" />
     </Helmet>
     <nav className="border-b border-border h-16 flex items-center px-4">
