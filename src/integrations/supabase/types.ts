@@ -274,6 +274,57 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          expiry_date: string | null
+          file_size: number | null
+          id: string
+          is_public: boolean
+          issue_date: string | null
+          issuer: string | null
+          mime_type: string | null
+          note: string | null
+          storage_path: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          is_public?: boolean
+          issue_date?: string | null
+          issuer?: string | null
+          mime_type?: string | null
+          note?: string | null
+          storage_path: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          is_public?: boolean
+          issue_date?: string | null
+          issuer?: string | null
+          mime_type?: string | null
+          note?: string | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -739,6 +790,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_sections: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          is_public: boolean
+          kind: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_public?: boolean
+          kind: string
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_public?: boolean
+          kind?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
