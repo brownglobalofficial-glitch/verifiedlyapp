@@ -8,9 +8,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Verifiedly Identity Verification fee — one-time $4.99.
-// Free for Verifiedly Pro subscribers (short-circuited before Checkout).
-const VERIFY_PRICE_ID = "price_1TtYw41hrOAc8qE8bFdRF341";
+// Verifiedly Identity Verification fee — one-time $12.99.
+// Buys a verification ATTEMPT (not a guaranteed badge).
+const VERIFY_PRICE_ID = "price_1TuNUS1hrOAc8qE8OOsyoQ6K";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -31,24 +31,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     const { data: prof } = await admin.from("profiles")
-      .select("is_pro, is_elite, id_verified, verification_status, pro_identity_check_used")
+      .select("id_verified, verification_status")
       .eq("id", user.id).maybeSingle();
     if (prof?.id_verified) throw new Error("Already verified");
 
-    // Pro/Elite subscribers get ONE included identity check on activation.
-    // Once that check reaches a terminal state (verified/failed/canceled) the
-    // included entitlement is consumed and further attempts require the $4.99
-    // paid flow. Support can flip pro_identity_check_used back to false to
-    // grant a manual replacement.
-    const proEligible = (prof?.is_pro || prof?.is_elite) && !prof?.pro_identity_check_used;
-    if (proEligible) {
-      if (prof!.verification_status !== "paid" && prof!.verification_status !== "processing") {
-        await admin.from("profiles").update({ verification_status: "paid" }).eq("id", user.id);
-      }
-      return new Response(JSON.stringify({ pro_bypass: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
-      });
-    }
+    // Pro no longer includes a free identity check — every attempt is paid.
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
     const origin = req.headers.get("origin") || "https://verifiedly.app";
