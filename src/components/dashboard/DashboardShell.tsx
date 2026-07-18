@@ -6,7 +6,7 @@ import DashboardSidebar from "./DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
-export default function DashboardShell({ children, title }: { children: ReactNode; title?: string }) {
+export default function DashboardShell({ children, title, hidePreview = false }: { children: ReactNode; title?: string; hidePreview?: boolean }) {
   const navigate = useNavigate();
   const [username, setUsername] = useState<string | undefined>();
 
@@ -31,7 +31,7 @@ export default function DashboardShell({ children, title }: { children: ReactNod
               {title && <h1 className="font-display font-semibold text-sm md:text-base truncate">{title}</h1>}
             </div>
             <div className="flex items-center gap-2">
-              {username && (
+              {username && !hidePreview && (
                 <a href={`/${username}`} target="_blank" rel="noreferrer">
                   <Button variant="outline" size="sm" className="gap-1">
                     <ExternalLink className="w-3 h-3" /> <span className="hidden sm:inline">Preview</span>

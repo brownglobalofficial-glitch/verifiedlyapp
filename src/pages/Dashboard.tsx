@@ -323,19 +323,16 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <DashboardShell title="Edit profile"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
+    return <DashboardShell title="Edit profile" hidePreview><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
   }
 
   const displayName = form.displayName || "Your name";
 
   return (
-    <DashboardShell title="Edit profile">
+    <DashboardShell title="Edit profile" hidePreview>
       <div className="mx-auto max-w-3xl px-3 py-4 sm:px-5 sm:py-6">
         <div className="sticky top-14 z-20 -mx-3 mb-4 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-3 py-3 backdrop-blur sm:-mx-5 sm:px-5">
-          <div className="min-w-0">
-            <h1 className="text-sm font-semibold">Edit profile</h1>
-            <p className="truncate text-xs text-muted-foreground">Changes appear at verifiedly.app/{profile?.username}</p>
-          </div>
+          <p className="min-w-0 truncate text-xs text-muted-foreground">Changes appear at verifiedly.app/{profile?.username}</p>
           <div className="flex shrink-0 items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="h-9 gap-1.5">
               <a href={`/${profile?.username}`} target="_blank" rel="noreferrer">Preview <ExternalLink className="h-3.5 w-3.5" /></a>
