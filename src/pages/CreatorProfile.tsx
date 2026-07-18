@@ -183,7 +183,7 @@ const CreatorProfile = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showTipDialog, setShowTipDialog] = useState(false);
-  const tipAmount = 500;
+  const [tipAmount, setTipAmount] = useState(500);
   const checkoutLoading = false;
   const { toast } = useToast();
   const navigate = useNavigate();
