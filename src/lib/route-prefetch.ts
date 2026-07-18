@@ -15,6 +15,9 @@ export const routeLoaders = {
   "/dashboard": () => import("@/pages/Dashboard"),
   "/dashboard/settings": () => import("@/pages/ProfileSettings"),
   "/dashboard/admin": () => import("@/pages/Admin"),
+  "/dashboard/verification": () => import("@/pages/dashboard/Verification"),
+  "/dashboard/documents": () => import("@/pages/dashboard/Documents"),
+  "/pricing": () => import("@/pages/Pricing"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),
 } as const;
 
@@ -38,6 +41,9 @@ export const prefetchPath = (path: string) => {
   // Public and retired profile subroutes all use the profile chunk.
   const segs = path.split("/").filter(Boolean);
   if (segs.length === 1) prefetchRoute("/creator-profile");
+  else if (segs.length === 3 && segs[0] === "documents" && segs[1] === "shared") {
+    void import("@/pages/SharedDocument");
+  }
   else if (segs.length >= 2 && (segs[1] === "membership" || segs[1] === "p")) prefetchRoute("/creator-profile");
 };
 

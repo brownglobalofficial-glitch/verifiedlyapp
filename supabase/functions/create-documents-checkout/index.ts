@@ -60,22 +60,19 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) return json({ error: "Please sign in again." }, 401);
 
-    const { data: profile } = await admin.from("profiles")
-      .select("id_verified")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (profile?.id_verified) return json({ already_verified: true });
+    const body = await req.json().catch(() => ({}));
+    const interval = body?.interval === "year" ? "year" : "month";
+    const amount = interval === "year" ? 3900 : 499;
 
     const { data: billing } = await admin.from("verifiedly_billing")
-      .select("stripe_customer_id, verification_payment_status, verification_checkout_session_id")
+      .select("stripe_customer_id, documents_status, documents_current_period_end")
       .eq("user_id", user.id)
       .maybeSingle();
-
-    if (billing?.verification_payment_status === "paid" && billing.verification_checkout_session_id) {
-      return json({
-        already_paid: true,
-        checkout_session_id: billing.verification_checkout_session_id,
-      });
+    if (
+      ["active", "trialing"].includes(billing?.documents_status ?? "")
+      && (!billing?.documents_current_period_end || new Date(billing.documents_current_period_end) > new Date())
+    ) {
+      return json({ already_active: true });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -100,29 +97,33 @@ serve(async (req) => {
     const origin = safeOrigin(req.headers.get("origin"));
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: "payment",
+      mode: "subscription",
       locale: "auto",
+      allow_promotion_codes: true,
       line_items: [{
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: 999,
+          unit_amount: amount,
+          recurring: { interval },
           product_data: {
-            name: "Verifiedly Identity",
-            description: "One government ID and selfie identity-verification service",
+            name: "Verifiedly Documents",
+            description: "Private professional credential storage and controlled sharing",
           },
         },
       }],
-      success_url: `${origin}/dashboard/verification?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/dashboard/verification?checkout=cancelled`,
+      success_url: `${origin}/dashboard/documents?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard/documents?checkout=cancelled`,
       metadata: {
-        type: "verifiedly_identity_payment",
+        type: "verifiedly_documents",
         user_id: user.id,
+        interval,
       },
-      payment_intent_data: {
+      subscription_data: {
         metadata: {
-          type: "verifiedly_identity_payment",
+          type: "verifiedly_documents",
           user_id: user.id,
+          interval,
         },
       },
     });

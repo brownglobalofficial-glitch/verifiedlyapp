@@ -91,6 +91,8 @@ serve(async (req) => {
     { auth: { persistSession: false } }
   );
 
+  let claimedEventId: string | null = null;
+
   try {
     const body = await req.text();
     const sig = req.headers.get("stripe-signature");
@@ -105,28 +107,66 @@ serve(async (req) => {
       });
     }
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    claimedEventId = event.id;
 
     log("Event received", { type: event.type, id: event.id });
 
-    // Idempotency: a unique index on stripe_event_id ensures the same event
-    // is only processed once. If insert fails with a duplicate, return 200
-    // immediately so Stripe stops retrying without re-running side effects.
+    // Claim the event. A failed attempt is explicitly reclaimable so Stripe
+    // retries are not acknowledged until all state changes complete.
+    const attemptStartedAt = new Date().toISOString();
     const { error: dupErr } = await supabase.from("webhook_events").insert({
       stripe_event_id: event.id,
       event_type: event.type,
       livemode: (event as any).livemode ?? null,
       payload_preview: { id: event.id, type: event.type, created: event.created },
+      processing_status: "processing",
+      attempt_count: 1,
+      last_attempt_at: attemptStartedAt,
+      processed_at: null,
+      last_error: null,
     });
     if (dupErr) {
       const code = (dupErr as any).code;
       if (code === "23505") {
-        log("Duplicate event — already processed, skipping", { id: event.id });
-        return new Response(JSON.stringify({ received: true, duplicate: true }), {
-          headers: { "Content-Type": "application/json" },
-          status: 200,
-        });
+        const { data: existing, error: readError } = await supabase
+          .from("webhook_events")
+          .select("processing_status, attempt_count, last_attempt_at")
+          .eq("stripe_event_id", event.id)
+          .maybeSingle();
+        if (readError || !existing) throw readError ?? new Error("Unable to read webhook claim.");
+
+        if (existing.processing_status === "processed") {
+          log("Duplicate event — already processed, skipping", { id: event.id });
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
+        const lastAttempt = new Date(existing.last_attempt_at).getTime();
+        const isFreshClaim = existing.processing_status === "processing"
+          && Number.isFinite(lastAttempt)
+          && Date.now() - lastAttempt < 5 * 60 * 1000;
+        if (isFreshClaim) {
+          return new Response(JSON.stringify({ error: "Webhook event is already processing." }), {
+            headers: { "Content-Type": "application/json" },
+            status: 409,
+          });
+        }
+
+        const { error: reclaimError } = await supabase
+          .from("webhook_events")
+          .update({
+            processing_status: "processing",
+            attempt_count: (existing.attempt_count ?? 1) + 1,
+            last_attempt_at: attemptStartedAt,
+            last_error: null,
+          })
+          .eq("stripe_event_id", event.id);
+        if (reclaimError) throw reclaimError;
+      } else {
+        throw dupErr;
       }
-      log("Failed to log webhook event (continuing)", { error: dupErr.message });
     }
 
     // ── Stripe Connect account.updated → cache payout status on creator_private_data ──
@@ -184,7 +224,40 @@ serve(async (req) => {
       const metadata = session.metadata || {};
       const type = metadata.type;
 
-      if (type === "product_purchase") {
+      if (type === "verifiedly_identity_payment") {
+        if (session.payment_status === "paid" && metadata.user_id) {
+          await supabase.from("verifiedly_billing").upsert({
+            user_id: metadata.user_id,
+            stripe_customer_id: typeof session.customer === "string" ? session.customer : session.customer?.id,
+            verification_payment_status: "paid",
+            verification_checkout_session_id: session.id,
+          }, { onConflict: "user_id" });
+          log("Verifiedly Identity payment confirmed", { userId: metadata.user_id });
+        }
+      } else if (type === "verifiedly_documents") {
+        if (metadata.user_id && typeof session.subscription === "string") {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription);
+          const status = subscription.status === "trialing"
+            ? "trialing"
+            : subscription.status === "active"
+              ? "active"
+              : subscription.status === "past_due"
+                ? "past_due"
+                : "incomplete";
+          await supabase.from("verifiedly_billing").upsert({
+            user_id: metadata.user_id,
+            stripe_customer_id: typeof session.customer === "string" ? session.customer : session.customer?.id,
+            documents_subscription_id: subscription.id,
+            documents_status: status,
+            documents_interval: metadata.interval === "year" ? "year" : "month",
+            documents_current_period_end: subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000).toISOString()
+              : null,
+            documents_cancel_at_period_end: !!subscription.cancel_at_period_end,
+          }, { onConflict: "user_id" });
+          log("Verifiedly Documents subscription confirmed", { userId: metadata.user_id, status });
+        }
+      } else if (type === "product_purchase") {
         log("Processing product purchase", { product_id: metadata.product_id });
 
         const { data: product } = await supabase
@@ -364,6 +437,35 @@ serve(async (req) => {
       }
     }
 
+    // Stripe Identity is asynchronous. These webhook events are the source of
+    // truth; no raw ID images, selfie images, or verified output fields are
+    // copied into Verifiedly's database.
+    if (
+      event.type === "identity.verification_session.verified"
+      || event.type === "identity.verification_session.requires_input"
+    ) {
+      const verification = event.data.object as Stripe.Identity.VerificationSession;
+      const userId = verification.metadata?.user_id;
+      if (userId) {
+        const status = event.type === "identity.verification_session.verified"
+          ? "verified"
+          : "requires_input";
+
+        await supabase.from("verifiedly_billing").upsert({
+          user_id: userId,
+          identity_status: status,
+          identity_last_session_id: verification.id,
+        }, { onConflict: "user_id" });
+
+        await supabase.from("profiles").update({
+          id_verified: status === "verified",
+          verification_status: status,
+          verified_at: status === "verified" ? new Date().toISOString() : null,
+        }).eq("id", userId);
+        log("Stripe Identity status synced", { userId, status });
+      }
+    }
+
     // ── Referral commission: credit referrer 10% on the FIRST paid invoice ──
     // Using invoice.payment_succeeded + billing_reason === "subscription_create"
     // ensures we only credit on the genuine first successful charge. The
@@ -444,7 +546,28 @@ serve(async (req) => {
       const sub = event.data.object as Stripe.Subscription;
       const md = (sub.metadata || {}) as Record<string, string>;
       const userId = md.user_id;
-      if (userId) {
+      if (userId && md.type === "verifiedly_documents") {
+        const status = event.type === "customer.subscription.deleted"
+          ? "canceled"
+          : sub.status === "trialing"
+            ? "trialing"
+            : sub.status === "active"
+              ? "active"
+              : sub.status === "past_due"
+                ? "past_due"
+                : "canceled";
+        await supabase.from("verifiedly_billing").upsert({
+          user_id: userId,
+          documents_subscription_id: sub.id,
+          documents_status: status,
+          documents_interval: md.interval === "year" ? "year" : "month",
+          documents_current_period_end: sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
+          documents_cancel_at_period_end: !!sub.cancel_at_period_end,
+        }, { onConflict: "user_id" });
+        log("Verifiedly Documents subscription synced", { userId, status });
+      } else if (userId) {
         const isActive = ["active", "trialing"].includes(sub.status);
         const tier = md.tier;
         if (event.type === "customer.subscription.deleted" || !isActive) {
@@ -462,11 +585,20 @@ serve(async (req) => {
           await supabase.from("profiles").update({
             is_pro: tier === "pro" || tier === "elite",
             is_elite: tier === "elite",
-            is_verified: true,
           }).eq("id", userId);
         }
       }
     }
+
+    const { error: completedError } = await supabase
+      .from("webhook_events")
+      .update({
+        processing_status: "processed",
+        processed_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("stripe_event_id", event.id);
+    if (completedError) throw completedError;
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
@@ -475,9 +607,15 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     log("ERROR", { message: msg });
+    if (claimedEventId) {
+      await supabase.from("webhook_events").update({
+        processing_status: "failed",
+        last_error: msg.slice(0, 1000),
+      }).eq("stripe_event_id", claimedEventId);
+    }
     return new Response(JSON.stringify({ error: msg }), {
       headers: { "Content-Type": "application/json" },
-      status: 400,
+      status: claimedEventId ? 500 : 400,
     });
   }
 });

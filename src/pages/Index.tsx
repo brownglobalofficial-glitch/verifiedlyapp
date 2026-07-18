@@ -40,7 +40,7 @@ const Index = () => {
 
         {/* Positioning */}
         <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
-          Your <span className="text-foreground font-medium">official profile</span> online — one clear place to share who you are and what you do.
+          Your <span className="text-foreground font-medium">official profile</span> online — create it, verify your identity, and keep professional credentials private.
         </p>
 
         {/* Actions */}
@@ -62,13 +62,15 @@ const Index = () => {
 
         {/* Trust line */}
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          Add your links, work, education, credentials, licenses, awards, and accomplishments in one structured profile.
+          Your public profile is free. Identity and private Documents are optional.
         </p>
 
         {/* Footer */}
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+          <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
           <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
         </footer>
       </main>

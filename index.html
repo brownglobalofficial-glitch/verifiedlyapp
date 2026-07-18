@@ -7,21 +7,21 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Verifiedly — Create. Verify. Share.</title>
-    <meta name="description" content="Your official profile online. Share who you are, what you do, and where people can find you.">
+    <meta name="description" content="Create one professional public profile, verify your identity through Stripe, and privately store professional credentials.">
     <meta name="author" content="BrownGlobal Holdings LLC" />
     <meta name="robots" content="index, follow" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://verifiedly.app" />
     <meta property="og:title" content="Verifiedly — Create. Verify. Share.">
-    <meta property="og:description" content="Your official profile online.">
+    <meta property="og:description" content="Your professional public profile, optional identity verification, and private credential storage.">
     <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/0AB5z0HLsOdO2Jge2YgDKOU1cUa2/social-images/social-1774569410104-IMG_20260221_192505_278_(2)_(1).webp">
     <meta property="og:site_name" content="Verifiedly" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@verifiedlyapp" />
     <meta name="twitter:title" content="Verifiedly — Create. Verify. Share.">
-    <meta name="twitter:description" content="Your official profile online.">
+    <meta name="twitter:description" content="Your professional public profile, optional identity verification, and private credential storage.">
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/0AB5z0HLsOdO2Jge2YgDKOU1cUa2/social-images/social-1774569410104-IMG_20260221_192505_278_(2)_(1).webp">
 
     <link rel="icon" type="image/png" href="/favicon.png">
@@ -33,14 +33,32 @@
       "@type": "WebApplication",
       "name": "Verifiedly",
       "url": "https://verifiedly.app",
-      "description": "Official online profiles with structured work, education, credentials, licenses, awards, accomplishments, and links.",
+      "description": "Professional public profiles with optional Stripe identity verification and private credential storage.",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
       "offers": {
-        "@type": "Offer",
-        "name": "Official Profile",
-        "price": "0",
-        "priceCurrency": "USD"
+        "@type": "OfferCatalog",
+        "name": "Verifiedly plans",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "name": "Public Profile",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          {
+            "@type": "Offer",
+            "name": "Identity Verification",
+            "price": "9.99",
+            "priceCurrency": "USD"
+          },
+          {
+            "@type": "Offer",
+            "name": "Verifiedly Documents Monthly",
+            "price": "4.99",
+            "priceCurrency": "USD"
+          }
+        ]
       },
       "creator": {
         "@type": "Organization",

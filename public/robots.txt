@@ -1,16 +1,26 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /dashboard/
+Disallow: /documents/shared/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /dashboard/
+Disallow: /documents/shared/
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /dashboard/
+Disallow: /documents/shared/
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /dashboard/
+Disallow: /documents/shared/
 
 User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /documents/shared/
 
 Sitemap: https://verifiedly.app/sitemap.xml

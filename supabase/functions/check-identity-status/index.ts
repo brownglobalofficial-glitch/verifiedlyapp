@@ -8,94 +8,87 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface VerifiedOutputs {
-  first_name?: string;
-  last_name?: string;
-  dob?: { year: number; month: number; day: number };
-  address?: { country?: string };
-  id_number?: { country?: string };
-}
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+});
 
-// Polling endpoint — user-triggered. Reads the latest Stripe state and updates
-// the profile, so we don't require a webhook for the happy path.
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+
   try {
-    const anon = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
-    const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-    const { data } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
-    const user = data.user;
-    if (!user) throw new Error("Not authenticated");
+    if (!authHeader) return json({ error: "Please sign in again." }, 401);
+
+    const anon = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    );
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } },
+    );
+    const { data: userData } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
+    const user = userData.user;
+    if (!user) return json({ error: "Please sign in again." }, 401);
 
     const { data: profile } = await admin.from("profiles")
-      .select("id, username, account_type, stripe_identity_session_id, verification_status, id_verified").eq("id", user.id).maybeSingle();
-    if (!profile) throw new Error("no_profile");
+      .select("id_verified, verified_at, stripe_identity_session_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    const { data: billing } = await admin.from("verifiedly_billing")
+      .select("verification_payment_status, identity_status, identity_attempt_count, identity_last_session_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    // Also honor a paid checkout session flag if present in the URL flow.
-    const body: unknown = await req.json().catch(() => ({}));
-    const checkoutSessionId = (
-      typeof body === "object" &&
-      body !== null &&
-      "checkout_session_id" in body &&
-      typeof body.checkout_session_id === "string"
-    ) ? body.checkout_session_id : undefined;
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
-
-    if (checkoutSessionId) {
-      try {
-        const cs = await stripe.checkout.sessions.retrieve(checkoutSessionId);
-        if (cs.payment_status === "paid" && cs.metadata?.user_id === user.id && !profile.id_verified) {
-          await admin.from("profiles").update({ verification_status: "paid" }).eq("id", user.id);
-        }
-      } catch { /* ignore */ }
-    }
-
-    if (profile.stripe_identity_session_id) {
-      const vs = await stripe.identity.verificationSessions.retrieve(profile.stripe_identity_session_id, {
-        expand: ["verified_outputs"],
+    const sessionId = billing?.identity_last_session_id ?? profile?.stripe_identity_session_id;
+    if (!sessionId || profile?.id_verified) {
+      return json({
+        id_verified: !!profile?.id_verified,
+        verified_at: profile?.verified_at ?? null,
+        verification_payment_status: billing?.verification_payment_status ?? "unpaid",
+        identity_status: profile?.id_verified ? "verified" : (billing?.identity_status ?? "unverified"),
+        identity_attempt_count: billing?.identity_attempt_count ?? 0,
       });
-      if (vs.status === "verified") {
-        const expanded = vs as typeof vs & { verified_outputs?: VerifiedOutputs };
-        const out = expanded.verified_outputs || {};
-        const first = out.first_name || null;
-        const last = out.last_name || null;
-        const dob = out.dob ? `${out.dob.year}-${String(out.dob.month).padStart(2, "0")}-${String(out.dob.day).padStart(2, "0")}` : null;
-        const country = out.address?.country || out.id_number?.country || null;
-        await admin.from("profiles").update({
-          id_verified: true,
-          verification_status: "verified",
-          verified_at: new Date().toISOString(),
-          verified_first_name: first,
-          verified_last_name: last,
-          verified_full_name: [first, last].filter(Boolean).join(" ") || null,
-          verified_dob: dob,
-          verified_country: country,
-        }).eq("id", user.id);
-      } else if (vs.status === "requires_input") {
-        await admin.from("profiles").update({ verification_status: "requires_input" }).eq("id", user.id);
-      } else if (vs.status === "canceled") {
-        await admin.from("profiles").update({ verification_status: "canceled" }).eq("id", user.id);
-      }
     }
 
-    const { data: fresh } = await admin.from("profiles")
-      .select("id, username, account_type, verification_status, id_verified, verified_at, verified_full_name, verified_country")
-      .eq("id", user.id).maybeSingle();
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("Stripe Identity is not configured yet.");
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const verification = await stripe.identity.verificationSessions.retrieve(sessionId);
 
-    return new Response(JSON.stringify(fresh), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+    const status = verification.status === "verified"
+      ? "verified"
+      : verification.status === "requires_input"
+        ? "requires_input"
+        : verification.status === "canceled"
+          ? "canceled"
+          : "processing";
+
+    await admin.from("verifiedly_billing").upsert({
+      user_id: user.id,
+      identity_status: status,
+      identity_last_session_id: sessionId,
+    }, { onConflict: "user_id" });
+
+    const verifiedAt = status === "verified" ? new Date().toISOString() : null;
+    await admin.from("profiles").update({
+      id_verified: status === "verified",
+      verification_status: status,
+      verified_at: verifiedAt ?? profile?.verified_at ?? null,
+    }).eq("id", user.id);
+
+    return json({
+      id_verified: status === "verified",
+      verified_at: verifiedAt ?? profile?.verified_at ?? null,
+      verification_payment_status: billing?.verification_payment_status ?? "paid",
+      identity_status: status,
+      identity_attempt_count: billing?.identity_attempt_count ?? 0,
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500,
-    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to check verification status.";
+    return json({ error: message }, 500);
   }
 });

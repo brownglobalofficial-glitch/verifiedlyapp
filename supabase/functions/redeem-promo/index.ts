@@ -69,7 +69,6 @@ serve(async (req) => {
     const profileUpdate: Record<string, unknown> = {
       is_pro: tier === "pro" || tier === "elite",
       is_elite: tier === "elite",
-      is_verified: true,
       comp_tier: tier,
     };
     const { error: profErr } = await supabase

@@ -7,3 +7,7 @@ project_id = "pwahrywcgtgfaaghkpoo"
     verify_jwt = true
   [functions.bootstrap-admin]
     verify_jwt = false
+  [functions.access-document-share]
+    verify_jwt = false
+  [functions.stripe-webhook]
+    verify_jwt = false
