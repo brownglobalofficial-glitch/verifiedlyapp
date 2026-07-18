@@ -28,7 +28,7 @@ const Privacy = () => (
       <h3>Profile information</h3>
       <ul>
         <li>Display name, profile photo or logo, biography, professional label, website, and social links</li>
-        <li>Work, education, accomplishments, credentials, projects, supporting links, and other sections you choose to add</li>
+        <li>Work, education, credentials, licenses, awards, accomplishments, supporting links, and other profile details you choose to add</li>
         <li>Your visibility choices for profile sections</li>
       </ul>
       <p>Information you publish on a public profile can be viewed, copied, indexed, or shared by others. Do not publish sensitive information that you do not want made public.</p>

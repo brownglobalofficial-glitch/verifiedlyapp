@@ -48,7 +48,6 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
       { key: "organization", label: "Organization", placeholder: "Organization name" },
       { key: "start", label: "Start", placeholder: "2024" },
       { key: "end", label: "End", placeholder: "Present" },
-      { key: "description", label: "Description", placeholder: "What you do there", type: "textarea" },
       { key: "url", label: "Official link", placeholder: "https://…", type: "url" },
     ],
   },
@@ -64,12 +63,11 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
     ],
   },
   accomplishment: {
-    label: "Awards",
+    label: "Awards & accomplishments",
     description: "An award, honor, milestone, or achievement.",
     fields: [
-      { key: "title", label: "Title", placeholder: "What you accomplished" },
+      { key: "title", label: "Award or accomplishment", placeholder: "Award or accomplishment" },
       { key: "date", label: "Date", placeholder: "2026" },
-      { key: "description", label: "Details", placeholder: "Add helpful context", type: "textarea" },
       { key: "url", label: "Supporting link", placeholder: "https://…", type: "url" },
     ],
   },
@@ -115,7 +113,9 @@ export const emptySectionData = (kind: ProfileSectionKind): ProfileSectionData =
   Object.fromEntries(PROFILE_SECTION_DEFINITIONS[kind].fields.map((field) => [field.key, ""]));
 
 export const hasVisibleSectionData = (section: ProfileSection) =>
-  Object.values(section.data || {}).some((value) => String(value || "").trim().length > 0);
+  PROFILE_SECTION_DEFINITIONS[section.kind].fields.some((field) =>
+    String(section.data?.[field.key] || "").trim().length > 0,
+  );
 
 export const safeExternalUrl = (value?: string | null) => {
   if (!value) return null;

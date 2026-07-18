@@ -1,6 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, ExternalLink, MoreHorizontal, Plus, ShieldCheck } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Camera, ExternalLink, GripVertical, MoreHorizontal, Plus, Share2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ProfileSectionsEditor from "@/components/profile/ProfileSectionsEditor";
@@ -115,6 +132,52 @@ const ensureLinkSlots = (links: EditableLink[], minimum = 3) => {
 
 const inlineInputClass = "h-8 rounded-none border-0 border-b border-border/70 bg-transparent px-0 text-sm shadow-none placeholder:text-muted-foreground/50 focus-visible:border-foreground focus-visible:ring-0";
 
+const SortableLink = ({
+  link,
+  index,
+  onChange,
+  onRemove,
+}: {
+  link: EditableLink;
+  index: number;
+  onChange: (id: string, patch: Partial<EditableLink>) => void;
+  onRemove: (link: EditableLink) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative rounded-2xl border px-10 py-3 transition ${link.is_active ? "border-border/80 bg-background" : "border-dashed border-border/70 bg-muted/20 opacity-70"} ${isDragging ? "z-30 shadow-lg" : ""}`}
+    >
+      <button
+        type="button"
+        className="absolute left-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 touch-none cursor-grab items-center justify-center rounded-full text-muted-foreground/55 transition hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        aria-label={`Reorder link ${index + 1}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <Input aria-label={`Link ${index + 1} label`} value={link.title} onChange={(event) => onChange(link.id, { title: event.target.value })} placeholder={`Link ${index + 1} label`} maxLength={80} className="h-7 border-0 bg-transparent px-0 text-center text-sm font-semibold shadow-none placeholder:text-muted-foreground/55 focus-visible:ring-0" />
+      <Input aria-label={`Link ${index + 1} web address`} type="url" value={link.url} onChange={(event) => onChange(link.id, { url: event.target.value })} placeholder="https://example.com" maxLength={500} className="h-6 border-0 bg-transparent px-0 text-center text-[11px] text-muted-foreground shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0" />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label={`Options for link ${index + 1}`}>
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuItem onClick={() => onChange(link.id, { is_active: !link.is_active })}>{link.is_active ? "Hide" : "Show"}</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onRemove(link)}>Remove</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -126,6 +189,10 @@ const Dashboard = () => {
   const [deletedLinkIds, setDeletedLinkIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -164,7 +231,7 @@ const Dashboard = () => {
         ...section,
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
-      })).filter((section) => isProfileEditorSectionKind(section.kind));
+      })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section));
       const loadedLinks = (currentLinks || []) as EditableLink[];
 
       setProfile(currentProfile);
@@ -213,6 +280,41 @@ const Dashboard = () => {
     setLinks((current) => ensureLinkSlots(current.filter((item) => item.id !== link.id)));
   };
 
+  const reorderLinks = (event: DragEndEvent) => {
+    if (!event.over || event.active.id === event.over.id) return;
+    setLinks((current) => {
+      const oldIndex = current.findIndex((link) => link.id === event.active.id);
+      const newIndex = current.findIndex((link) => link.id === event.over?.id);
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return arrayMove(current, oldIndex, newIndex).map((link, sortOrder) => ({ ...link, sort_order: sortOrder }));
+    });
+  };
+
+  const reorderSections = (kind: ProfileSectionKind, activeId: string, overId: string) => {
+    setSections((current) => {
+      const oldIndex = current.findIndex((section) => section.id === activeId && section.kind === kind);
+      const newIndex = current.findIndex((section) => section.id === overId && section.kind === kind);
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return arrayMove(current, oldIndex, newIndex).map((section, position) => ({ ...section, position }));
+    });
+  };
+
+  const shareProfile = async () => {
+    if (!profile) return;
+    const url = `https://verifiedly.app/${profile.username}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: form.displayName || profile.username, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Profile link copied" });
+      }
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      toast({ title: "Could not share the profile", variant: "destructive" });
+    }
+  };
+
   const save = async () => {
     if (!profile) return;
     if (!form.displayName.trim()) {
@@ -256,10 +358,7 @@ const Dashboard = () => {
         .eq("id", profile.id);
       if (profileError) throw profileError;
 
-      const emptyExistingSectionIds = sections
-        .filter((section) => !section.id.startsWith("draft-") && !hasVisibleSectionData(section))
-        .map((section) => section.id);
-      const sectionIdsToDelete = [...new Set([...deletedSectionIds, ...emptyExistingSectionIds])];
+      const sectionIdsToDelete = [...new Set(deletedSectionIds)];
       if (sectionIdsToDelete.length) {
         const { error } = await supabase.from("profile_sections").delete().in("id", sectionIdsToDelete).eq("user_id", profile.id);
         if (error) throw error;
@@ -348,6 +447,9 @@ const Dashboard = () => {
         <div className="sticky top-14 z-20 -mx-3 mb-3 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
           <p className="min-w-0 truncate text-xs text-muted-foreground">verifiedly.app/{profile?.username}</p>
           <div className="flex shrink-0 items-center gap-1.5">
+            <Button type="button" onClick={() => void shareProfile()} variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs">
+              <Share2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Share</span>
+            </Button>
             <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs">
               <a href={`/${profile?.username}`} target="_blank" rel="noreferrer">Preview <ExternalLink className="h-3.5 w-3.5" /></a>
             </Button>
@@ -363,17 +465,56 @@ const Dashboard = () => {
             <button type="button" onClick={() => setForm({ ...form, accountType: "business" })} className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${form.accountType === "business" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Organization</button>
           </div>
 
+          <section className="border-b border-border/70 px-4 py-5 text-center sm:px-6 sm:py-6">
+            <div className="relative mx-auto w-fit">
+              <Avatar className="h-20 w-20 bg-muted sm:h-24 sm:w-24">
+                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />}
+                <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+              </Avatar>
+              <Button asChild variant="secondary" size="icon" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border border-background shadow-sm">
+                <Link to="/dashboard/settings" aria-label="Change profile photo"><Camera className="h-3.5 w-3.5" /></Link>
+              </Button>
+            </div>
+
+            <div className="mx-auto mt-3 flex max-w-sm items-center justify-center gap-1.5">
+              <Input
+                value={form.displayName}
+                onChange={(event) => setForm({ ...form, displayName: event.target.value })}
+                placeholder={form.accountType === "business" ? "Organization name" : "Your name"}
+                maxLength={80}
+                aria-label={form.accountType === "business" ? "Organization name" : "Name"}
+                className="h-9 min-w-0 border-0 bg-transparent p-0 text-center font-display text-2xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0"
+              />
+              {profile?.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0" label={form.accountType === "business" ? "Account holder verified" : "Identity verified"} />}
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">@{profile?.username}</p>
+
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" aria-label="Social profiles">
+              {SOCIAL_FIELDS.map(([key, label, placeholder]) => {
+                const hasValue = !!form.socialLinks[key]?.trim();
+                return (
+                  <Popover key={key}>
+                    <PopoverTrigger asChild>
+                      <button type="button" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${hasValue ? "border-foreground/20 bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-muted-foreground hover:text-foreground"}`} aria-label={`Edit ${label}`} title={label}>
+                        <SocialIcon platform={key} className="h-3.5 w-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="center" className="w-[min(300px,calc(100vw-24px))] p-3">
+                      <label>
+                        <span className="text-xs font-semibold">{label}</span>
+                        <Input value={form.socialLinks[key] || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, [key]: event.target.value } })} placeholder={placeholder} maxLength={500} className="mt-2 h-9" />
+                      </label>
+                    </PopoverContent>
+                  </Popover>
+                );
+              })}
+            </div>
+          </section>
+
           <div className="grid gap-0 lg:grid-cols-[minmax(180px,0.8fr)_minmax(320px,1.45fr)_minmax(220px,1fr)]">
             <aside className="order-2 border-t border-border/70 p-4 lg:order-1 lg:border-r lg:border-t-0 lg:p-5">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Identity</p>
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Profile information</p>
               <div className="space-y-3">
-                <label className="block">
-                  <span className="text-[10px] font-medium text-muted-foreground">{form.accountType === "business" ? "Organization" : "Name"}</span>
-                  <div className="flex items-center gap-1.5">
-                    <Input value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} placeholder={form.accountType === "business" ? "Organization name" : "Your name"} maxLength={80} className={`${inlineInputClass} font-display font-semibold`} />
-                    {profile?.id_verified && <VerifiedBadge className="h-4 w-4 shrink-0" label={form.accountType === "business" ? "Account holder verified" : "Identity verified"} />}
-                  </div>
-                </label>
                 <label className="block">
                   <span className="text-[10px] font-medium text-muted-foreground">Role</span>
                   <Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Player, founder, club…" maxLength={60} className={inlineInputClass} />
@@ -395,61 +536,15 @@ const Dashboard = () => {
             </aside>
 
             <main className="order-1 min-w-0 p-4 sm:p-5 lg:order-2 lg:p-6">
-              <div className="text-center">
-                <div className="relative mx-auto w-fit">
-                  <Avatar className="h-20 w-20 bg-muted sm:h-24 sm:w-24">
-                    {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />}
-                    <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-                  </Avatar>
-                  <Button asChild variant="secondary" size="icon" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border border-background shadow-sm">
-                    <Link to="/dashboard/settings" aria-label="Change profile photo"><Camera className="h-3.5 w-3.5" /></Link>
-                  </Button>
-                </div>
-                <p className="mt-2.5 text-xs text-muted-foreground">@{profile?.username}</p>
-
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" aria-label="Social profiles">
-                  {SOCIAL_FIELDS.map(([key, label, placeholder]) => {
-                    const hasValue = !!form.socialLinks[key]?.trim();
-                    return (
-                      <Popover key={key}>
-                        <PopoverTrigger asChild>
-                          <button type="button" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${hasValue ? "border-foreground/20 bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-muted-foreground hover:text-foreground"}`} aria-label={`Edit ${label}`} title={label}>
-                            <SocialIcon platform={key} className="h-3.5 w-3.5" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent align="center" className="w-[min(300px,calc(100vw-24px))] p-3">
-                          <label>
-                            <span className="text-xs font-semibold">{label}</span>
-                            <Input value={form.socialLinks[key] || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, [key]: event.target.value } })} placeholder={placeholder} maxLength={500} className="mt-2 h-9" />
-                          </label>
-                        </PopoverContent>
-                      </Popover>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <section id="links" className="mx-auto mt-5 max-w-md">
-                <div className="space-y-2.5">
-                  {links.map((link, index) => (
-                    <div key={link.id} className={`relative rounded-2xl border p-3 pr-10 transition ${link.is_active ? "border-border/80 bg-background" : "border-dashed border-border/70 bg-muted/20 opacity-70"}`}>
-                      <Input aria-label={`Link ${index + 1} label`} value={link.title} onChange={(event) => changeLink(link.id, { title: event.target.value })} placeholder={`Link ${index + 1} label`} maxLength={80} className="h-7 border-0 bg-transparent px-0 text-center text-sm font-semibold shadow-none placeholder:text-muted-foreground/55 focus-visible:ring-0" />
-                      <Input aria-label={`Link ${index + 1} web address`} type="url" value={link.url} onChange={(event) => changeLink(link.id, { url: event.target.value })} placeholder="https://example.com" maxLength={500} className="h-6 border-0 bg-transparent px-0 text-center text-[11px] text-muted-foreground shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0" />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button type="button" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label={`Options for link ${index + 1}`}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                          <DropdownMenuItem onClick={() => changeLink(link.id, { is_active: !link.is_active })}>{link.is_active ? "Hide" : "Show"}</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => removeLink(link)}>Remove</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              <section id="links" className="mx-auto max-w-md">
+                <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Links</p>
+                <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={reorderLinks}>
+                  <SortableContext items={links.map((link) => link.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2.5">
+                      {links.map((link, index) => <SortableLink key={link.id} link={link} index={index} onChange={changeLink} onRemove={removeLink} />)}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
                 <Button type="button" variant="ghost" size="sm" className="mx-auto mt-2.5 flex h-7 gap-1 text-[11px] text-muted-foreground" onClick={() => setLinks((current) => [...current, draftLink(current.length)])}>
                   <Plus className="h-3 w-3" /> Add link
                 </Button>
@@ -458,7 +553,7 @@ const Dashboard = () => {
 
             <aside className="order-3 border-t border-border/70 p-4 lg:border-l lg:border-t-0 lg:p-5">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Profile details</p>
-              <ProfileSectionsEditor sections={sections} onAdd={addSection} onChange={changeSection} onRemove={removeSection} onVisibilityChange={changeVisibility} />
+              <ProfileSectionsEditor sections={sections} onAdd={addSection} onChange={changeSection} onRemove={removeSection} onVisibilityChange={changeVisibility} onReorder={reorderSections} />
             </aside>
           </div>
         </Card>

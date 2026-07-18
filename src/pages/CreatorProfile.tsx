@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import { ChevronRight, ExternalLink, Globe, Mail, MapPin } from "lucide-react";
+import { Check, ChevronRight, ExternalLink, Globe, Mail, MapPin, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -104,6 +104,7 @@ const CreatorProfile = () => {
   const [links, setLinks] = useState<PublicLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!username) return;
@@ -193,23 +194,44 @@ const CreatorProfile = () => {
   const website = safeExternalUrl(profile.website);
   const updatedAt = profile.updated_at ? new Date(profile.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
   const description = profile.category ? `${displayName} · ${profile.category}` : `Official Verifiedly profile for ${displayName}.`;
+  const profileUrl = `https://verifiedly.app/${profile.username}`;
+  const shareImage = profile.avatar_url || new URL(logoMark, window.location.origin).href;
+
+  const shareProfile = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${displayName} on Verifiedly`, text: description, url: profileUrl });
+      } else {
+        await navigator.clipboard.writeText(profileUrl);
+        setLinkCopied(true);
+        window.setTimeout(() => setLinkCopied(false), 1800);
+      }
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+    }
+  };
 
   return (
     <div className={`min-h-screen ${theme.page}`}>
       <Helmet>
         <title>{displayName} (@{profile.username}) · Verifiedly</title>
         <meta name="description" content={description.slice(0, 160)} />
-        <link rel="canonical" href={`https://verifiedly.app/${profile.username}`} />
+        <link rel="canonical" href={profileUrl} />
         <meta property="og:type" content="profile" />
         <meta property="og:title" content={`${displayName} on Verifiedly`} />
         <meta property="og:description" content={description.slice(0, 200)} />
-        <meta property="og:url" content={`https://verifiedly.app/${profile.username}`} />
-        {profile.avatar_url && <meta property="og:image" content={profile.avatar_url} />}
+        <meta property="og:url" content={profileUrl} />
+        <meta property="og:image" content={shareImage} />
+        <meta property="og:image:alt" content={profile.avatar_url ? `${displayName}'s profile picture` : "Verifiedly"} />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`${displayName} on Verifiedly`} />
+        <meta name="twitter:description" content={description.slice(0, 200)} />
+        <meta name="twitter:image" content={shareImage} />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": isOrganization ? "Organization" : "Person",
           name: displayName,
-          url: `https://verifiedly.app/${profile.username}`,
+          url: profileUrl,
           image: profile.avatar_url || undefined,
           sameAs: [...socials.map((social) => social.url), website].filter(Boolean),
         })}</script>
@@ -218,49 +240,56 @@ const CreatorProfile = () => {
       <header className={`border-b ${theme.border}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logoMark} alt="" className="h-6 w-6" /> Verifiedly</Link>
-          <Button asChild size="sm" variant="outline" className={`h-8 rounded-full text-xs ${theme.card} ${theme.border}`}><Link to="/signup">Create profile</Link></Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" onClick={() => void shareProfile()} size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full px-3 text-xs">
+              {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />} {linkCopied ? "Copied" : "Share"}
+            </Button>
+            <Button asChild size="sm" variant="outline" className={`h-8 rounded-full text-xs ${theme.card} ${theme.border}`}><Link to="/signup">Create profile</Link></Button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:py-8">
         <Card className={`overflow-hidden rounded-3xl shadow-sm ${theme.card} ${theme.border}`}>
+          <section className={`border-b px-5 py-6 text-center sm:px-7 sm:py-7 ${theme.border}`}>
+            <Avatar className="mx-auto h-24 w-24 bg-muted sm:h-28 sm:w-28">
+              {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
+              <AvatarFallback className="text-3xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+            </Avatar>
+
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+              {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label={isOrganization ? "Account holder verified" : "Identity verified"} />}
+            </div>
+            <p className={`mt-1 text-xs ${theme.muted}`}>@{profile.username}</p>
+
+            {!!socials.length && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2" aria-label="Social profiles">
+                {socials.map(({ platform, url }) => (
+                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 hover:opacity-75 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}>
+                    <SocialIcon platform={platform} className="h-3.5 w-3.5" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+
           <div className="grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(320px,1.45fr)_minmax(220px,1fr)]">
             <aside className={`order-2 border-t p-5 lg:order-1 lg:border-r lg:border-t-0 lg:p-6 ${theme.border}`}>
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <h1 className="break-words font-display text-2xl font-bold tracking-tight">{displayName}</h1>
-                  <p className={`mt-1 text-xs ${theme.muted}`}>@{profile.username}</p>
-                </div>
-                {profile.id_verified && <VerifiedBadge className="mt-1 h-5 w-5 shrink-0" label={isOrganization ? "Account holder verified" : "Identity verified"} />}
-              </div>
-              {profile.category && <p className="mt-5 text-sm font-medium">{profile.category}</p>}
-
-              <div className={`mt-5 space-y-3 border-t pt-4 text-xs ${theme.border}`}>
+              <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Profile information</h2>
+              <div className="space-y-3 text-xs">
+                {profile.category && <p className="text-sm font-medium">{profile.category}</p>}
                 {location && <div className="flex items-start gap-2"><MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>{location}</span></div>}
                 {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 transition hover:opacity-70"><Mail className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">{publicEmail}</span></a>}
                 {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 transition hover:opacity-70"><Globe className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">Website</span></a>}
-                {!location && !publicEmail && !website && <p className={theme.muted}>No public contact details.</p>}
+                {!profile.category && !location && !publicEmail && !website && <p className={theme.muted}>No public profile information yet.</p>}
               </div>
             </aside>
 
-            <section className={`order-1 min-w-0 p-5 text-center sm:p-7 lg:order-2 lg:border-r ${theme.border}`}>
-              <Avatar className="mx-auto h-24 w-24 bg-muted sm:h-28 sm:w-28">
-                {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
-                <AvatarFallback className="text-3xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-              </Avatar>
-
-              {!!socials.length && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2" aria-label="Social profiles">
-                  {socials.map(({ platform, url }) => (
-                    <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 hover:opacity-75 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}>
-                      <SocialIcon platform={platform} className="h-3.5 w-3.5" />
-                    </a>
-                  ))}
-                </div>
-              )}
-
+            <section className={`order-1 min-w-0 p-5 text-center sm:p-6 lg:order-2 lg:border-r ${theme.border}`}>
+              <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Links</h2>
               {!!links.length && (
-                <div className="mx-auto mt-5 max-w-md space-y-2.5" aria-label="Links">
+                <div className="mx-auto max-w-md space-y-2.5" aria-label="Links">
                   {links.map((link) => {
                     const url = safeExternalUrl(link.url);
                     if (!url) return null;
@@ -276,7 +305,7 @@ const CreatorProfile = () => {
                 </div>
               )}
 
-              {!socials.length && !links.length && <p className={`mt-5 text-xs ${theme.muted}`}>This profile has no public links yet.</p>}
+              {!links.length && <p className={`text-xs ${theme.muted}`}>This profile has no public links yet.</p>}
             </section>
 
             <aside className="order-3 p-5 lg:p-6" aria-label="Profile details">
@@ -291,7 +320,6 @@ const CreatorProfile = () => {
                         {entries.map((section) => {
                           const heading = sectionHeading(section);
                           const meta = sectionMeta(section);
-                          const descriptionText = section.data?.description || "";
                           const url = safeExternalUrl(section.data?.url);
                           return (
                             <article key={section.id}>
@@ -302,7 +330,6 @@ const CreatorProfile = () => {
                                 </div>
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 transition hover:opacity-65 ${theme.muted}`} aria-label={`Open supporting link for ${heading}`}><ExternalLink className="h-3.5 w-3.5" /></a>}
                               </div>
-                              {descriptionText && <p className={`mt-1 line-clamp-2 text-xs leading-relaxed ${theme.muted}`}>{descriptionText}</p>}
                             </article>
                           );
                         })}
