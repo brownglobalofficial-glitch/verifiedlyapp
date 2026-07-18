@@ -64,8 +64,8 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
     ],
   },
   accomplishment: {
-    label: "Accomplishment",
-    description: "A milestone, result, award, or achievement.",
+    label: "Awards",
+    description: "An award, honor, milestone, or achievement.",
     fields: [
       { key: "title", label: "Title", placeholder: "What you accomplished" },
       { key: "date", label: "Date", placeholder: "2026" },
@@ -74,8 +74,8 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
     ],
   },
   credential: {
-    label: "Credential",
-    description: "A degree, certificate, license, or qualification you want to reference.",
+    label: "Credentials & licenses",
+    description: "A certificate, license, degree, or other qualification.",
     fields: [
       { key: "name", label: "Credential", placeholder: "Credential name" },
       { key: "issuer", label: "Issuer", placeholder: "Issuing organization" },
@@ -97,6 +97,19 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
 };
 
 export const PROFILE_SECTION_KINDS = Object.keys(PROFILE_SECTION_DEFINITIONS) as ProfileSectionKind[];
+
+// About and project records remain supported so existing data is never removed.
+// The current official-profile experience intentionally keeps only these concise,
+// structured categories visible.
+export const PROFILE_EDITOR_SECTION_KINDS: ProfileSectionKind[] = [
+  "work",
+  "education",
+  "credential",
+  "accomplishment",
+];
+
+export const isProfileEditorSectionKind = (kind: ProfileSectionKind) =>
+  PROFILE_EDITOR_SECTION_KINDS.includes(kind);
 
 export const emptySectionData = (kind: ProfileSectionKind): ProfileSectionData =>
   Object.fromEntries(PROFILE_SECTION_DEFINITIONS[kind].fields.map((field) => [field.key, ""]));
