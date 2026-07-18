@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { Camera, ExternalLink, KeyRound, Save, ShieldCheck } from "lucide-react";
+import { Camera, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -186,7 +186,7 @@ const ProfileSettings = () => {
             ))}
           </div>
           <div className="flex justify-end border-t border-border pt-4">
-            <Button onClick={saveTheme} disabled={saving} className="gap-2"><Save className="h-4 w-4" /> {saving ? "Saving…" : "Save theme"}</Button>
+            <Button onClick={saveTheme} disabled={saving} className="rounded-full px-5">{saving ? "Saving…" : "Save"}</Button>
           </div>
         </Card>
 

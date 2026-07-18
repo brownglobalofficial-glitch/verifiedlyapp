@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, Settings, LogOut, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { User, ShieldCheck, Settings, LogOut, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -17,8 +17,7 @@ import {
 import logoMark from "@/assets/verifiedly-mark.png";
 
 const items = [
-  { title: "Profile", url: "/dashboard", icon: User, end: true },
-  { title: "Links", url: "/dashboard/links", icon: LinkIcon },
+  { title: "Edit profile", url: "/dashboard", icon: User, end: true },
   { title: "Verification", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];

@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Save, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   PROFILE_SECTION_DEFINITIONS,
@@ -15,171 +11,111 @@ import {
 
 interface ProfileSectionsEditorProps {
   sections: ProfileSection[];
-  busyId: string | null;
-  onAdd: (kind: ProfileSectionKind) => Promise<void>;
+  onAdd: (kind: ProfileSectionKind) => void;
   onChange: (id: string, key: string, value: string) => void;
-  onSave: (section: ProfileSection) => Promise<void>;
-  onRemove: (section: ProfileSection) => Promise<void>;
-  onVisibilityChange: (section: ProfileSection, isPublic: boolean) => Promise<void>;
-  onMove: (section: ProfileSection, direction: -1 | 1) => Promise<void>;
+  onRemove: (section: ProfileSection) => void;
+  onVisibilityChange: (section: ProfileSection, isPublic: boolean) => void;
 }
+
+const inputClass = "h-9 rounded-none border-0 border-b bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 focus-visible:border-foreground";
+const textareaClass = "min-h-20 resize-y rounded-lg border bg-transparent px-3 py-2 text-sm shadow-none focus-visible:ring-1";
 
 const ProfileSectionsEditor = ({
   sections,
-  busyId,
   onAdd,
   onChange,
-  onSave,
   onRemove,
   onVisibilityChange,
-  onMove,
-}: ProfileSectionsEditorProps) => {
-  const [newKind, setNewKind] = useState<ProfileSectionKind>("accomplishment");
-  const [adding, setAdding] = useState(false);
+}: ProfileSectionsEditorProps) => (
+  <div className="divide-y divide-border">
+    {PROFILE_SECTION_KINDS.map((kind) => {
+      const definition = PROFILE_SECTION_DEFINITIONS[kind];
+      const entries = sections.filter((section) => section.kind === kind);
 
-  const add = async () => {
-    setAdding(true);
-    try {
-      await onAdd(newKind);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <Card className="p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="font-display font-semibold">Profile sections</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Add factual, professional information. Empty and private sections never appear publicly.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <select
-              aria-label="Section type"
-              value={newKind}
-              onChange={(event) => setNewKind(event.target.value as ProfileSectionKind)}
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {PROFILE_SECTION_KINDS.map((kind) => (
-                <option key={kind} value={kind}>{PROFILE_SECTION_DEFINITIONS[kind].label}</option>
-              ))}
-            </select>
-            <Button type="button" onClick={add} disabled={adding} className="gap-2">
-              <Plus className="h-4 w-4" /> Add
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {sections.length === 0 && (
-        <Card className="border-dashed p-8 text-center">
-          <p className="font-medium">Your profile is ready for more detail.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Add an accomplishment, role, credential, project, education entry, or About section.
-          </p>
-        </Card>
-      )}
-
-      {sections.map((section, index) => {
-        const definition = PROFILE_SECTION_DEFINITIONS[section.kind];
-        const busy = busyId === section.id;
-
-        return (
-          <Card key={section.id} className="p-4 sm:p-5 space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-display font-semibold">{definition.label}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{definition.description}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={busy || index === 0}
-                  onClick={() => onMove(section, -1)}
-                  aria-label={`Move ${definition.label} up`}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={busy || index === sections.length - 1}
-                  onClick={() => onMove(section, 1)}
-                  aria-label={`Move ${definition.label} down`}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={busy}
-                  onClick={() => onRemove(section)}
-                  aria-label={`Delete ${definition.label}`}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+      return (
+        <section key={kind} className="py-6 first:pt-0 last:pb-0">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-display font-semibold">{definition.label}</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">{definition.description}</p>
             </div>
+            {kind !== "about" && (
+              <Button type="button" variant="ghost" size="sm" className="h-8 gap-1.5 px-2 text-xs" onClick={() => onAdd(kind)}>
+                <Plus className="h-3.5 w-3.5" /> Add another
+              </Button>
+            )}
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {definition.fields.map((field) => {
-                const value = section.data?.[field.key] || "";
-                const fullWidth = field.type === "textarea" || field.key === "url";
-                return (
-                  <div key={field.key} className={fullWidth ? "sm:col-span-2" : undefined}>
-                    <Label htmlFor={`${section.id}-${field.key}`}>{field.label}</Label>
-                    {field.type === "textarea" ? (
-                      <Textarea
-                        id={`${section.id}-${field.key}`}
-                        value={value}
-                        onChange={(event) => onChange(section.id, field.key, event.target.value)}
-                        placeholder={field.placeholder}
-                        maxLength={600}
-                        className="mt-1 min-h-24"
-                      />
-                    ) : (
-                      <Input
-                        id={`${section.id}-${field.key}`}
-                        type={field.type === "url" ? "url" : "text"}
-                        value={value}
-                        onChange={(event) => onChange(section.id, field.key, event.target.value)}
-                        placeholder={field.placeholder}
-                        maxLength={field.type === "url" ? 500 : 160}
-                        className="mt-1"
-                      />
+          <div className="space-y-4">
+            {entries.map((section, entryIndex) => (
+              <div key={section.id} className="relative rounded-xl border border-border/80 bg-background p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    {kind === "about" ? "Profile summary" : `${definition.label} ${entryIndex + 1}`}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onVisibilityChange(section, !section.is_public)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      aria-label={section.is_public ? `Hide ${definition.label}` : `Show ${definition.label}`}
+                    >
+                      {section.is_public ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                      {section.is_public ? "Visible" : "Hidden"}
+                    </button>
+                    {kind !== "about" && (
+                      <button
+                        type="button"
+                        onClick={() => onRemove(section)}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                        aria-label={`Remove ${definition.label}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
 
-            <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <label className="flex items-center gap-2 text-sm">
-                <Switch
-                  checked={section.is_public}
-                  onCheckedChange={(checked) => onVisibilityChange(section, checked)}
-                  disabled={busy}
-                />
-                {section.is_public ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                {section.is_public ? "Visible on profile" : "Private draft"}
-              </label>
-              <Button type="button" size="sm" onClick={() => onSave(section)} disabled={busy} className="gap-2">
-                <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save section"}
-              </Button>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
-  );
-};
+                <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                  {definition.fields.map((field) => {
+                    const value = section.data?.[field.key] || "";
+                    const fullWidth = field.type === "textarea" || field.key === "url";
+                    const id = `${section.id}-${field.key}`;
+
+                    return (
+                      <label key={field.key} htmlFor={id} className={fullWidth ? "sm:col-span-2" : undefined}>
+                        <span className="sr-only">{field.label}</span>
+                        {field.type === "textarea" ? (
+                          <Textarea
+                            id={id}
+                            value={value}
+                            onChange={(event) => onChange(section.id, field.key, event.target.value)}
+                            placeholder={field.placeholder}
+                            maxLength={600}
+                            className={textareaClass}
+                          />
+                        ) : (
+                          <Input
+                            id={id}
+                            type={field.type === "url" ? "url" : "text"}
+                            value={value}
+                            onChange={(event) => onChange(section.id, field.key, event.target.value)}
+                            placeholder={field.placeholder}
+                            maxLength={field.type === "url" ? 500 : 160}
+                            className={inputClass}
+                          />
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+);
 
 export default ProfileSectionsEditor;

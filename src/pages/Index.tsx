@@ -62,7 +62,7 @@ const Index = () => {
 
         {/* Trust line */}
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          Add your links, accomplishments, work, education, and credentials. Identity verification is optional.
+          Add your links, accomplishments, work, education, and credentials in one structured profile.
         </p>
 
         {/* Footer */}
@@ -70,7 +70,6 @@ const Index = () => {
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
-          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
         </footer>
       </main>
     </div>

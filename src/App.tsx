@@ -18,7 +18,6 @@ const ResetPassword = lazy(routeLoaders["/reset-password"]);
 const Dashboard = lazy(routeLoaders["/dashboard"]);
 const ProfileSettings = lazy(routeLoaders["/dashboard/settings"]);
 const CreatorProfile = lazy(routeLoaders["/creator-profile"]);
-const ManageLinks = lazy(routeLoaders["/dashboard/links"]);
 const Onboarding = lazy(routeLoaders["/onboarding"]);
 const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
@@ -28,7 +27,6 @@ const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Developers = lazy(() => import("./pages/Developers"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 
 const queryClient = new QueryClient();
 
@@ -85,7 +83,6 @@ const RouteOptimizer = () => {
         prefetchIdle([
           "/dashboard",
           "/dashboard/settings",
-          "/dashboard/links",
         ]);
         const provider = session.user.app_metadata?.provider;
         // Only force onboarding redirect on first sign-in (not every page load),
@@ -114,7 +111,7 @@ const RouteOptimizer = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/links"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings"]);
         redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
@@ -152,7 +149,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
             <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
-            <Route path="/dashboard/links" element={<AuthGuard><ManageLinks /></AuthGuard>} />
+            <Route path="/dashboard/links" element={<Navigate to="/dashboard#links" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
             <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
@@ -171,7 +168,7 @@ const App = () => (
             <Route path="/:username/membership" element={<LegacyProfileRedirect />} />
             <Route path="/:username/p/:productId" element={<LegacyProfileRedirect />} />
             <Route path="/comparison/verifiedly-vs-linktree" element={<Navigate to="/" replace />} />
-            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/pricing" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

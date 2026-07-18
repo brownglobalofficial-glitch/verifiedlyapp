@@ -30,11 +30,11 @@ export const STRIPE_TIERS = {
   },
 } as const;
 
-// One-time Stripe Identity verification fee. Purchases a verification
-// ATTEMPT, not a guaranteed badge. Non-refundable once the ID scan runs.
+// Legacy configuration retained only so old, unreachable screens compile.
+// New verification enrollment and pricing are paused.
 export const IDENTITY_VERIFICATION = {
-  price_id: "price_1TuNUS1hrOAc8qE8OOsyoQ6K",
-  amount_usd: 12.99,
+  price_id: null,
+  amount_usd: null,
 } as const;
 
 export type SubscriptionTier = keyof typeof STRIPE_TIERS;

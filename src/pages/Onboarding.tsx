@@ -21,7 +21,7 @@ const THEMES = [
 ] as const;
 
 type AccountType = "creator" | "business";
-type ProfileLink = { title: string; url: string; icon: string };
+type ProfileLink = { title: string; url: string };
 
 const normalizeUrl = (value: string) => {
   const candidate = value.trim();
@@ -161,7 +161,7 @@ const Onboarding = () => {
       toast({ title: "Enter a link title and a valid web address", variant: "destructive" });
       return;
     }
-    setLinks((current) => [...current, { title: newLinkTitle.trim(), url, icon: "link" }]);
+    setLinks((current) => [...current, { title: newLinkTitle.trim(), url }]);
     setNewLinkTitle("");
     setNewLinkUrl("");
   };
@@ -206,7 +206,7 @@ const Onboarding = () => {
             creator_id: userId,
             title: link.title,
             url: link.url,
-            icon: link.icon,
+            icon: null,
             sort_order: position,
           })),
         );

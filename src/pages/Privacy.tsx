@@ -5,7 +5,7 @@ const Privacy = () => (
   <div className="min-h-screen bg-background py-12 px-4">
     <Helmet>
       <title>Privacy Policy — Verifiedly</title>
-      <meta name="description" content="How Verifiedly handles account, public profile, analytics, and optional Stripe Identity verification information." />
+      <meta name="description" content="How Verifiedly handles account, public profile, analytics, and verification information." />
       <link rel="canonical" href="https://verifiedly.app/privacy" />
       <meta property="og:title" content="Privacy Policy — Verifiedly" />
       <meta property="og:description" content="How Verifiedly handles account, profile, and identity-verification information." />
@@ -22,7 +22,6 @@ const Privacy = () => (
       <h3>Account and eligibility information</h3>
       <ul>
         <li>Name, email address, handle, authentication information, and account settings</li>
-        <li>Date of birth, used to enforce Verifiedly's age requirement and not displayed publicly</li>
         <li>Support requests and other communications you send us</li>
       </ul>
 
@@ -34,9 +33,8 @@ const Privacy = () => (
       </ul>
       <p>Information you publish on a public profile can be viewed, copied, indexed, or shared by others. Do not publish sensitive information that you do not want made public.</p>
 
-      <h3>Identity verification and payment information</h3>
-      <p>If you choose identity verification, Stripe Identity collects and processes the government-ID image, live capture, and selfie used for the check. Verifiedly does not receive or store the raw ID image or selfie. We may receive and store the verification status and limited outputs such as legal name, country, date of birth, verification timestamp, and Stripe session reference.</p>
-      <p>Stripe processes the verification payment. We do not store your complete card number. Stripe's handling of information is governed by its own privacy policy.</p>
+      <h3>Verification information</h3>
+      <p>New verification enrollment is currently paused. If verification is offered in the future, Verifiedly will identify the verification provider and explain what information is collected before the check begins. Existing records from previously completed checks may include verification status, legal name, country, verification timestamp, and a provider session reference. Verifiedly does not intentionally store raw government-ID images or selfies.</p>
 
       <h3>Information collected automatically</h3>
       <ul>
@@ -49,8 +47,8 @@ const Privacy = () => (
       <ul>
         <li>Provide, secure, maintain, and improve Verifiedly</li>
         <li>Create and display profiles according to your visibility choices</li>
-        <li>Process optional identity checks and show the appropriate badge status</li>
-        <li>Process payments, prevent fraud, enforce our Terms, and meet legal obligations</li>
+        <li>Maintain existing verification results and operate future verification features if launched</li>
+        <li>Prevent fraud, enforce our Terms, and meet legal obligations</li>
         <li>Respond to support requests and send important service notices</li>
         <li>Measure profile and link usage</li>
       </ul>
@@ -59,7 +57,7 @@ const Privacy = () => (
       <p>We do not sell personal information. We may share information:</p>
       <ul>
         <li><strong>Publicly:</strong> when you choose to publish it on your profile</li>
-        <li><strong>With service providers:</strong> including Supabase for hosting and authentication and Stripe for payments and identity verification</li>
+        <li><strong>With service providers:</strong> including Supabase for hosting and authentication and any verification provider disclosed before a future check begins</li>
         <li><strong>For legal and safety reasons:</strong> when required by law or reasonably necessary to protect users, our rights, or the service</li>
         <li><strong>During a business transaction:</strong> such as a merger, financing, acquisition, or sale, subject to appropriate safeguards</li>
         <li><strong>With your direction or consent</strong></li>
@@ -77,8 +75,8 @@ const Privacy = () => (
       <h2>7. Cookies</h2>
       <p>Verifiedly uses essential authentication, security, and preference technologies. Blocking them may prevent the service from working. We do not use third-party advertising cookies in this version.</p>
 
-      <h2>8. Age Requirement</h2>
-      <p>Verifiedly is not intended for people under 18. If we learn that an ineligible person created an account, we may close the account and delete associated information as required by law.</p>
+      <h2>8. Young Users</h2>
+      <p>Verifiedly is not intended for children under 13. Users who are minors where they live must have permission from a parent or legal guardian. If we learn that a child under 13 created an account, we may close the account and delete associated information as required by law.</p>
 
       <h2>9. International Processing</h2>
       <p>Verifiedly is operated from the United States, and information may be processed in the United States and other countries where our providers operate. Where required, we use legally recognized transfer mechanisms. Local privacy rights remain available where applicable.</p>

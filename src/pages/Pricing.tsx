@@ -9,10 +9,10 @@ const Pricing = () => (
   <div className="min-h-screen bg-background">
     <Helmet>
       <title>Pricing · Verifiedly</title>
-      <meta name="description" content="Create and share a Verifiedly official profile for free. Optional Stripe Identity verification is $12.99 per attempt." />
+      <meta name="description" content="Current Verifiedly profile and verification availability." />
       <link rel="canonical" href="https://verifiedly.app/pricing" />
       <meta property="og:title" content="Pricing · Verifiedly" />
-      <meta property="og:description" content="Free official profiles with an optional $12.99 identity check." />
+      <meta property="og:description" content="Current Verifiedly profile and verification availability." />
       <meta property="og:url" content="https://verifiedly.app/pricing" />
     </Helmet>
     <nav className="border-b border-border h-16 flex items-center px-4">

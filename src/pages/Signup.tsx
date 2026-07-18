@@ -17,7 +17,6 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [dob, setDob] = useState(""); // YYYY-MM-DD, must be 18+
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
   const returnTo = searchParams.get("returnTo") || "";
@@ -59,17 +58,6 @@ const Signup = () => {
       toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
       return;
     }
-    if (!dob) {
-      toast({ title: "Date of birth required", description: "You must be 18 or older to use Verifiedly.", variant: "destructive" });
-      return;
-    }
-    const dobDate = new Date(dob);
-    const eighteenYearsAgo = new Date();
-    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
-    if (isNaN(dobDate.getTime()) || dobDate > eighteenYearsAgo) {
-      toast({ title: "Must be 18 or older", description: "Verifiedly is not available to users under 18.", variant: "destructive" });
-      return;
-    }
     if (!agreedTerms) {
       toast({ title: "Terms required", description: "You must agree to the Terms of Service and Privacy Policy.", variant: "destructive" });
       return;
@@ -88,7 +76,6 @@ const Signup = () => {
             display_name: displayName,
             account_type: "creator",
             referred_by: referralCode,
-            date_of_birth: dob,
           },
         },
       });
@@ -169,12 +156,6 @@ const Signup = () => {
               </button>
             </div>
           </div>
-          <div>
-            <Label htmlFor="dob">Date of birth</Label>
-            <Input id="dob" type="date" value={dob} onChange={e => setDob(e.target.value)} required max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0,10)} />
-            <p className="text-xs text-muted-foreground mt-1">You must be 18 or older to use Verifiedly.</p>
-          </div>
-
           {referralCode && (
             <div className="bg-secondary rounded-lg p-3">
               <p className="text-xs text-muted-foreground">Referred by code: <span className="font-mono font-medium text-foreground">{referralCode}</span></p>
@@ -184,7 +165,7 @@ const Signup = () => {
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
             <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
-              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>
+              I am at least 13. If I am a minor where I live, I have permission from a parent or guardian. I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>.
             </label>
           </div>
           <Button type="submit" className="w-full" disabled={loading || !agreedTerms}>

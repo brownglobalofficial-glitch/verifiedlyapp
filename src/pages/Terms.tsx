@@ -5,10 +5,10 @@ const Terms = () => (
   <div className="min-h-screen bg-background py-12 px-4">
     <Helmet>
       <title>Terms of Service — Verifiedly</title>
-      <meta name="description" content="Terms for Verifiedly official profiles, public information, links, and optional Stripe Identity verification." />
+      <meta name="description" content="Terms for Verifiedly official profiles, public information, links, and future verification features." />
       <link rel="canonical" href="https://verifiedly.app/terms" />
       <meta property="og:title" content="Terms of Service — Verifiedly" />
-      <meta property="og:description" content="Terms for using Verifiedly official profiles and optional identity verification." />
+      <meta property="og:description" content="Terms for using Verifiedly official profiles and verification features." />
       <meta property="og:url" content="https://verifiedly.app/terms" />
     </Helmet>
     <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
@@ -20,7 +20,7 @@ const Terms = () => (
       <p>Verifiedly is operated by <strong>BrownGlobal Holdings LLC</strong> ("Verifiedly," "we," "us," or "our"). By accessing or using Verifiedly, you agree to these Terms. If you do not agree, do not use the service.</p>
 
       <h2>2. Eligibility</h2>
-      <p>You must be at least 18 years old, or the age of majority where you live if higher, to create or use a Verifiedly account. You represent that the eligibility and registration information you provide is accurate.</p>
+      <p>You must be at least 13 years old to create or use a Verifiedly account. If you are under the age of legal majority where you live, you must have permission from a parent or legal guardian. You represent that your registration information is accurate.</p>
 
       <h2>3. Accounts and Security</h2>
       <p>You are responsible for safeguarding your account credentials and for activity under your account. Notify <strong>support@verifiedly.app</strong> promptly if you believe your account has been accessed without permission. We may require additional checks before restoring or changing access to an account.</p>
@@ -30,12 +30,11 @@ const Terms = () => (
       <p>You must have the right to publish everything you add. You may not impersonate another person or organization or submit information that is deceptive, unlawful, infringing, or harmful.</p>
 
       <h2>5. What Verification Means</h2>
-      <p>Identity verification is optional and is currently provided through Stripe Identity. A successful individual check may add a Verified badge to a personal profile. On an organization profile, the badge means the account holder's identity was checked; it does not mean the legal entity itself was verified.</p>
+      <p>New identity-verification enrollment is currently paused while Verifiedly finalizes its verification method. If verification is offered, the profile will explain the provider used and exactly what a badge or label means. Existing verified profiles may continue to display the result of a previously completed check.</p>
       <p>A Verified badge does not verify every statement, link, credential, accomplishment, organization, or other claim on a profile. Unless Verifiedly clearly labels a specific item otherwise, profile information is supplied by the profile owner and should be evaluated independently.</p>
 
-      <h2>6. Identity Verification Fee</h2>
-      <p>The current identity verification fee is <strong>$12.99 per attempt</strong>. Payment buys an attempt to complete the Stripe Identity check; it does not guarantee approval or a badge. Stripe may require a government-issued ID, live image capture, or a selfie. The fee may change for future attempts, and the price shown before checkout controls.</p>
-      <p>Refund eligibility is described in our <Link to="/refunds">Refund Policy</Link>. Stripe's services are also governed by applicable <a href="https://stripe.com/legal/ssa" target="_blank" rel="noopener noreferrer">Stripe terms</a>.</p>
+      <h2>6. Verification Availability and Pricing</h2>
+      <p>Verifiedly is not currently offering new paid or free verification checks, and no verification subscription is available. Before any future verification method launches, Verifiedly will disclose the provider, information requested, price if any, and applicable terms before a user begins.</p>
 
       <h2>7. Third-Party Links and Services</h2>
       <p>Profiles may link to third-party websites and social accounts. Verifiedly does not control or endorse those services and is not responsible for their content, availability, privacy practices, or transactions. Your use of a third-party service is governed by that service's terms.</p>

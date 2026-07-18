@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import {
-  Award,
-  BriefcaseBusiness,
-  ChevronRight,
-  ExternalLink,
-  FileCheck2,
-  FolderKanban,
-  Globe,
-  GraduationCap,
-  Info,
-} from "lucide-react";
+import { ChevronRight, ExternalLink, Globe, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +12,8 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import logoMark from "@/assets/verifiedly-mark.png";
 import {
   hasVisibleSectionData,
+  PROFILE_SECTION_DEFINITIONS,
+  PROFILE_SECTION_KINDS,
   safeExternalUrl,
   type ProfileSection,
   type ProfileSectionKind,
@@ -65,15 +57,6 @@ const THEME_CLASSES: Record<string, { page: string; card: string; muted: string;
   blush: { page: "bg-rose-50 text-rose-950", card: "bg-white/90", muted: "text-rose-800/60", border: "border-rose-200" },
   sand: { page: "bg-amber-50 text-stone-950", card: "bg-white/90", muted: "text-stone-500", border: "border-amber-200" },
   neon: { page: "bg-zinc-950 text-fuchsia-50", card: "bg-zinc-900", muted: "text-zinc-400", border: "border-fuchsia-900/50" },
-};
-
-const SECTION_ICONS: Record<ProfileSectionKind, typeof Info> = {
-  about: Info,
-  work: BriefcaseBusiness,
-  education: GraduationCap,
-  accomplishment: Award,
-  credential: FileCheck2,
-  project: FolderKanban,
 };
 
 const sectionHeading = (section: ProfileSection) => {
@@ -179,8 +162,15 @@ const CreatorProfile = () => {
   const socials = useMemo(() => {
     const values = (profile?.social_links || {}) as Record<string, string>;
     return Object.entries(values)
+      .filter(([platform]) => platform !== "email")
       .map(([platform, value]) => ({ platform, url: socialUrl(platform, String(value)) }))
       .filter((item): item is { platform: string; url: string } => !!item.url);
+  }, [profile?.social_links]);
+
+  const publicEmail = useMemo(() => {
+    const values = (profile?.social_links || {}) as Record<string, string>;
+    const value = String(values.email || "").trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
   }, [profile?.social_links]);
 
   if (loading) {
@@ -248,7 +238,7 @@ const CreatorProfile = () => {
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
         <section className="text-center">
-          <Avatar className={`mx-auto h-24 w-24 ring-4 ${theme.border}`}>
+          <Avatar className="mx-auto h-24 w-24 bg-muted">
             {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
             <AvatarFallback className="text-3xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
           </Avatar>
@@ -262,14 +252,7 @@ const CreatorProfile = () => {
           )}
           {profile.bio && <p className="mx-auto mt-4 max-w-xl text-sm sm:text-base leading-relaxed">{profile.bio}</p>}
 
-          {profile.id_verified && (
-            <div className={`mx-auto mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${theme.card} ${theme.border}`}>
-              <VerifiedBadge className="h-4 w-4" label={isOrganization ? "Account holder verified" : "Identity verified"} />
-              {isOrganization ? "Account holder verified" : "Identity verified"}
-            </div>
-          )}
-
-          {(socials.length > 0 || website) && (
+          {(socials.length > 0 || website || publicEmail) && (
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
               {socials.map(({ platform, url }) => (
                 <a
@@ -277,16 +260,23 @@ const CreatorProfile = () => {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border transition-transform hover:-translate-y-0.5 ${theme.card} ${theme.border}`}
+                  className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors hover:opacity-75 ${theme.card} ${theme.border}`}
                   aria-label={platform}
                   title={platform}
                 >
                   <SocialIcon platform={platform} className="h-4 w-4" />
+                  <span className="capitalize">{platform === "twitter" ? "X" : platform}</span>
                 </a>
               ))}
               {website && (
-                <a href={website} target="_blank" rel="noopener noreferrer" className={`flex h-10 w-10 items-center justify-center rounded-full border transition-transform hover:-translate-y-0.5 ${theme.card} ${theme.border}`} aria-label="Official website" title="Official website">
+                <a href={website} target="_blank" rel="noopener noreferrer" className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors hover:opacity-75 ${theme.card} ${theme.border}`} aria-label="Official website" title="Official website">
                   <Globe className="h-4 w-4" />
+                  Website
+                </a>
+              )}
+              {publicEmail && (
+                <a href={`mailto:${publicEmail}`} className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors hover:opacity-75 ${theme.card} ${theme.border}`} aria-label="Email">
+                  <Mail className="h-4 w-4" /> Email
                 </a>
               )}
             </div>
@@ -294,41 +284,51 @@ const CreatorProfile = () => {
         </section>
 
         {sections.length > 0 && (
-          <section className="mt-10 space-y-3" aria-label="Profile information">
-            {sections.map((section) => {
-              const Icon = SECTION_ICONS[section.kind];
-              const heading = sectionHeading(section);
-              const meta = sectionMeta(section);
-              const description = sectionDescription(section);
-              const url = safeExternalUrl(section.data?.url);
+          <section className={`mt-10 overflow-hidden rounded-2xl border px-5 sm:px-6 ${theme.card} ${theme.border}`} aria-label="Profile information">
+            {PROFILE_SECTION_KINDS.map((kind) => {
+              const entries = sections.filter((section) => section.kind === kind);
+              if (!entries.length) return null;
 
               return (
-                <Card key={section.id} className={`p-5 shadow-none ${theme.card} ${theme.border}`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${theme.border}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h2 className="font-display font-semibold">{heading}</h2>
-                          {meta && <p className={`mt-0.5 text-xs ${theme.muted}`}>{meta}</p>}
-                        </div>
-                        {url && (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 ${theme.muted}`} aria-label={`Open supporting link for ${heading}`}>
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                      {description && <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{description}</p>}
-                      {section.kind === "credential" && (
-                        <p className={`mt-3 text-[11px] ${theme.muted}`}>
-                          Provided by the profile owner{url ? "; use the linked source for supporting information." : "."}
-                        </p>
-                      )}
-                    </div>
+                <div key={kind} className={`border-b py-6 last:border-b-0 ${theme.border}`}>
+                  <h2 className={`mb-3 text-xs font-semibold uppercase tracking-[0.16em] ${theme.muted}`}>
+                    {PROFILE_SECTION_DEFINITIONS[kind].label}
+                  </h2>
+                  <div className="divide-y divide-border/60">
+                    {entries.map((section) => {
+                      const heading = sectionHeading(section);
+                      const meta = sectionMeta(section);
+                      const description = sectionDescription(section);
+                      const url = safeExternalUrl(section.data?.url);
+
+                      return (
+                        <article key={section.id} className="py-3 first:pt-0 last:pb-0">
+                          {section.kind === "about" ? (
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{description}</p>
+                          ) : (
+                            <>
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <h3 className="font-display font-semibold">{heading}</h3>
+                                  {meta && <p className={`mt-0.5 text-xs ${theme.muted}`}>{meta}</p>}
+                                </div>
+                                {url && (
+                                  <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 ${theme.muted}`} aria-label={`Open supporting link for ${heading}`}>
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                )}
+                              </div>
+                              {description && <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{description}</p>}
+                              {section.kind === "credential" && (
+                                <p className={`mt-2 text-[11px] ${theme.muted}`}>Provided by the profile owner{url ? "; supporting source linked." : "."}</p>
+                              )}
+                            </>
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
-                </Card>
+                </div>
               );
             })}
           </section>
@@ -343,8 +343,7 @@ const CreatorProfile = () => {
                 if (!url) return null;
                 return (
                   <a key={link.id} href={url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => void supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id })}>
-                    <Card className={`flex items-center gap-3 p-4 shadow-none transition-transform hover:-translate-y-0.5 ${theme.card} ${theme.border}`}>
-                      {link.thumbnail_url ? <img src={link.thumbnail_url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : link.icon ? <span className="w-10 text-center text-xl">{link.icon}</span> : null}
+                    <Card className={`flex items-center gap-3 rounded-xl p-3.5 shadow-none transition-colors hover:opacity-75 ${theme.card} ${theme.border}`}>
                       <span className="flex-1 text-sm font-semibold">{link.title}</span>
                       <ChevronRight className={`h-4 w-4 ${theme.muted}`} />
                     </Card>
@@ -357,7 +356,7 @@ const CreatorProfile = () => {
 
         <footer className={`mt-12 border-t pt-6 text-center text-xs ${theme.border} ${theme.muted}`}>
           {updatedAt && <p>Profile updated {updatedAt}</p>}
-          <p className="mt-2">A Verified badge confirms an identity check—not every profile statement.</p>
+          <p className="mt-2">Profile details are supplied by the profile owner. Any future verification label will explain exactly what was checked.</p>
           <div className="mt-4 flex items-center justify-center gap-4">
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>

@@ -14,7 +14,6 @@ export const routeLoaders = {
   "/privacy": () => import("@/pages/Privacy"),
   "/dashboard": () => import("@/pages/Dashboard"),
   "/dashboard/settings": () => import("@/pages/ProfileSettings"),
-  "/dashboard/links": () => import("@/pages/ManageLinks"),
   "/dashboard/admin": () => import("@/pages/Admin"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),
 } as const;
