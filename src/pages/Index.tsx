@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+
   useEffect(() => {
     let cancelled = false;
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -19,17 +20,16 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
         <title>Verifiedly — Create. Verify. Share.</title>
-        <meta name="description" content="Your official profile online. Share who you are, what you do, and the places people can find you." />
+        <meta name="description" content="Create one official profile, verify your identity, and share who you are anywhere." />
         <meta property="og:title" content="Verifiedly — Create. Verify. Share." />
-        <meta property="og:description" content="Your official profile online." />
+        <meta property="og:description" content="One official profile for your verified identity, experience, education, and credentials." />
         <meta property="og:url" content="https://verifiedly.app/" />
         <link rel="canonical" href="https://verifiedly.app/" />
       </Helmet>
 
       <main className="w-full max-w-sm flex flex-col items-center">
-        {/* Brand */}
         <div className="text-center mb-16 sm:mb-20">
-          <img src={logoMark} alt="Verifiedly Logo" className="h-12 w-12 mx-auto mb-5" />
+          <img src={logoMark} alt="Verifiedly" className="h-12 w-12 mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
             Verifiedly<span className="sr-only"> — Create, Verify, and Share</span>
           </h1>
@@ -38,12 +38,13 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Positioning */}
-        <p className="text-center text-sm sm:text-base text-muted-foreground leading-relaxed mb-10 max-w-[300px]">
-          Your <span className="text-foreground font-medium">official profile</span> online — create it, verify your identity, and keep professional credentials private.
-        </p>
+        <div className="text-center mb-10 max-w-[310px]">
+          <p className="text-lg font-display font-semibold text-foreground">One official profile.</p>
+          <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
+            Show who you are, add your experience and credentials, verify your identity, and share one profile anywhere.
+          </p>
+        </div>
 
-        {/* Actions */}
         <div className="w-full space-y-3">
           <Link
             to="/signup"
@@ -60,12 +61,10 @@ const Index = () => {
           </Link>
         </div>
 
-        {/* Trust line */}
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          Your public profile is free. Identity and private Documents are optional.
+          Your profile is free. Identity verification and private supporting files are optional.
         </p>
 
-        {/* Footer */}
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
