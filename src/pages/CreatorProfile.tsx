@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { BusinessVerificationBadge, CredentialVerificationBadge } from "@/components/VerificationClaimBadge";
 import logoMark from "@/assets/verifiedly-mark.png";
 import {
   hasVisibleSectionData,
@@ -20,7 +21,7 @@ import {
   type ProfileSectionKind,
 } from "@/lib/profile-sections";
 
-const PUBLIC_PROFILE_FIELDS = "id, username, display_name, category, account_type, avatar_url, website, social_links, theme_color, id_verified, verified_at, updated_at";
+const PUBLIC_PROFILE_FIELDS = "id, username, display_name, category, account_type, avatar_url, website, social_links, theme_color, id_verified, verified_at, updated_at, organization_legal_name, organization_industry, organization_country, business_verified, business_verified_at, business_verification_expires_at, business_verification_provider";
 
 interface PublicProfile {
   id: string;
@@ -35,6 +36,22 @@ interface PublicProfile {
   id_verified: boolean;
   verified_at: string | null;
   updated_at: string;
+  organization_legal_name: string | null;
+  organization_industry: string | null;
+  organization_country: string | null;
+  business_verified: boolean;
+  business_verified_at: string | null;
+  business_verification_expires_at: string | null;
+  business_verification_provider: string | null;
+}
+
+interface PublicCredentialVerification {
+  id: string;
+  section_id: string;
+  provider_name: string;
+  status: string;
+  verified_at: string | null;
+  expires_at: string | null;
 }
 
 const THEME_CLASSES: Record<string, { page: string; card: string; muted: string; border: string }> = {
@@ -94,6 +111,7 @@ const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [sections, setSections] = useState<ProfileSection[]>([]);
+  const [credentialVerifications, setCredentialVerifications] = useState<PublicCredentialVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -130,12 +148,20 @@ const CreatorProfile = () => {
         return;
       }
 
-      const { data: currentSections } = await supabase
-        .from("profile_sections")
-        .select("id, user_id, kind, position, data, is_public, created_at, updated_at")
-        .eq("user_id", currentProfile.id)
-        .eq("is_public", true)
-        .order("position", { ascending: true });
+      const [{ data: currentSections }, { data: currentCredentials }] = await Promise.all([
+        supabase
+          .from("profile_sections")
+          .select("id, user_id, kind, position, data, is_public, created_at, updated_at")
+          .eq("user_id", currentProfile.id)
+          .eq("is_public", true)
+          .order("position", { ascending: true }),
+        supabase
+          .from("credential_verifications")
+          .select("id, section_id, provider_name, status, verified_at, expires_at")
+          .eq("user_id", currentProfile.id)
+          .eq("status", "verified")
+          .eq("display_public", true),
+      ]);
 
       setProfile(currentProfile as PublicProfile);
       setSections((currentSections || []).map((section) => ({
@@ -143,6 +169,7 @@ const CreatorProfile = () => {
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
       })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section)));
+      setCredentialVerifications((currentCredentials as PublicCredentialVerification[] | null) || []);
       setLoading(false);
 
       void supabase.from("page_views").insert({ creator_id: currentProfile.id });
@@ -164,6 +191,7 @@ const CreatorProfile = () => {
   }, [socialValues]);
 
   const location = String(socialValues.location || "").trim() || null;
+  const credentialBySection = useMemo(() => new Map(credentialVerifications.map((verification) => [verification.section_id, verification])), [credentialVerifications]);
 
   if (loading) {
     return (
@@ -264,6 +292,7 @@ const CreatorProfile = () => {
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                   <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
                   {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label={isOrganization ? "Account holder verified" : "Identity verified"} />}
+                  {isOrganization && profile.business_verified && <BusinessVerificationBadge compact />}
                   {isOwner && !profile.id_verified && (
                     <Link to="/dashboard/verification" className={`inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-[10px] font-medium transition hover:opacity-70 ${theme.muted} ${theme.border}`} title="Get verified">
                       <ShieldCheck className="h-3 w-3" /> Get verified
@@ -287,6 +316,9 @@ const CreatorProfile = () => {
                 <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Profile information</h2>
                 <div className="space-y-3 text-xs">
                   {profile.category && <p className="text-sm font-medium">{profile.category}</p>}
+                  {isOrganization && profile.organization_legal_name && <div><p className={`text-[10px] uppercase tracking-[0.12em] ${theme.muted}`}>Legal name</p><p className="mt-0.5 text-xs font-medium">{profile.organization_legal_name}</p></div>}
+                  {isOrganization && profile.organization_industry && <div><p className={`text-[10px] uppercase tracking-[0.12em] ${theme.muted}`}>Industry</p><p className="mt-0.5 text-xs">{profile.organization_industry}</p></div>}
+                  {isOrganization && profile.organization_country && <div><p className={`text-[10px] uppercase tracking-[0.12em] ${theme.muted}`}>Registered country</p><p className="mt-0.5 text-xs">{profile.organization_country}</p></div>}
                   {location && <div className="flex items-start gap-2"><MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>{location}</span></div>}
                   {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 transition hover:opacity-70"><Mail className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">{publicEmail}</span></a>}
                   {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 transition hover:opacity-70"><Globe className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">Website</span></a>}
@@ -308,12 +340,14 @@ const CreatorProfile = () => {
                           const heading = sectionHeading(section);
                           const meta = sectionMeta(section);
                           const url = safeExternalUrl(section.data?.url);
+                          const credentialVerification = credentialBySection.get(section.id);
                           return (
                             <article key={section.id} className="py-4">
                               <div className="flex items-start gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <h3 className="text-sm font-semibold leading-snug">{heading}</h3>
+                                  <div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold leading-snug">{heading}</h3>{credentialVerification && <CredentialVerificationBadge provider={credentialVerification.provider_name} />}</div>
                                   {meta && <p className={`mt-0.5 text-[11px] leading-relaxed ${theme.muted}`}>{meta}</p>}
+                                  {credentialVerification?.verified_at && <p className={`mt-1 text-[10px] ${theme.muted}`}>Checked {new Date(credentialVerification.verified_at).toLocaleDateString()}{credentialVerification.expires_at ? ` · Expires ${new Date(credentialVerification.expires_at).toLocaleDateString()}` : ""}</p>}
                                 </div>
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 transition hover:opacity-65 ${theme.muted}`} aria-label={`Open supporting link for ${heading}`}><ExternalLink className="h-3.5 w-3.5" /></a>}
                               </div>

@@ -1,4 +1,4 @@
-import { Check, FolderLock, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Check, FolderLock, ShieldCheck, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,7 @@ const plans = [
     cadence: "forever",
     icon: UserRound,
     description: "Create one clear place for who you are, what you do, and where people can find you.",
-    features: ["Personal or organization profile", "Work, education, and credentials", "Official website and social profiles", "Clean verifiedly.app handle"],
+    features: ["Personal or organization profile", "Work, education, and credentials", "Optional profile discovery", "Clean verifiedly.app handle"],
     cta: "Create profile",
     note: "No platform subscription",
   },
@@ -24,6 +24,16 @@ const plans = [
     features: ["Government ID authenticity check", "Selfie matched to the ID", "One retry when available", "Identity badge after approval"],
     cta: "Create profile to verify",
     note: "Available to adults 18+",
+  },
+  {
+    name: "Verified credentials",
+    price: "$19.99+",
+    cadence: "per check",
+    icon: BadgeCheck,
+    description: "Independently verify a degree, professional license, or certification and choose whether to display the claim.",
+    features: ["$24.99 planned U.S. degree check", "$19.99 planned license check", "Provider and checked date shown", "No raw report on the public profile"],
+    cta: "Create profile for pilot",
+    note: "No charge until the provider integration is approved",
   },
   {
     name: "Verifiedly Documents",
@@ -42,11 +52,11 @@ const Pricing = () => (
     <div className="mx-auto max-w-6xl">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple pricing</p>
-        <h2 className="mt-3 text-3xl font-display font-bold tracking-tight sm:text-4xl">Your profile is free. Pay only for what needs protection.</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Identity and private document storage are separate products. Buying either one does not verify every claim on a profile.</p>
+        <h2 className="mt-3 text-3xl font-display font-bold tracking-tight sm:text-4xl">Your profile is free. Pay only for what needs checking or protection.</h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Identity, individual credential checks, and private document storage are separate products. Each badge explains exactly what was checked.</p>
       </div>
 
-      <div className="mt-10 grid gap-4 lg:grid-cols-3">
+      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan, index) => (
           <Card key={plan.name} className={`flex rounded-3xl p-6 shadow-sm ${index === 1 ? "border-foreground" : "border-foreground/10"}`}>
             <div className="flex w-full flex-col">

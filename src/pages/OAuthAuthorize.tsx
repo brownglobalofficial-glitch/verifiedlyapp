@@ -10,6 +10,7 @@ const SCOPE_LABELS: Record<string, string> = {
   openid: "A stable user ID",
   profile: "Your username, display name, and avatar",
   identity: "Whether your identity check passed, and when",
+  credentials: "Your public, independently verified credential claims",
   email: "Your email address",
 };
 

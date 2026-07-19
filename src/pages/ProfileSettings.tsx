@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { Camera, Code2, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
+import { Camera, Code2, ExternalLink, KeyRound, Search, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,9 @@ interface SettingsProfile {
   avatar_url: string | null;
   theme_color: string | null;
   id_verified: boolean;
+  search_visible: boolean;
+  accepts_verification_requests: boolean;
+  business_verified: boolean;
 }
 
 const ProfileSettings = () => {
@@ -48,6 +52,9 @@ const ProfileSettings = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [acceptsVerificationRequests, setAcceptsVerificationRequests] = useState(false);
+  const [savingDiscovery, setSavingDiscovery] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -59,7 +66,7 @@ const ProfileSettings = () => {
       setUser(session.user);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, display_name, account_type, avatar_url, theme_color, id_verified")
+        .select("id, username, display_name, account_type, avatar_url, theme_color, id_verified, search_visible, accepts_verification_requests, business_verified")
         .eq("id", session.user.id)
         .maybeSingle();
       if (error || !data) {
@@ -69,6 +76,8 @@ const ProfileSettings = () => {
       setProfile(data);
       setTheme(data.theme_color || "default");
       setAvatarUrl(data.avatar_url || "");
+      setSearchVisible(data.search_visible);
+      setAcceptsVerificationRequests(data.accepts_verification_requests);
       setLoading(false);
     };
     load();
@@ -134,6 +143,24 @@ const ProfileSettings = () => {
     toast({ title: "Password email sent", description: `Check ${user.email}.` });
   };
 
+  const saveDiscovery = async () => {
+    if (!profile) return;
+    setSavingDiscovery(true);
+    const nextAcceptsRequests = searchVisible && acceptsVerificationRequests;
+    const { error } = await supabase.from("profiles").update({
+      search_visible: searchVisible,
+      accepts_verification_requests: nextAcceptsRequests,
+    }).eq("id", profile.id);
+    setSavingDiscovery(false);
+    if (error) {
+      toast({ title: "Discovery settings not saved", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAcceptsVerificationRequests(nextAcceptsRequests);
+    setProfile({ ...profile, search_visible: searchVisible, accepts_verification_requests: nextAcceptsRequests });
+    toast({ title: searchVisible ? "Profile added to opt-in search" : "Profile removed from search" });
+  };
+
   if (loading) {
     return <DashboardShell title="Settings"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
   }
@@ -166,6 +193,31 @@ const ProfileSettings = () => {
             <Button asChild variant="outline" size="sm" className="gap-2">
               <a href={`/${profile?.username}`} target="_blank" rel="noreferrer">View profile <ExternalLink className="h-4 w-4" /></a>
             </Button>
+          </div>
+        </Card>
+
+        <Card className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <Search className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="font-display font-semibold">Profile discovery</h2>
+                  <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">Discovery is off by default. When enabled, signed-in organization accounts can find the same public information already shown on your profile. There are no job applications, rankings, connections, or background checks.</p>
+                </div>
+                <Switch checked={searchVisible} onCheckedChange={(value) => { setSearchVisible(value); if (!value) setAcceptsVerificationRequests(false); }} aria-label="Appear in Verifiedly search" />
+              </div>
+
+              <div className={`mt-4 flex items-start justify-between gap-4 rounded-2xl border p-4 ${searchVisible ? "" : "opacity-50"}`}>
+                <div><p className="text-sm font-medium">Accept verification requests</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Signals that verified organizations may ask you to independently verify a degree or license. You always decide whether to proceed.</p></div>
+                <Switch disabled={!searchVisible} checked={acceptsVerificationRequests} onCheckedChange={setAcceptsVerificationRequests} aria-label="Accept verification requests" />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[11px] text-muted-foreground">Only information you mark public can appear in discovery.</p>
+                <Button onClick={() => void saveDiscovery()} disabled={savingDiscovery} size="sm" className="rounded-full px-5">{savingDiscovery ? "Saving…" : "Save discovery"}</Button>
+              </div>
+            </div>
           </div>
         </Card>
 

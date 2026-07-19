@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import { BusinessVerificationBadge } from "@/components/VerificationClaimBadge";
 import { useToast } from "@/hooks/use-toast";
 import {
   emptySectionData,
@@ -29,6 +30,9 @@ interface ProfileForm {
   displayName: string;
   category: string;
   website: string;
+  organizationLegalName: string;
+  organizationIndustry: string;
+  organizationCountry: string;
   socialLinks: Record<string, string>;
 }
 
@@ -42,6 +46,10 @@ interface DashboardProfile {
   website: string | null;
   social_links: unknown;
   id_verified: boolean;
+  business_verified: boolean;
+  organization_legal_name: string | null;
+  organization_industry: string | null;
+  organization_country: string | null;
 }
 
 const SOCIAL_FIELDS = [
@@ -64,6 +72,9 @@ const emptyForm: ProfileForm = {
   displayName: "",
   category: "",
   website: "",
+  organizationLegalName: "",
+  organizationIndustry: "",
+  organizationCountry: "",
   socialLinks: emptySocialLinks,
 };
 
@@ -109,7 +120,7 @@ const Dashboard = () => {
       const [{ data: currentProfile, error: profileError }, { data: currentSections }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, username, display_name, category, account_type, avatar_url, website, social_links, id_verified")
+          .select("id, username, display_name, category, account_type, avatar_url, website, social_links, id_verified, business_verified, organization_legal_name, organization_industry, organization_country")
           .eq("id", session.user.id)
           .maybeSingle(),
         supabase
@@ -137,6 +148,9 @@ const Dashboard = () => {
         displayName: currentProfile.display_name || "",
         category: currentProfile.category || "",
         website: currentProfile.website || "",
+        organizationLegalName: currentProfile.organization_legal_name || "",
+        organizationIndustry: currentProfile.organization_industry || "",
+        organizationCountry: currentProfile.organization_country || "",
         socialLinks: { ...emptySocialLinks, ...socials },
       });
       setSections(ensureFixedSections(currentProfile.id, loadedSections));
@@ -233,6 +247,9 @@ const Dashboard = () => {
           display_name: form.displayName.trim(),
           category: form.category.trim() || null,
           website: normalizedWebsite,
+          organization_legal_name: form.accountType === "business" ? form.organizationLegalName.trim() || null : null,
+          organization_industry: form.accountType === "business" ? form.organizationIndustry.trim() || null : null,
+          organization_country: form.accountType === "business" ? form.organizationCountry.trim() || null : null,
           social_links: cleanSocials,
         })
         .eq("id", profile.id);
@@ -273,6 +290,9 @@ const Dashboard = () => {
         display_name: form.displayName.trim(),
         category: form.category.trim() || null,
         website: normalizedWebsite,
+        organization_legal_name: form.accountType === "business" ? form.organizationLegalName.trim() || null : null,
+        organization_industry: form.accountType === "business" ? form.organizationIndustry.trim() || null : null,
+        organization_country: form.accountType === "business" ? form.organizationCountry.trim() || null : null,
         social_links: cleanSocials,
       });
       setSections(ensureFixedSections(profile.id, savedSections));
@@ -347,6 +367,7 @@ const Dashboard = () => {
                 className="h-9 min-w-0 border-0 bg-transparent p-0 text-center font-display text-2xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0"
               />
               {profile?.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0" label={form.accountType === "business" ? "Account holder verified" : "Identity verified"} />}
+              {form.accountType === "business" && profile?.business_verified && <BusinessVerificationBadge compact className="shrink-0" />}
               {!profile?.id_verified && (
                 <Link to="/dashboard/verification" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-muted-foreground/35 px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-foreground/50 hover:text-foreground" title="Get verified">
                   <ShieldCheck className="h-3 w-3" /> Get verified
@@ -381,9 +402,25 @@ const Dashboard = () => {
             <aside className="border-b border-border/70 p-4 lg:border-b-0 lg:border-r lg:p-5">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Profile information</p>
               <div className="space-y-3">
+                {form.accountType === "business" && (
+                  <>
+                    <label className="block">
+                      <span className="text-[10px] font-medium text-muted-foreground">Legal organization name</span>
+                      <Input value={form.organizationLegalName} onChange={(event) => setForm({ ...form, organizationLegalName: event.target.value })} placeholder="Registered legal name" maxLength={160} className={inlineInputClass} />
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] font-medium text-muted-foreground">Industry</span>
+                      <Input value={form.organizationIndustry} onChange={(event) => setForm({ ...form, organizationIndustry: event.target.value })} placeholder="Sports, media, technology…" maxLength={100} className={inlineInputClass} />
+                    </label>
+                    <label className="block">
+                      <span className="text-[10px] font-medium text-muted-foreground">Registered country</span>
+                      <Input value={form.organizationCountry} onChange={(event) => setForm({ ...form, organizationCountry: event.target.value })} placeholder="Country" maxLength={100} className={inlineInputClass} />
+                    </label>
+                  </>
+                )}
                 <label className="block">
-                  <span className="text-[10px] font-medium text-muted-foreground">Role</span>
-                  <Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Player, founder, club…" maxLength={60} className={inlineInputClass} />
+                  <span className="text-[10px] font-medium text-muted-foreground">{form.accountType === "business" ? "Public label" : "Role"}</span>
+                  <Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder={form.accountType === "business" ? "Football club, media company…" : "Player, founder, creator…"} maxLength={60} className={inlineInputClass} />
                 </label>
                 <label className="block">
                   <span className="text-[10px] font-medium text-muted-foreground">Location</span>
@@ -398,6 +435,11 @@ const Dashboard = () => {
                   <Input type="url" value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} placeholder="yourwebsite.com" maxLength={500} className={inlineInputClass} />
                 </label>
               </div>
+              {form.accountType === "business" && (
+                <Button asChild variant="outline" size="sm" className="mt-4 w-full rounded-full text-xs">
+                  <Link to="/dashboard/organization-verification">{profile?.business_verified ? "View business verification" : "Verify organization"}</Link>
+                </Button>
+              )}
               <p className="mt-4 text-[10px] leading-relaxed text-muted-foreground">Only add contact details you want shown publicly.</p>
             </aside>
 

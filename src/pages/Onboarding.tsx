@@ -51,6 +51,9 @@ const Onboarding = () => {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [category, setCategory] = useState("");
+  const [organizationLegalName, setOrganizationLegalName] = useState("");
+  const [organizationIndustry, setOrganizationIndustry] = useState("");
+  const [organizationCountry, setOrganizationCountry] = useState("");
   const [location, setLocation] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -82,7 +85,7 @@ const Onboarding = () => {
 
       const { data } = await supabase
         .from("profiles")
-        .select("username, display_name, category, account_type, avatar_url, website, social_links, theme_color")
+        .select("username, display_name, category, account_type, avatar_url, website, social_links, theme_color, organization_legal_name, organization_industry, organization_country")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -92,6 +95,9 @@ const Onboarding = () => {
       if (data.display_name) setDisplayName(data.display_name);
       if (data.category) setCategory(data.category);
       if (data.account_type === "business") setAccountType("business");
+      if (data.organization_legal_name) setOrganizationLegalName(data.organization_legal_name);
+      if (data.organization_industry) setOrganizationIndustry(data.organization_industry);
+      if (data.organization_country) setOrganizationCountry(data.organization_country);
       if (data.avatar_url) setAvatarUrl(data.avatar_url);
       if (data.website) setWebsite(data.website);
       if (data.theme_color) setTheme(data.theme_color);
@@ -183,6 +189,9 @@ const Onboarding = () => {
         display_name: displayName.trim(),
         category: category.trim() || null,
         account_type: accountType,
+        organization_legal_name: accountType === "business" ? organizationLegalName.trim() || null : null,
+        organization_industry: accountType === "business" ? organizationIndustry.trim() || null : null,
+        organization_country: accountType === "business" ? organizationCountry.trim() || null : null,
         avatar_url: avatarUrl || null,
         website: normalizedWebsite,
         social_links: socialLinks,
@@ -315,6 +324,17 @@ const Onboarding = () => {
                 <Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://example.com" inputMode="url" maxLength={500} />
               </div>
             </div>
+
+            {accountType === "business" && (
+              <Card className="p-4">
+                <div className="flex items-start gap-3"><Building2 className="mt-0.5 h-4 w-4 shrink-0" /><div><p className="text-sm font-medium">Organization record</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">These public details prepare the profile for a separate business-registration check. Registration numbers and owner documents will be collected by the approved verification provider, not here.</p></div></div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2"><Label htmlFor="organization-legal-name">Legal organization name</Label><Input id="organization-legal-name" value={organizationLegalName} onChange={(event) => setOrganizationLegalName(event.target.value)} className="mt-1" placeholder="Registered legal name" maxLength={160} /></div>
+                  <div><Label htmlFor="organization-industry">Industry</Label><Input id="organization-industry" value={organizationIndustry} onChange={(event) => setOrganizationIndustry(event.target.value)} className="mt-1" placeholder="Sports, media, technology…" maxLength={100} /></div>
+                  <div><Label htmlFor="organization-country">Registered country</Label><Input id="organization-country" value={organizationCountry} onChange={(event) => setOrganizationCountry(event.target.value)} className="mt-1" placeholder="Country" maxLength={100} /></div>
+                </div>
+              </Card>
+            )}
 
             <Card className="p-4">
               <p className="text-sm font-medium">Social profiles</p>

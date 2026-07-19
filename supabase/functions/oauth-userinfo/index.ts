@@ -45,6 +45,24 @@ Deno.serve(async (req) => {
     payload.verified_at = p.verified_at || null;
     payload.verification_kind = p.verification_kind || "individual";
   }
+  if (scopes.includes("credentials")) {
+    const { data: credentials } = await admin
+      .from("credential_verifications")
+      .select("credential_type, provider_name, verified_title, verified_issuer, verified_at, expires_at")
+      .eq("user_id", tok.user_id)
+      .eq("status", "verified")
+      .eq("display_public", true)
+      .order("verified_at", { ascending: false });
+
+    payload.verified_credentials = (credentials || []).map((credential) => ({
+      type: credential.credential_type,
+      title: credential.verified_title,
+      issuer: credential.verified_issuer,
+      provider: credential.provider_name,
+      verified_at: credential.verified_at,
+      expires_at: credential.expires_at,
+    }));
+  }
   if (scopes.includes("email")) {
     const { data: u } = await admin.auth.admin.getUserById(tok.user_id);
     payload.email = u?.user?.email;

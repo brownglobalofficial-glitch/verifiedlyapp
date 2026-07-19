@@ -25,6 +25,9 @@ const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const Documents = lazy(() => import("./pages/dashboard/Documents"));
+const Credentials = lazy(() => import("./pages/dashboard/Credentials"));
+const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
+const Directory = lazy(() => import("./pages/Directory"));
 const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
@@ -157,6 +160,9 @@ const App = () => (
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/dashboard/documents" element={<AuthGuard><Documents /></AuthGuard>} />
+            <Route path="/dashboard/credentials" element={<AuthGuard><Credentials /></AuthGuard>} />
+            <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
+            <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 type Props = {
   clientId: string;
   redirectUri: string;
-  scope?: string;       // "openid profile identity"
+  scope?: string;       // "openid profile identity credentials"
   state: string;        // REQUIRED — CSRF token, store and verify on callback
   codeChallenge?: string;       // PKCE S256 challenge (public clients)
   codeChallengeMethod?: "S256"; // always S256 when PKCE is used
@@ -20,7 +20,7 @@ type Props = {
 
 export function SignInWithVerifiedly({
   clientId, redirectUri, state,
-  scope = "openid profile identity",
+  scope = "openid profile identity credentials",
   codeChallenge, codeChallengeMethod,
 }: Props) {
   const url = new URL("https://verifiedly.app/oauth/authorize");
@@ -64,6 +64,7 @@ const user = await userRes.json();
 // => {
 //   sub, username?, display_name?, avatar_url?,
 //   verified?, id_verified?, verified_at?, verification_kind?,
+//   verified_credentials?: [{ type, title, issuer, provider, verified_at, expires_at }],
 //   email? // only when separately requested and approved
 // }`;
 
@@ -86,7 +87,7 @@ const authorize = () => {
   url.searchParams.set("client_id", import.meta.env.VITE_GSN_CLIENT_ID);
   url.searchParams.set("redirect_uri", import.meta.env.VITE_GSN_REDIRECT_URI);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "openid profile identity");
+  url.searchParams.set("scope", "openid profile identity credentials");
   url.searchParams.set("state", state);
   window.location.href = url.toString();
 };
@@ -163,11 +164,12 @@ const Developers = () => {
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">openid</code> — sub (stable user id)</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> — username, display_name, avatar_url</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> — verified, id_verified, verified_at, verification_kind</li>
+            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">credentials</code> — public, independently verified degree/license claims only</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — email address (request only if needed)</li>
           </ul>
           <p className="text-xs text-muted-foreground mt-3">
             Verifiedly does not expose a "trust score", subscription tier, or endorsement signal via OAuth.
-            Identity claims confirm identity only — not honesty, safety, or quality.
+            Identity claims confirm identity only — not honesty, safety, or quality. Credential claims never include uploaded files, raw reports, or provider order IDs.
           </p>
         </Card>
 
