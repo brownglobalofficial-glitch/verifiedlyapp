@@ -23,11 +23,14 @@ describe("Verifiedly profile, agreement, and OAuth boundaries", () => {
     }
   });
 
-  it("uses a blocking vault-policy agreement in signup and onboarding", () => {
-    expect(signup).toContain("disabled={loading || !agreedTerms}");
+  it("records agreement at signup and synchronizes it without blocking onboarding", () => {
+    expect(signup).toContain("disabled={loading || !agreedTerms");
     expect(signup).toContain("vault_policy_certified: true");
-    expect(onboarding).toContain("step === 1 ? agreedTerms : true");
+    expect(signup).toContain("LEGAL_ACCEPTANCE_STORAGE_KEY");
+    expect(onboarding).not.toContain("Review the account agreement");
     expect(onboarding).toContain('from("legal_acceptances")');
+    expect(onboarding).toContain('insertError.code !== "23505"');
+    expect(onboarding).toContain("console.warn(\"Legal acceptance record was not synchronized\"");
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS public.legal_acceptances");
   });
 
