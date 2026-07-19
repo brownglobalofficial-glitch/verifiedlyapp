@@ -12,29 +12,31 @@ const providerMigration = readFileSync(
 
 describe("Verifiedly account-type onboarding", () => {
   it("keeps websites organization-only in onboarding, editing, and public profiles", () => {
-    expect(onboarding).toContain('accountType === "business" && <div><Label htmlFor="website">');
+    expect(onboarding).toContain('accountType === "business" && (');
     expect(onboarding).toContain('accountType === "business" && website.trim()');
     expect(dashboard).toContain('form.accountType === "business" && (');
     expect(dashboard).toContain('const normalizedWebsite = form.accountType === "business"');
     expect(publicProfile).toContain("const website = isOrganization ? safeExternalUrl(profile.website) : null");
   });
 
-  it("uses the focused launch social set without LinkedIn", () => {
-    for (const source of [onboarding, dashboard, publicProfile]) {
-      expect(source).not.toContain("LinkedIn");
-      expect(source).not.toContain("linkedin.com");
-    }
-    for (const platform of ["Instagram", "YouTube", "TikTok", "Facebook", "X"]) {
-      expect(onboarding).toContain(platform);
-    }
+  it("keeps social links out of the required onboarding path", () => {
+    expect(onboarding).not.toContain("Social profiles");
+    expect(onboarding).not.toContain("Instagram handle or URL");
+    expect(onboarding).not.toContain("YouTube handle or URL");
+    expect(onboarding).not.toContain("TikTok handle or URL");
+    expect(onboarding).not.toContain("Facebook handle or URL");
+    expect(onboarding).not.toContain("X handle or URL");
   });
 
-  it("uses account-appropriate labels and shows a live appearance preview", () => {
+  it("uses account-appropriate labels and the default clean appearance", () => {
+    expect(onboarding).toContain(">Person<");
+    expect(onboarding).toContain(">Organization<");
     expect(onboarding).toContain("Organization type");
     expect(onboarding).toContain("Professional label");
     expect(onboarding).toContain("Football club, academy, business, nonprofit");
     expect(onboarding).toContain("Footballer, student, founder, photographer");
-    expect(onboarding).toContain("selectedTheme");
+    expect(onboarding).not.toContain("selectedTheme");
+    expect(onboarding).not.toContain("Choose a clean appearance");
     expect(settings).toContain('aria-label="Live profile appearance preview"');
   });
 
