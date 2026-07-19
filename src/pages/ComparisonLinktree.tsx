@@ -5,7 +5,7 @@ import { Check, X, ShieldCheck } from "lucide-react";
 
 const rows: { feature: string; verifiedly: string | boolean; linktree: string | boolean }[] = [
   { feature: "Government-ID verified profiles", verifiedly: true, linktree: false },
-  { feature: "Blue verification badge (Stripe Identity)", verifiedly: "$4.99 one-time", linktree: false },
+  { feature: "Blue verification badge (Stripe Identity)", verifiedly: "$9.99 one-time", linktree: false },
   { feature: "Verifiedly platform fee on paid products", verifiedly: "3% on Pro / 10% on Free", linktree: "See Linktree pricing" },
   { feature: "Tips, digital products & memberships", verifiedly: true, linktree: true },
   { feature: "Sign in with Verifiedly (OAuth for other apps)", verifiedly: true, linktree: false },
