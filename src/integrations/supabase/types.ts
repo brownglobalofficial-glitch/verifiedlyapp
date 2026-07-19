@@ -328,104 +328,6 @@ export type Database = {
         }
         Relationships: []
       }
-      document_access_events: {
-        Row: {
-          created_at: string
-          document_id: string
-          event_type: string
-          id: string
-          owner_user_id: string
-          share_link_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          document_id: string
-          event_type: string
-          id?: string
-          owner_user_id: string
-          share_link_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          document_id?: string
-          event_type?: string
-          id?: string
-          owner_user_id?: string
-          share_link_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_access_events_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_access_events_share_link_id_fkey"
-            columns: ["share_link_id"]
-            isOneToOne: false
-            referencedRelation: "document_share_links"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      document_share_links: {
-        Row: {
-          created_at: string
-          document_id: string
-          expires_at: string
-          failed_attempt_count: number
-          id: string
-          last_viewed_at: string | null
-          max_views: number
-          owner_user_id: string
-          password_hash: string | null
-          password_salt: string | null
-          revoked_at: string | null
-          token_hash: string
-          view_count: number
-        }
-        Insert: {
-          created_at?: string
-          document_id: string
-          expires_at: string
-          failed_attempt_count?: number
-          id?: string
-          last_viewed_at?: string | null
-          max_views?: number
-          owner_user_id: string
-          password_hash?: string | null
-          password_salt?: string | null
-          revoked_at?: string | null
-          token_hash: string
-          view_count?: number
-        }
-        Update: {
-          created_at?: string
-          document_id?: string
-          expires_at?: string
-          failed_attempt_count?: number
-          id?: string
-          last_viewed_at?: string | null
-          max_views?: number
-          owner_user_id?: string
-          password_hash?: string | null
-          password_salt?: string | null
-          revoked_at?: string | null
-          token_hash?: string
-          view_count?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_share_links_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       earnings: {
         Row: {
           amount: number
@@ -925,92 +827,6 @@ export type Database = {
           },
         ]
       }
-      business_verification_requests: {
-        Row: {
-          created_at: string
-          id: string
-          provider: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          provider?: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          provider?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      credential_verifications: {
-        Row: {
-          created_at: string
-          credential_type: string
-          display_public: boolean
-          expires_at: string | null
-          id: string
-          provider: string
-          provider_name: string
-          section_id: string
-          status: string
-          updated_at: string
-          user_id: string
-          verified_at: string | null
-          verified_issuer: string | null
-          verified_title: string
-        }
-        Insert: {
-          created_at?: string
-          credential_type: string
-          display_public?: boolean
-          expires_at?: string | null
-          id?: string
-          provider?: string
-          provider_name?: string
-          section_id: string
-          status?: string
-          updated_at?: string
-          user_id: string
-          verified_at?: string | null
-          verified_issuer?: string | null
-          verified_title: string
-        }
-        Update: {
-          created_at?: string
-          credential_type?: string
-          display_public?: boolean
-          expires_at?: string | null
-          id?: string
-          provider?: string
-          provider_name?: string
-          section_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-          verified_at?: string | null
-          verified_issuer?: string | null
-          verified_title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "credential_verifications_section_id_fkey"
-            columns: ["section_id"]
-            isOneToOne: true
-            referencedRelation: "profile_sections"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profile_sections: {
         Row: {
           created_at: string
@@ -1046,14 +862,9 @@ export type Database = {
       }
       profiles: {
         Row: {
-          accepts_verification_requests: boolean
           account_type: string | null
           avatar_url: string | null
           bio: string | null
-          business_verification_expires_at: string | null
-          business_verification_provider: string | null
-          business_verified: boolean
-          business_verified_at: string | null
           category: string | null
           comp_tier: string | null
           created_at: string
@@ -1070,9 +881,6 @@ export type Database = {
           link_layout: string
           membership_button_label: string | null
           onboarding_completed: boolean | null
-          organization_country: string | null
-          organization_industry: string | null
-          organization_legal_name: string | null
           payout_status_public: boolean
           pro_identity_check_used: boolean
           referral_code: string | null
@@ -1080,7 +888,6 @@ export type Database = {
           show_legal_name: boolean
           signal_breakdown_public: boolean
           social_links: Json | null
-          search_visible: boolean
           stripe_identity_session_id: string | null
           theme_color: string | null
           tip_button_label: string | null
@@ -1106,14 +913,9 @@ export type Database = {
           website: string | null
         }
         Insert: {
-          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
-          business_verification_expires_at?: string | null
-          business_verification_provider?: string | null
-          business_verified?: boolean
-          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -1130,9 +932,6 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
-          organization_country?: string | null
-          organization_industry?: string | null
-          organization_legal_name?: string | null
           payout_status_public?: boolean
           pro_identity_check_used?: boolean
           referral_code?: string | null
@@ -1140,7 +939,6 @@ export type Database = {
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
-          search_visible?: boolean
           stripe_identity_session_id?: string | null
           theme_color?: string | null
           tip_button_label?: string | null
@@ -1166,14 +964,9 @@ export type Database = {
           website?: string | null
         }
         Update: {
-          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
-          business_verification_expires_at?: string | null
-          business_verification_provider?: string | null
-          business_verified?: boolean
-          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -1190,9 +983,6 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
-          organization_country?: string | null
-          organization_industry?: string | null
-          organization_legal_name?: string | null
           payout_status_public?: boolean
           pro_identity_check_used?: boolean
           referral_code?: string | null
@@ -1200,7 +990,6 @@ export type Database = {
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
-          search_visible?: boolean
           stripe_identity_session_id?: string | null
           theme_color?: string | null
           tip_button_label?: string | null
@@ -1756,94 +1545,28 @@ export type Database = {
         }
         Relationships: []
       }
-      verifiedly_billing: {
-        Row: {
-          created_at: string
-          documents_cancel_at_period_end: boolean
-          documents_current_period_end: string | null
-          documents_interval: string | null
-          documents_status: string
-          documents_subscription_id: string | null
-          identity_attempt_count: number
-          identity_last_session_id: string | null
-          identity_status: string
-          stripe_customer_id: string | null
-          updated_at: string
-          user_id: string
-          verification_checkout_session_id: string | null
-          verification_payment_status: string
-        }
-        Insert: {
-          created_at?: string
-          documents_cancel_at_period_end?: boolean
-          documents_current_period_end?: string | null
-          documents_interval?: string | null
-          documents_status?: string
-          documents_subscription_id?: string | null
-          identity_attempt_count?: number
-          identity_last_session_id?: string | null
-          identity_status?: string
-          stripe_customer_id?: string | null
-          updated_at?: string
-          user_id: string
-          verification_checkout_session_id?: string | null
-          verification_payment_status?: string
-        }
-        Update: {
-          created_at?: string
-          documents_cancel_at_period_end?: boolean
-          documents_current_period_end?: string | null
-          documents_interval?: string | null
-          documents_status?: string
-          documents_subscription_id?: string | null
-          identity_attempt_count?: number
-          identity_last_session_id?: string | null
-          identity_status?: string
-          stripe_customer_id?: string | null
-          updated_at?: string
-          user_id?: string
-          verification_checkout_session_id?: string | null
-          verification_payment_status?: string
-        }
-        Relationships: []
-      }
       webhook_events: {
         Row: {
-          attempt_count: number
           event_type: string
           id: string
-          last_attempt_at: string
-          last_error: string | null
           livemode: boolean | null
           payload_preview: Json | null
-          processed_at: string | null
-          processing_status: string
           received_at: string
           stripe_event_id: string | null
         }
         Insert: {
-          attempt_count?: number
           event_type: string
           id?: string
-          last_attempt_at?: string
-          last_error?: string | null
           livemode?: boolean | null
           payload_preview?: Json | null
-          processed_at?: string | null
-          processing_status?: string
           received_at?: string
           stripe_event_id?: string | null
         }
         Update: {
-          attempt_count?: number
           event_type?: string
           id?: string
-          last_attempt_at?: string
-          last_error?: string | null
           livemode?: boolean | null
           payload_preview?: Json | null
-          processed_at?: string | null
-          processing_status?: string
           received_at?: string
           stripe_event_id?: string | null
         }
@@ -1854,36 +1577,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      request_business_verification: { Args: never; Returns: string }
-      request_credential_verification: {
-        Args: { _credential_type: string; _section_id: string }
-        Returns: string
-      }
       consume_oauth_code: {
         Args: { _client_id: string; _code: string; _redirect_uri: string }
         Returns: {
-          code_challenge: string | null
-          code_challenge_method: string | null
+          code_challenge: string
+          code_challenge_method: string
           scopes: string[]
           user_id: string
         }[]
-      }
-      consume_document_share: {
-        Args: { _token_hash: string }
-        Returns: {
-          document_id: string
-          link_expires_at: string
-          mime_type: string
-          original_filename: string
-          owner_user_id: string
-          share_link_id: string
-          storage_path: string
-          title: string
-        }[]
-      }
-      record_document_share_denial: {
-        Args: { _token_hash: string }
-        Returns: boolean
       }
       creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
       delete_email: {
@@ -1919,10 +1620,6 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
-        Returns: boolean
-      }
-      has_active_documents_access: {
-        Args: never
         Returns: boolean
       }
       is_age_over: {
