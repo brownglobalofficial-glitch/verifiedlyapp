@@ -28,6 +28,12 @@ This configuration gives the badge one clear meaning: the account holder complet
 
 After saving, copy the Verification Flow ID. It starts with `vf_`.
 
+Use the flow ID only through the server-side API integration. Deactivate the
+flow's reusable `verify.stripe.com` static link in Stripe Dashboard. A static
+link remains active until it is deactivated and would bypass Verifiedly's
+checkout, authenticated user association, attempt limit, and application
+status handling. Do not place that static link in the website or repository.
+
 ## 2. Add Supabase Edge Function secrets
 
 Add these separately in test and live environments:

@@ -42,6 +42,8 @@ describe("Verifiedly Identity and Documents boundaries", () => {
   it("uses the reusable Stripe Identity flow without copying verified outputs", () => {
     expect(identitySession).toContain("STRIPE_IDENTITY_FLOW_ID");
     expect(identitySession).toContain("verification_flow: flowId");
+    expect(identitySession).toContain("client_reference_id: user.id");
+    expect(identitySession).toContain("idempotencyKey:");
     expect(identitySession).not.toContain("verified_outputs");
     expect(identityStatus).not.toContain("verified_outputs");
   });

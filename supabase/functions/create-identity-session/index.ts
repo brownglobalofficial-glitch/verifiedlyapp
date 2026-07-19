@@ -111,10 +111,13 @@ serve(async (req) => {
     const verification = await stripe.identity.verificationSessions.create({
       verification_flow: flowId,
       return_url: `${origin}/dashboard/verification?identity=returned`,
+      client_reference_id: user.id,
       metadata: {
         user_id: user.id,
         checkout_session_id: checkoutSessionId,
       },
+    }, {
+      idempotencyKey: `verifiedly-identity-${user.id}-${checkoutSessionId}-${attempts + 1}`,
     });
 
     await admin.from("verifiedly_billing").upsert({
