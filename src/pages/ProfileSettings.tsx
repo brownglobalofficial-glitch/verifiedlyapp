@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import { Camera, Code2, ExternalLink, KeyRound, Search, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import SocialIcon from "@/components/SocialIcon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,16 +16,16 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 
 const THEMES = [
-  { id: "default", label: "Classic", colors: "bg-neutral-50 border-neutral-300" },
-  { id: "mono", label: "Mono", colors: "bg-white border-black" },
-  { id: "midnight", label: "Midnight", colors: "bg-slate-950 border-slate-500" },
-  { id: "sunset", label: "Sunset", colors: "bg-orange-100 border-orange-400" },
-  { id: "forest", label: "Forest", colors: "bg-emerald-100 border-emerald-500" },
-  { id: "ocean", label: "Ocean", colors: "bg-sky-100 border-sky-500" },
-  { id: "lavender", label: "Lavender", colors: "bg-violet-100 border-violet-500" },
-  { id: "blush", label: "Blush", colors: "bg-rose-100 border-rose-400" },
-  { id: "sand", label: "Sand", colors: "bg-amber-100 border-amber-500" },
-  { id: "neon", label: "Neon", colors: "bg-zinc-950 border-fuchsia-500" },
+  { id: "default", label: "Classic", colors: "bg-neutral-50 border-neutral-300", page: "bg-neutral-50 text-neutral-950", surface: "border-neutral-200 bg-white", muted: "text-neutral-500" },
+  { id: "mono", label: "Mono", colors: "bg-white border-black", page: "bg-white text-black", surface: "border-neutral-300 bg-white", muted: "text-neutral-500" },
+  { id: "midnight", label: "Midnight", colors: "bg-slate-950 border-slate-500", page: "bg-slate-950 text-slate-50", surface: "border-slate-800 bg-slate-900", muted: "text-slate-400" },
+  { id: "sunset", label: "Sunset", colors: "bg-orange-100 border-orange-400", page: "bg-orange-50 text-stone-950", surface: "border-orange-200 bg-white/90", muted: "text-stone-500" },
+  { id: "forest", label: "Forest", colors: "bg-emerald-100 border-emerald-500", page: "bg-emerald-50 text-emerald-950", surface: "border-emerald-200 bg-white/90", muted: "text-emerald-700/70" },
+  { id: "ocean", label: "Ocean", colors: "bg-sky-100 border-sky-500", page: "bg-sky-50 text-slate-950", surface: "border-sky-200 bg-white/90", muted: "text-sky-800/60" },
+  { id: "lavender", label: "Lavender", colors: "bg-violet-100 border-violet-500", page: "bg-violet-50 text-violet-950", surface: "border-violet-200 bg-white/90", muted: "text-violet-800/60" },
+  { id: "blush", label: "Blush", colors: "bg-rose-100 border-rose-400", page: "bg-rose-50 text-rose-950", surface: "border-rose-200 bg-white/90", muted: "text-rose-800/60" },
+  { id: "sand", label: "Sand", colors: "bg-amber-100 border-amber-500", page: "bg-amber-50 text-stone-950", surface: "border-amber-200 bg-white/90", muted: "text-stone-500" },
+  { id: "neon", label: "Neon", colors: "bg-zinc-950 border-fuchsia-500", page: "bg-zinc-950 text-fuchsia-50", surface: "border-fuchsia-900/50 bg-zinc-900", muted: "text-zinc-400" },
 ];
 
 interface SettingsProfile {
@@ -33,6 +34,9 @@ interface SettingsProfile {
   display_name: string | null;
   account_type: string | null;
   avatar_url: string | null;
+  category: string | null;
+  website: string | null;
+  social_links: unknown;
   theme_color: string | null;
   id_verified: boolean;
   search_visible: boolean;
@@ -66,7 +70,7 @@ const ProfileSettings = () => {
       setUser(session.user);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, display_name, account_type, avatar_url, theme_color, id_verified, search_visible, accepts_verification_requests, business_verified")
+        .select("id, username, display_name, account_type, avatar_url, category, website, social_links, theme_color, id_verified, search_visible, accepts_verification_requests, business_verified")
         .eq("id", session.user.id)
         .maybeSingle();
       if (error || !data) {
@@ -166,6 +170,10 @@ const ProfileSettings = () => {
   }
 
   const displayName = profile?.display_name || profile?.username || "Profile";
+  const selectedTheme = THEMES.find((option) => option.id === theme) || THEMES[0];
+  const profileSocials = (profile?.social_links || {}) as Record<string, string>;
+  const previewSocials = ["instagram", "youtube", "tiktok", "facebook", "twitter"]
+    .filter((platform) => String(platform === "twitter" ? profileSocials.twitter || profileSocials.x || "" : profileSocials[platform] || "").trim());
 
   return (
     <DashboardShell title="Settings">
@@ -225,6 +233,24 @@ const ProfileSettings = () => {
           <div>
             <h2 className="font-display font-semibold">Profile appearance</h2>
             <p className="mt-1 text-xs text-muted-foreground">Choose a restrained background style. Your information keeps the same clear structure.</p>
+          </div>
+          <div className={`overflow-hidden rounded-3xl border p-5 ${selectedTheme.page}`} aria-label="Live profile appearance preview">
+            <div className="mx-auto max-w-md text-center">
+              <Avatar className="mx-auto h-20 w-20 bg-muted">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt="" className="object-cover" />}
+                <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <p className="font-display text-xl font-bold">{displayName}</p>
+                {profile?.id_verified && <VerifiedBadge className="h-4 w-4" label={profile.account_type === "business" ? "Account holder verified" : "Identity verified"} />}
+              </div>
+              <p className={`mt-1 text-xs ${selectedTheme.muted}`}>@{profile?.username}{profile?.category ? ` · ${profile.category}` : ""}</p>
+              {!!previewSocials.length && <div className="mt-3 flex justify-center gap-2">{previewSocials.map((platform) => <span key={platform} className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${selectedTheme.surface}`}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></span>)}</div>}
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(140px,0.8fr)_minmax(0,1.4fr)]">
+              <div className={`rounded-2xl border p-3 ${selectedTheme.surface}`}><p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${selectedTheme.muted}`}>{profile?.account_type === "business" ? "Organization information" : "Profile information"}</p><p className="mt-2 text-xs">{profile?.category || "Your professional label"}</p>{profile?.account_type === "business" && profile.website && <p className={`mt-1 text-[11px] ${selectedTheme.muted}`}>Official website</p>}</div>
+              <div className="grid grid-cols-2 gap-2">{["Work", "Education", "Credentials", "Awards"].map((label) => <div key={label} className={`rounded-xl border p-3 text-xs font-medium ${selectedTheme.surface}`}>{label}</div>)}</div>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {THEMES.map((option) => (

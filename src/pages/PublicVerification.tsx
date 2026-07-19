@@ -6,21 +6,21 @@ import { Helmet } from "react-helmet-async";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
-const PLATFORM_URL: Record<string, (h: string) => string> = {
-  instagram: (h) => `https://instagram.com/${h}`,
-  tiktok:    (h) => `https://tiktok.com/@${h}`,
-  x:         (h) => `https://x.com/${h}`,
-  youtube:   (h) => `https://youtube.com/@${h}`,
-  twitch:    (h) => `https://twitch.tv/${h}`,
-  linkedin:  (h) => `https://linkedin.com/in/${h}`,
-  github:    (h) => `https://github.com/${h}`,
-};
+interface VerificationProfile {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  id_verified: boolean;
+  verified_at: string | null;
+  show_legal_name: boolean;
+  verified_full_name: string | null;
+}
 
 const PublicVerification = () => {
   const { username } = useParams();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [socials, setSocials] = useState<any[]>([]);
+  const [profile, setProfile] = useState<VerificationProfile | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -30,9 +30,7 @@ const PublicVerification = () => {
         .eq("username", username)
         .maybeSingle();
       if (!p) { setLoading(false); return; }
-      const { data: vs } = await (supabase.from("verified_socials" as any).select("platform, handle, verification_status").eq("user_id", p.id) as any);
-      setProfile(p);
-      setSocials(vs || []);
+      setProfile(p as VerificationProfile);
       setLoading(false);
     })();
   }, [username]);
@@ -45,7 +43,6 @@ const PublicVerification = () => {
   );
 
   const isVerified = !!profile.id_verified;
-  const connectedSocials = socials.filter((s: any) => s.verification_status === "verified");
   const ogTitle = isVerified
     ? `@${profile.username} · Verified identity on Verifiedly`
     : `@${profile.username} · Verifiedly`;
@@ -108,28 +105,6 @@ const PublicVerification = () => {
             View profile <ExternalLink className="w-3 h-3" />
           </Link>
         </Card>
-
-        {connectedSocials.length > 0 && (
-          <Card className="p-5 mt-4">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-3">Connected accounts</p>
-            <ul className="space-y-1.5">
-              {connectedSocials.map((s: any) => {
-                const urlFn = PLATFORM_URL[s.platform];
-                return (
-                  <li key={`${s.platform}-${s.handle}`} className="flex items-center justify-between text-sm">
-                    <span className="capitalize">{s.platform} · @{s.handle}</span>
-                    {urlFn && (
-                      <a href={urlFn(s.handle)} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="text-[11px] text-muted-foreground mt-3">Connected means the account was linked — not identity verified.</p>
-          </Card>
-        )}
 
         <p className="text-[11px] text-muted-foreground text-center mt-6 leading-relaxed">
           Identity check powered by Stripe Identity. This confirms identity, not endorsement.

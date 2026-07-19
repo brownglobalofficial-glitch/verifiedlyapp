@@ -129,7 +129,7 @@ const OrganizationVerification = () => {
           </Card>
         ) : (
           <Card className="mt-4 rounded-3xl p-5 shadow-sm sm:p-6">
-            <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0 flex-1"><h2 className="font-semibold">Provider-ready pilot</h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Middesk is the planned U.S. provider. Persona is the planned option for broader country coverage. Their hosted or approved flow—not the public profile—must collect registration numbers, owner information, and supporting documents.</p></div></div>
+            <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0 flex-1"><h2 className="font-semibold">Provider-ready pilot</h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Persona's full KYB product is the planned first provider for international organization checks. Its hosted or approved flow—not the public profile—must collect registration numbers, representative information, and supporting documents. Coverage is confirmed before any fee is offered.</p></div></div>
             {request ? (
               <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-muted/60 p-4"><div><p className="text-xs font-semibold">{statusText[request.status] || request.status}</p><p className="mt-1 text-[11px] text-muted-foreground">Requested {new Date(request.created_at).toLocaleDateString()} · {request.provider}</p></div><CalendarCheck2 className="h-5 w-5 text-muted-foreground" /></div>
             ) : (

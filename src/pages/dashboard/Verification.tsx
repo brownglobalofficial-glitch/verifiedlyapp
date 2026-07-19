@@ -45,6 +45,8 @@ const defaultState: VerificationState = {
   identity_attempt_count: 0,
 };
 
+const identityCheckoutEnabled = import.meta.env.VITE_STRIPE_IDENTITY_USE_CASE_APPROVED === "true";
+
 const Verification = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -229,7 +231,7 @@ const Verification = () => {
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <p className="text-3xl font-display font-bold">$9.99</p>
-                  <p className="mt-1 text-xs text-muted-foreground">One-time Verifiedly service fee</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{identityCheckoutEnabled ? "One-time Verifiedly service fee" : "Planned one-time fee · provider approval pending"}</p>
                 </div>
                 <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">One retry when available</span>
               </div>
@@ -252,6 +254,13 @@ const Verification = () => {
                 </div>
               )}
 
+              {!identityCheckoutEnabled && (
+                <div className="flex gap-3 rounded-2xl border p-4 text-sm text-muted-foreground">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>Checkout is paused while Verifiedly completes provider approval for this profile-badge use case. No payment can be taken yet.</p>
+                </div>
+              )}
+
               {canContinue ? (
                 <Button className="h-12 w-full gap-2 rounded-xl" onClick={() => void startIdentity(checkoutId!)} disabled={action !== null}>
                   {action === "identity" ? "Opening secure check…" : "Continue identity check"}
@@ -265,8 +274,8 @@ const Verification = () => {
                       I am 18 or older, I am verifying my own identity, and I consent to Stripe collecting my government ID and selfie for this check.
                     </Label>
                   </div>
-                  <Button className="h-12 w-full rounded-xl" onClick={beginCheckout} disabled={!eligible || action !== null}>
-                    {action === "checkout" ? "Opening secure checkout…" : "Pay $9.99 and verify"}
+                  <Button className="h-12 w-full rounded-xl" onClick={beginCheckout} disabled={!identityCheckoutEnabled || !eligible || action !== null}>
+                    {!identityCheckoutEnabled ? "Provider approval pending" : action === "checkout" ? "Opening secure checkout…" : "Pay $9.99 and verify"}
                   </Button>
                 </>
               )}

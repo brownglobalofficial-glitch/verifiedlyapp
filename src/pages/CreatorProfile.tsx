@@ -67,6 +67,8 @@ const THEME_CLASSES: Record<string, { page: string; card: string; muted: string;
   neon: { page: "bg-zinc-950 text-fuchsia-50", card: "bg-zinc-900", muted: "text-zinc-400", border: "border-fuchsia-900/50" },
 };
 
+const PUBLIC_SOCIAL_KEYS = new Set(["instagram", "youtube", "tiktok", "facebook", "twitter", "x"]);
+
 const sectionHeading = (section: ProfileSection) => {
   const data = section.data || {};
   switch (section.kind) {
@@ -102,7 +104,6 @@ const socialUrl = (platform: string, value: string) => {
     tiktok: "https://tiktok.com/@",
     twitter: "https://x.com/",
     x: "https://x.com/",
-    linkedin: "https://linkedin.com/in/",
   };
   return bases[platform] ? safeExternalUrl(`${bases[platform]}${handle}`) : null;
 };
@@ -181,7 +182,7 @@ const CreatorProfile = () => {
   const socialValues = useMemo(() => (profile?.social_links || {}) as Record<string, string>, [profile?.social_links]);
 
   const socials = useMemo(() => Object.entries(socialValues)
-    .filter(([platform]) => platform !== "email" && platform !== "location")
+    .filter(([platform]) => PUBLIC_SOCIAL_KEYS.has(platform))
     .map(([platform, value]) => ({ platform, url: socialUrl(platform, String(value)) }))
     .filter((item): item is { platform: string; url: string } => !!item.url), [socialValues]);
 
@@ -218,7 +219,7 @@ const CreatorProfile = () => {
   const theme = THEME_CLASSES[profile.theme_color || "default"] || THEME_CLASSES.default;
   const displayName = profile.display_name || profile.username;
   const isOrganization = profile.account_type === "business";
-  const website = safeExternalUrl(profile.website);
+  const website = isOrganization ? safeExternalUrl(profile.website) : null;
   const updatedAt = profile.updated_at ? new Date(profile.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
   const description = profile.category ? `${displayName} · ${profile.category}` : `Official Verifiedly profile for ${displayName}.`;
   const profileUrl = `https://verifiedly.app/${profile.username}`;

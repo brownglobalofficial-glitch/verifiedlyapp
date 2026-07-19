@@ -54,12 +54,13 @@ interface DashboardProfile {
 
 const SOCIAL_FIELDS = [
   ["instagram", "Instagram", "Handle or profile URL"],
-  ["linkedin", "LinkedIn", "Handle or profile URL"],
   ["youtube", "YouTube", "Handle or channel URL"],
   ["tiktok", "TikTok", "Handle or profile URL"],
   ["facebook", "Facebook", "Handle or page URL"],
   ["twitter", "X", "Handle or profile URL"],
 ] as const;
+
+const ALLOWED_SOCIAL_KEYS = new Set(["location", "email", ...SOCIAL_FIELDS.map(([key]) => key)]);
 
 const emptySocialLinks = Object.fromEntries([
   ["location", ""],
@@ -147,11 +148,15 @@ const Dashboard = () => {
         accountType: currentProfile.account_type === "business" ? "business" : "creator",
         displayName: currentProfile.display_name || "",
         category: currentProfile.category || "",
-        website: currentProfile.website || "",
+        website: currentProfile.account_type === "business" ? currentProfile.website || "" : "",
         organizationLegalName: currentProfile.organization_legal_name || "",
         organizationIndustry: currentProfile.organization_industry || "",
         organizationCountry: currentProfile.organization_country || "",
-        socialLinks: { ...emptySocialLinks, ...socials },
+        socialLinks: {
+          ...emptySocialLinks,
+          ...Object.fromEntries(Object.entries(socials).filter(([key]) => ALLOWED_SOCIAL_KEYS.has(key))),
+          twitter: socials.twitter || socials.x || "",
+        },
       });
       setSections(ensureFixedSections(currentProfile.id, loadedSections));
       setLoading(false);
@@ -224,8 +229,8 @@ const Dashboard = () => {
       return;
     }
 
-    const normalizedWebsite = form.website.trim() ? safeExternalUrl(form.website.trim()) : null;
-    if (form.website.trim() && !normalizedWebsite) {
+    const normalizedWebsite = form.accountType === "business" && form.website.trim() ? safeExternalUrl(form.website.trim()) : null;
+    if (form.accountType === "business" && form.website.trim() && !normalizedWebsite) {
       toast({ title: "Enter a valid website", variant: "destructive" });
       return;
     }
@@ -238,7 +243,9 @@ const Dashboard = () => {
     setSaving(true);
     try {
       const cleanSocials = Object.fromEntries(
-        Object.entries(form.socialLinks).filter(([, value]) => value.trim().length > 0).map(([key, value]) => [key, value.trim()]),
+        Object.entries(form.socialLinks)
+          .filter(([key, value]) => ALLOWED_SOCIAL_KEYS.has(key) && value.trim().length > 0)
+          .map(([key, value]) => [key, value.trim()]),
       );
       const { error: profileError } = await supabase
         .from("profiles")
@@ -419,8 +426,8 @@ const Dashboard = () => {
                   </>
                 )}
                 <label className="block">
-                  <span className="text-[10px] font-medium text-muted-foreground">{form.accountType === "business" ? "Public label" : "Role"}</span>
-                  <Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder={form.accountType === "business" ? "Football club, media company…" : "Player, founder, creator…"} maxLength={60} className={inlineInputClass} />
+                  <span className="text-[10px] font-medium text-muted-foreground">{form.accountType === "business" ? "Organization type" : "Professional label"}</span>
+                  <Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder={form.accountType === "business" ? "Football club, academy, business…" : "Footballer, student, founder…"} maxLength={60} className={inlineInputClass} />
                 </label>
                 <label className="block">
                   <span className="text-[10px] font-medium text-muted-foreground">Location</span>
@@ -430,10 +437,12 @@ const Dashboard = () => {
                   <span className="text-[10px] font-medium text-muted-foreground">Public email</span>
                   <Input type="email" value={form.socialLinks.email || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, email: event.target.value } })} placeholder="name@example.com" maxLength={254} className={inlineInputClass} />
                 </label>
-                <label className="block">
-                  <span className="text-[10px] font-medium text-muted-foreground">Website</span>
-                  <Input type="url" value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} placeholder="yourwebsite.com" maxLength={500} className={inlineInputClass} />
-                </label>
+                {form.accountType === "business" && (
+                  <label className="block">
+                    <span className="text-[10px] font-medium text-muted-foreground">Official website</span>
+                    <Input type="url" value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} placeholder="organization.org" maxLength={500} className={inlineInputClass} />
+                  </label>
+                )}
               </div>
               {form.accountType === "business" && (
                 <Button asChild variant="outline" size="sm" className="mt-4 w-full rounded-full text-xs">

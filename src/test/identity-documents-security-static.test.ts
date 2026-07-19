@@ -9,8 +9,16 @@ const identitySession = readFileSync(
   "supabase/functions/create-identity-session/index.ts",
   "utf8",
 );
+const identityCheckout = readFileSync(
+  "supabase/functions/create-identity-checkout/index.ts",
+  "utf8",
+);
 const identityStatus = readFileSync(
   "supabase/functions/check-identity-status/index.ts",
+  "utf8",
+);
+const identityPage = readFileSync(
+  "src/pages/dashboard/Verification.tsx",
   "utf8",
 );
 const shareAccess = readFileSync(
@@ -48,6 +56,10 @@ describe("Verifiedly Identity and Documents boundaries", () => {
   });
 
   it("uses the reusable Stripe Identity flow without copying verified outputs", () => {
+    expect(identityCheckout).toContain('STRIPE_IDENTITY_USE_CASE_APPROVED');
+    expect(identitySession).toContain('STRIPE_IDENTITY_USE_CASE_APPROVED');
+    expect(identityPage).toContain('VITE_STRIPE_IDENTITY_USE_CASE_APPROVED');
+    expect(identityPage).toContain("Provider approval pending");
     expect(identitySession).toContain("STRIPE_IDENTITY_FLOW_ID");
     expect(identitySession).toContain("verification_flow: flowId");
     expect(identitySession).toContain("client_reference_id: user.id");

@@ -41,6 +41,11 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    if (Deno.env.get("STRIPE_IDENTITY_USE_CASE_APPROVED") !== "true") {
+      return json({
+        error: "Identity verification is not available yet. Verifiedly is completing provider approval for this use case.",
+      }, 503);
+    }
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe is not configured yet.");
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Building2, Camera, Check, ChevronLeft, ChevronRight, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, Camera, Check, ChevronLeft, ChevronRight, Globe2, MapPin, ShieldCheck, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,15 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
+import SocialIcon from "@/components/SocialIcon";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const THEMES = [
-  { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
-  { id: "midnight", label: "Midnight", bg: "bg-[hsl(230,25%,12%)]", accent: "bg-[hsl(230,60%,60%)]" },
-  { id: "sunset", label: "Sunset", bg: "bg-[hsl(20,30%,97%)]", accent: "bg-[hsl(20,90%,55%)]" },
-  { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]" },
-  { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]" },
-  { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
+  { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground", text: "text-foreground", muted: "text-muted-foreground", surface: "border-border bg-background/80" },
+  { id: "midnight", label: "Midnight", bg: "bg-[hsl(230,25%,12%)]", accent: "bg-[hsl(230,60%,60%)]", text: "text-white", muted: "text-white/60", surface: "border-white/15 bg-white/5" },
+  { id: "sunset", label: "Sunset", bg: "bg-[hsl(20,30%,97%)]", accent: "bg-[hsl(20,90%,55%)]", text: "text-stone-950", muted: "text-stone-500", surface: "border-orange-200/70 bg-white/70" },
+  { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]", text: "text-emerald-950", muted: "text-emerald-800/60", surface: "border-emerald-200/70 bg-white/65" },
+  { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]", text: "text-sky-950", muted: "text-sky-800/60", surface: "border-sky-200/70 bg-white/65" },
+  { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]", text: "text-violet-950", muted: "text-violet-800/60", surface: "border-violet-200/70 bg-white/65" },
 ] as const;
 
 type AccountType = "creator" | "business";
@@ -58,9 +59,10 @@ const Onboarding = () => {
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [instagram, setInstagram] = useState("");
-  const [linkedin, setLinkedin] = useState("");
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [twitter, setTwitter] = useState("");
 
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [theme, setTheme] = useState("default");
@@ -105,9 +107,10 @@ const Onboarding = () => {
       const socials = (data.social_links || {}) as Record<string, string>;
       setLocation(socials.location || "");
       setInstagram(socials.instagram || "");
-      setLinkedin(socials.linkedin || "");
       setYoutube(socials.youtube || "");
       setTiktok(socials.tiktok || "");
+      setFacebook(socials.facebook || "");
+      setTwitter(socials.twitter || socials.x || "");
     };
 
     load();
@@ -171,8 +174,8 @@ const Onboarding = () => {
       return;
     }
 
-    const normalizedWebsite = website.trim() ? normalizeUrl(website) : null;
-    if (website.trim() && !normalizedWebsite) {
+    const normalizedWebsite = accountType === "business" && website.trim() ? normalizeUrl(website) : null;
+    if (accountType === "business" && website.trim() && !normalizedWebsite) {
       setStep(0);
       toast({ title: "Enter a valid official website", variant: "destructive" });
       return;
@@ -181,7 +184,7 @@ const Onboarding = () => {
     setSaving(true);
     try {
       const socialLinks = Object.fromEntries(
-        Object.entries({ location, instagram, linkedin, youtube, tiktok }).filter(([, value]) => value.trim()),
+        Object.entries({ location, instagram, youtube, tiktok, facebook, twitter }).filter(([, value]) => value.trim()),
       );
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
@@ -220,6 +223,14 @@ const Onboarding = () => {
   const canContinue = step === 0
     ? displayName.trim().length > 0 && username.length >= 3 && usernameAvailable === true && !checkingUsername
     : step === 1 ? agreedTerms : true;
+  const selectedTheme = THEMES.find((item) => item.id === theme) || THEMES[0];
+  const previewSocials = [
+    ["instagram", instagram],
+    ["youtube", youtube],
+    ["tiktok", tiktok],
+    ["facebook", facebook],
+    ["twitter", twitter],
+  ].filter(([, value]) => value.trim());
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -312,17 +323,14 @@ const Onboarding = () => {
                 <Input id="display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1" maxLength={80} />
               </div>
               <div>
-                <Label htmlFor="category">Professional label</Label>
-                <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder="Player, founder, club…" maxLength={60} />
+                <Label htmlFor="category">{accountType === "business" ? "Organization type" : "Professional label"}</Label>
+                <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder={accountType === "business" ? "Football club, academy, business, nonprofit…" : "Footballer, student, founder, photographer…"} maxLength={60} />
               </div>
               <div>
                 <Label htmlFor="location">Location</Label>
                 <Input id="location" value={location} onChange={(event) => setLocation(event.target.value)} className="mt-1" placeholder="City, country" maxLength={120} />
               </div>
-              <div>
-                <Label htmlFor="website">Official website</Label>
-                <Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://example.com" inputMode="url" maxLength={500} />
-              </div>
+              {accountType === "business" && <div><Label htmlFor="website">Official website</Label><Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://organization.org" inputMode="url" maxLength={500} /></div>}
             </div>
 
             {accountType === "business" && (
@@ -341,9 +349,10 @@ const Onboarding = () => {
               <p className="mt-1 text-xs text-muted-foreground">Optional links help people find your official accounts. They are not treated as identity verification.</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Input value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="Instagram handle or URL" maxLength={500} />
-                <Input value={linkedin} onChange={(event) => setLinkedin(event.target.value)} placeholder="LinkedIn handle or URL" maxLength={500} />
                 <Input value={youtube} onChange={(event) => setYoutube(event.target.value)} placeholder="YouTube handle or URL" maxLength={500} />
                 <Input value={tiktok} onChange={(event) => setTiktok(event.target.value)} placeholder="TikTok handle or URL" maxLength={500} />
+                <Input value={facebook} onChange={(event) => setFacebook(event.target.value)} placeholder="Facebook handle or URL" maxLength={500} />
+                <Input value={twitter} onChange={(event) => setTwitter(event.target.value)} placeholder="X handle or URL" maxLength={500} />
               </div>
             </Card>
           </div>
@@ -375,6 +384,31 @@ const Onboarding = () => {
             <div>
               <h2 className="text-xl font-display font-semibold">Choose a clean appearance</h2>
               <p className="mt-1 text-sm text-muted-foreground">Your content stays structured and professional in every theme.</p>
+            </div>
+            <div className={`overflow-hidden rounded-3xl border ${selectedTheme.bg} ${selectedTheme.text}`}>
+              <div className="p-5 sm:p-6">
+                <div className="mx-auto text-center">
+                  <Avatar className="mx-auto h-20 w-20 border-2 border-current/10">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+                    <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || (accountType === "business" ? "O" : "Y")}</AvatarFallback>
+                  </Avatar>
+                  <h3 className="mt-3 font-display text-xl font-bold">{displayName.trim() || (accountType === "business" ? "Organization name" : "Your name")}</h3>
+                  <p className={`mt-1 text-xs ${selectedTheme.muted}`}>@{username || "yourhandle"}{category.trim() ? ` · ${category.trim()}` : ""}</p>
+                  {!!previewSocials.length && <div className="mt-3 flex flex-wrap justify-center gap-2">{previewSocials.map(([platform]) => <span key={platform} className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${selectedTheme.surface}`}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></span>)}</div>}
+                </div>
+                <div className={`mt-5 rounded-2xl border p-4 ${selectedTheme.surface}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-[0.14em] ${selectedTheme.muted}`}>{accountType === "business" ? "Organization information" : "Profile information"}</p>
+                  <div className="mt-3 space-y-2 text-xs">
+                    {category.trim() && <p className="font-medium">{category.trim()}</p>}
+                    {location.trim() && <p className="flex items-center gap-2"><MapPin className={`h-3.5 w-3.5 ${selectedTheme.muted}`} />{location.trim()}</p>}
+                    {accountType === "business" && website.trim() && <p className="flex items-center gap-2"><Globe2 className={`h-3.5 w-3.5 ${selectedTheme.muted}`} />Official website</p>}
+                    {!category.trim() && !location.trim() && !(accountType === "business" && website.trim()) && <p className={selectedTheme.muted}>Your public details will appear here.</p>}
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {["Work", "Education", "Credentials & licenses", "Awards & accomplishments"].map((label) => <div key={label} className={`rounded-xl border px-3 py-2 text-xs ${selectedTheme.surface}`}><span className="font-medium">{label}</span><span className={`ml-1 ${selectedTheme.muted}`}>· add later</span></div>)}
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {THEMES.map((item) => (

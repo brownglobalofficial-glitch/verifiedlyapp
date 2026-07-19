@@ -10,11 +10,14 @@ is contracted and configured.
 
 ### Checkr Partner / API account
 
-Use Checkr for the first U.S. education and professional-license workflows.
+Use Checkr only for education and professional-license workflows that Checkr
+has approved for Verifiedly and supports in the candidate's jurisdiction. It is
+not a universal international credential database.
 The authorized BrownGlobal adult representative must:
 
 1. Apply for a Checkr partner/platform account and describe Verifiedly's flow.
-2. Confirm in writing that Verifiedly may charge the customer directly or add a
+2. Confirm in writing which countries, institutions, and license types are
+   supported and that Verifiedly may charge the customer directly or add a
    disclosed platform fee. If not, let Checkr bill the organization and use the
    approved partner revenue model.
 3. Obtain a production API key and the approved education/license package IDs.
@@ -50,10 +53,14 @@ for the first Checkr-backed release.
 
 ## Required for organization verification
 
-Choose one initial provider; do not run both for the same first-market flow.
+Use **Persona's full KYB product** as the first organization-verification
+provider. This is the best fit for Verifiedly's international positioning.
+Persona's lightweight U.S. business-verification product is not a substitute
+for the full KYB product. Confirm each supported country and data source before
+showing a verification checkout.
 
-- **Middesk:** recommended for U.S. business registration/KYB checks.
-- **Persona KYB:** recommended when multi-country coverage becomes the priority.
+Middesk can be evaluated later for deeper U.S.-only checks, but should not run
+alongside Persona in the initial flow.
 
 The provider should collect registration numbers, registered addresses,
 beneficial-owner information, and supporting documents through its hosted or
@@ -62,11 +69,27 @@ safe public badge fields, the checked date, and the recheck date.
 
 Recommended server-only secrets once a provider is contracted:
 
-- `MIDDESK_API_KEY` and `MIDDESK_WEBHOOK_SECRET`, or
 - `PERSONA_API_KEY`, `PERSONA_KYB_TRANSACTION_TYPE_ID`, and
   `PERSONA_WEBHOOK_SECRET`
 
 Organization verification should be valid for 12 months, not permanent.
+
+## Individual identity verification
+
+Continue using Stripe Identity for the optional adult identity badge. Always
+check that Verifiedly's Stripe account is eligible to offer Identity in the
+business's country before enabling production checkout. Stripe hosts the ID and
+selfie flow; Verifiedly should store only the provider session reference,
+status, and check date required for the badge.
+
+Stripe's published use-case rules prohibit reselling Identity as an independent
+identity-verification service. Obtain written Stripe approval for Verifiedly's
+profile-badge use case and its proposed fee before enabling the $9.99 production
+checkout. If Stripe does not approve it, keep the badge disabled and evaluate a
+contracted Persona identity inquiry instead; do not work around the restriction.
+
+Identity verification remains separate from organization and credential
+verification. It must not be presented as a background check or an endorsement.
 
 ## Not required yet
 
