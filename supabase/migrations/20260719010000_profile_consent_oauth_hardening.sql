@@ -31,6 +31,9 @@ CREATE INDEX IF NOT EXISTS idx_legal_acceptances_user_time
 -- The UI blocks prohibited labels before upload. This database constraint is a
 -- second line of defense against filenames or titles that clearly identify an
 -- identity document. It does not replace content scanning.
+ALTER TABLE public.documents
+  ADD COLUMN IF NOT EXISTS original_filename TEXT;
+
 DO $$
 BEGIN
   IF NOT EXISTS (

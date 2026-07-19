@@ -35,6 +35,7 @@ describe("Verifiedly profile, agreement, and OAuth boundaries", () => {
     expect(legal).toContain("Social Security cards/numbers");
     expect(legal).toContain("passports");
     expect(legal).toContain("government-issued photo IDs");
+    expect(migration).toContain("ADD COLUMN IF NOT EXISTS original_filename TEXT");
     expect(migration).toContain("documents_no_identity_document_labels_v2");
     expect(migration).toContain("passport");
   });
