@@ -68,24 +68,24 @@ const user = await userRes.json();
 //   email? // only when separately requested and approved
 // }`;
 
-const GSN_ENV_SNIPPET = `# GSN — development (.env.local) — CLIENT SIDE ONLY
-VITE_GSN_CLIENT_ID=gsn_app
-VITE_GSN_REDIRECT_URI=http://localhost:8080/auth/callback
+const ENV_SNIPPET = `# Development (.env.local) — CLIENT SIDE ONLY
+VITE_VERIFIEDLY_CLIENT_ID=your_client_id
+VITE_VERIFIEDLY_REDIRECT_URI=http://localhost:8080/auth/callback
 
-# GSN — production / server env (edge function / server route)
+# Production / server env (edge function / server route)
 # NEVER expose client_secret through a VITE_* variable or browser bundle.
-GSN_CLIENT_ID=gsn_app
-GSN_CLIENT_SECRET=paste_rotated_secret_here
-GSN_REDIRECT_URI=https://gsnmedia.app/auth/callback`;
+VERIFIEDLY_CLIENT_ID=your_client_id
+VERIFIEDLY_CLIENT_SECRET=paste_rotated_secret_here
+VERIFIEDLY_REDIRECT_URI=https://your-app.example.com/auth/callback`;
 
-const GSN_BUTTON_SNIPPET = `// GSN — start the OAuth flow. state is REQUIRED and MUST be verified on the callback.
+const BUTTON_SNIPPET = `// Start the OAuth flow. state is REQUIRED and MUST be verified on the callback.
 const authorize = () => {
   const state = crypto.randomUUID();
   sessionStorage.setItem("verifiedly_oauth_state", state);
 
   const url = new URL("https://verifiedly.app/oauth/authorize");
-  url.searchParams.set("client_id", import.meta.env.VITE_GSN_CLIENT_ID);
-  url.searchParams.set("redirect_uri", import.meta.env.VITE_GSN_REDIRECT_URI);
+  url.searchParams.set("client_id", import.meta.env.VITE_VERIFIEDLY_CLIENT_ID);
+  url.searchParams.set("redirect_uri", import.meta.env.VITE_VERIFIEDLY_REDIRECT_URI);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid profile identity credentials");
   url.searchParams.set("state", state);
@@ -139,7 +139,7 @@ const Developers = () => {
             Email <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a> with your
             app name, homepage URL, app type, and exact redirect URIs. Confidential server apps receive a <code className="text-xs bg-muted px-1 py-0.5 rounded">client_id</code> and one-time <code className="text-xs bg-muted px-1 py-0.5 rounded">client_secret</code>. Browser and mobile apps receive a public client ID and must use PKCE (S256).
           </p>
-          <p className="text-xs text-muted-foreground">First-party Brown Global apps (GSN, Globalis) are pre-provisioned.</p>
+          <p className="text-xs text-muted-foreground">Approved first-party partners are pre-provisioned by the Verifiedly team.</p>
         </Card>
 
         <Card className="p-6 mb-6">
@@ -184,53 +184,32 @@ const Developers = () => {
         </Card>
 
         <div className="mt-12 mb-6">
-          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-3">First-party</span>
-          <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight mb-2">Configure GSN OAuth</h2>
-          <p className="text-sm text-muted-foreground">Step-by-step setup for the pre-provisioned GSN client.</p>
+          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-3">Environment</span>
+          <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight mb-2">Configure your app</h2>
+          <p className="text-sm text-muted-foreground">Once your client is approved, wire up env vars and trigger the flow.</p>
         </div>
 
         <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Step 1 — Get the client secret</h2>
-          <p className="text-sm text-muted-foreground">
-            Sign in as <code className="text-xs bg-muted px-1 py-0.5 rounded">support@verifiedly.app</code> and open{" "}
-            <Link to="/dashboard/admin#oauth-clients" className="underline">/dashboard/admin#oauth-clients</Link>.
-            Find <strong>GSN</strong> (<code className="text-xs bg-muted px-1 py-0.5 rounded">gsn_app</code>) and click <strong>Rotate secret</strong>.
-            Copy the plaintext value immediately — it is shown only once.
-          </p>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Step 2 — Add env vars in the GSN repo</h2>
+          <h2 className="font-display font-semibold mb-3">Environment variables</h2>
           <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{GSN_ENV_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(GSN_ENV_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{ENV_SNIPPET}</code></pre>
+            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(ENV_SNIPPET)}><Copy className="w-3 h-3" /></Button>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Never commit <code>VITE_GSN_CLIENT_SECRET</code>. In production keep the secret server-side
-            (<code>GSN_CLIENT_SECRET</code>) and perform the token exchange from an edge function.
+            Never commit <code>client_secret</code> or expose it through a <code>VITE_*</code> variable. In production keep it server-side and perform the token exchange from an edge function or backend route.
           </p>
         </Card>
 
         <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Step 3 — Allowed redirect URIs</h2>
-          <p className="text-sm text-muted-foreground mb-2">The <code>gsn_app</code> client accepts only these callback URLs:</p>
-          <ul className="text-sm space-y-1 list-disc list-inside">
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://gsnmedia.app/auth/callback</code> (production)</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">http://localhost:8080/auth/callback</code> (development only)</li>
-          </ul>
-          <p className="text-xs text-muted-foreground mt-3">Need another URL (custom domain, staging)? Email support@verifiedly.app to add it.</p>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Step 4 — Trigger the flow</h2>
+          <h2 className="font-display font-semibold mb-3">Trigger the flow</h2>
           <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{GSN_BUTTON_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(GSN_BUTTON_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{BUTTON_SNIPPET}</code></pre>
+            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(BUTTON_SNIPPET)}><Copy className="w-3 h-3" /></Button>
           </div>
         </Card>
 
         <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Step 5 — Handle the callback</h2>
+          <h2 className="font-display font-semibold mb-3">Handle the callback</h2>
           <p className="text-sm text-muted-foreground">
             Your partner-app callback must compare <code className="text-xs bg-muted px-1 py-0.5 rounded">state</code> before doing anything else.
             Confidential apps then send the code to their own server for exchange; public clients send the saved PKCE verifier.
