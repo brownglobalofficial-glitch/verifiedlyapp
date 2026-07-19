@@ -151,7 +151,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
             <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
-            <Route path="/dashboard/links" element={<Navigate to="/dashboard#links" replace />} />
+            <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
             <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />

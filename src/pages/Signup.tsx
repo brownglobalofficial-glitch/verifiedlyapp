@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -28,6 +29,10 @@ const Signup = () => {
   const { toast } = useToast();
 
   const handleOAuth = async (provider: "google" | "apple") => {
+    if (!agreedTerms) {
+      toast({ title: "Agreement required", description: "Review and accept the Terms, Privacy Policy, and vault restrictions first.", variant: "destructive" });
+      return;
+    }
     const { error } = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: returnTo ? `${window.location.origin}${returnTo}` : window.location.origin,
     });
@@ -76,6 +81,10 @@ const Signup = () => {
             display_name: displayName,
             account_type: "creator",
             referred_by: referralCode,
+            legal_terms_accepted_at: new Date().toISOString(),
+            legal_terms_version: LEGAL_TERMS_VERSION,
+            vault_policy_certified: true,
+            vault_policy_version: VAULT_POLICY_VERSION,
           },
         },
       });
@@ -165,9 +174,10 @@ const Signup = () => {
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
             <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
-              I am at least 13. If I am a minor where I live, I have permission from a parent or guardian. I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>.
+              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>, and I certify that I will not upload prohibited identity or financial documents to my private vault.
             </label>
           </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">You must be at least 13. If you are a minor where you live, a parent or legal guardian must permit your use. Identity verification is limited to adults 18+.</p>
           <Button type="submit" className="w-full" disabled={loading || !agreedTerms}>
             {loading ? "Creating account..." : "Sign up"}
           </Button>

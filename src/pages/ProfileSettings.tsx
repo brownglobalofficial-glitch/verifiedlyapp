@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { Camera, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
+import { Camera, Code2, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -212,6 +214,41 @@ const ProfileSettings = () => {
               </div>
             </div>
             <Button asChild variant="outline"><Link to="/dashboard/verification">Open verification</Link></Button>
+          </div>
+        </Card>
+
+        <Card className="p-5 sm:p-6" id="developer">
+          <div className="flex items-start gap-3">
+            <Code2 className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display font-semibold">Sign in with Verifiedly (OAuth 2.0 API)</h2>
+                <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Developer beta</span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Connect an approved app to consented Verifiedly profile and identity-status data. Credentials are issued after redirect-URI review; they are not generated or changed in the browser.</p>
+
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <Label htmlFor="oauth-client-id">Client ID</Label>
+                  <Input id="oauth-client-id" readOnly value="" placeholder="Issued after your app is approved" className="mt-1 rounded-xl font-mono text-xs" />
+                </div>
+                <div>
+                  <Label htmlFor="oauth-client-secret">Client Secret</Label>
+                  <Input id="oauth-client-secret" type="password" readOnly value="" placeholder="Shown once when issued or rotated" className="mt-1 rounded-xl font-mono text-xs" autoComplete="off" />
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">Verifiedly stores only a hash. A secret cannot be retrieved later; rotate it if it is lost. Never put it in browser code or a VITE_* variable.</p>
+                </div>
+                <div>
+                  <Label htmlFor="oauth-redirect-uris">Redirect URIs</Label>
+                  <Textarea id="oauth-redirect-uris" readOnly value="" placeholder={'https://yourapp.com/auth/callback\nhttp://localhost:3000/auth/callback'} className="mt-1 min-h-20 resize-none rounded-xl font-mono text-xs" />
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">HTTPS is required in production and every callback must exactly match a registered URI. Browser and mobile apps use Authorization Code + PKCE (S256).</p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
+                <Button asChild variant="outline" className="gap-2"><Link to="/developers">Open developer docs <ExternalLink className="h-4 w-4" /></Link></Button>
+                <Button asChild variant="ghost"><a href="mailto:support@verifiedly.app?subject=Verifiedly%20OAuth%20client%20request">Request a client</a></Button>
+              </div>
+            </div>
           </div>
         </Card>
 

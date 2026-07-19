@@ -569,6 +569,33 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          id: string
+          source: string
+          terms_version: string
+          user_id: string
+          vault_policy_version: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          source: string
+          terms_version: string
+          user_id: string
+          vault_policy_version: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          source?: string
+          terms_version?: string
+          user_id?: string
+          vault_policy_version?: string
+        }
+        Relationships: []
+      }
       link_clicks: {
         Row: {
           created_at: string
@@ -660,6 +687,8 @@ export type Database = {
         Row: {
           client_id: string
           code: string
+          code_challenge: string | null
+          code_challenge_method: string | null
           created_at: string
           expires_at: string
           redirect_uri: string
@@ -670,6 +699,8 @@ export type Database = {
         Insert: {
           client_id: string
           code: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
           created_at?: string
           expires_at: string
           redirect_uri: string
@@ -680,6 +711,8 @@ export type Database = {
         Update: {
           client_id?: string
           code?: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
           created_at?: string
           expires_at?: string
           redirect_uri?: string
@@ -1708,6 +1741,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_oauth_code: {
+        Args: { _client_id: string; _code: string; _redirect_uri: string }
+        Returns: {
+          code_challenge: string | null
+          code_challenge_method: string | null
+          scopes: string[]
+          user_id: string
+        }[]
+      }
       consume_document_share: {
         Args: { _token_hash: string }
         Returns: {

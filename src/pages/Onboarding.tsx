@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { Building2, Camera, Check, ChevronLeft, ChevronRight, Plus, UserRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Building2, Camera, Check, ChevronLeft, ChevronRight, ShieldCheck, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const THEMES = [
@@ -20,7 +22,6 @@ const THEMES = [
 ] as const;
 
 type AccountType = "creator" | "business";
-type ProfileLink = { title: string; url: string };
 
 const normalizeUrl = (value: string) => {
   const candidate = value.trim();
@@ -58,12 +59,10 @@ const Onboarding = () => {
   const [youtube, setYoutube] = useState("");
   const [tiktok, setTiktok] = useState("");
 
-  const [links, setLinks] = useState<ProfileLink[]>([]);
-  const [newLinkTitle, setNewLinkTitle] = useState("");
-  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const [theme, setTheme] = useState("default");
 
-  const steps = ["Official profile", "Important links", "Appearance"];
+  const steps = ["Official profile", "Agreement", "Appearance"];
 
   useEffect(() => {
     const load = async () => {
@@ -154,21 +153,15 @@ const Onboarding = () => {
     setUploading(false);
   };
 
-  const addLink = () => {
-    const url = normalizeUrl(newLinkUrl);
-    if (!newLinkTitle.trim() || !url) {
-      toast({ title: "Enter a link title and a valid web address", variant: "destructive" });
-      return;
-    }
-    setLinks((current) => [...current, { title: newLinkTitle.trim(), url }]);
-    setNewLinkTitle("");
-    setNewLinkUrl("");
-  };
-
   const finish = async () => {
     if (!userId || username.length < 3 || usernameAvailable !== true || !displayName.trim()) {
       setStep(0);
       toast({ title: "Complete the required profile fields", variant: "destructive" });
+      return;
+    }
+    if (!agreedTerms) {
+      setStep(1);
+      toast({ title: "Agreement required", description: "Review and accept the Terms, Privacy Policy, and vault restrictions to continue.", variant: "destructive" });
       return;
     }
 
@@ -198,18 +191,13 @@ const Onboarding = () => {
       }, { onConflict: "id" });
       if (profileError) throw profileError;
 
-      if (links.length) {
-        const { error: linksError } = await supabase.from("bio_links").insert(
-          links.map((link, position) => ({
-            creator_id: userId,
-            title: link.title,
-            url: link.url,
-            icon: null,
-            sort_order: position,
-          })),
-        );
-        if (linksError) throw linksError;
-      }
+      const { error: acceptanceError } = await supabase.from("legal_acceptances").insert({
+        user_id: userId,
+        terms_version: LEGAL_TERMS_VERSION,
+        vault_policy_version: VAULT_POLICY_VERSION,
+        source: "onboarding",
+      });
+      if (acceptanceError) throw acceptanceError;
 
       toast({ title: "Your official profile is ready" });
       navigate("/dashboard");
@@ -220,12 +208,9 @@ const Onboarding = () => {
     }
   };
 
-  const canContinue = step !== 0 || (
-    displayName.trim().length > 0 &&
-    username.length >= 3 &&
-    usernameAvailable === true &&
-    !checkingUsername
-  );
+  const canContinue = step === 0
+    ? displayName.trim().length > 0 && username.length >= 3 && usernameAvailable === true && !checkingUsername
+    : step === 1 ? agreedTerms : true;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -347,36 +332,21 @@ const Onboarding = () => {
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-xl font-display font-semibold">Add your most important links</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Keep this focused. You can add or reorder links later.</p>
+              <h2 className="text-xl font-display font-semibold">Review the account agreement</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Verifiedly separates your public profile from private professional credentials.</p>
             </div>
-            <Card className="space-y-3 p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="link-title">Label</Label>
-                  <Input id="link-title" value={newLinkTitle} onChange={(event) => setNewLinkTitle(event.target.value)} className="mt-1" placeholder="Portfolio" maxLength={80} />
-                </div>
-                <div>
-                  <Label htmlFor="link-url">Web address</Label>
-                  <Input id="link-url" value={newLinkUrl} onChange={(event) => setNewLinkUrl(event.target.value)} className="mt-1" placeholder="https://…" inputMode="url" maxLength={500} />
-                </div>
+            <Card className="p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <Checkbox id="onboarding-legal-agreement" checked={agreedTerms} onCheckedChange={(value) => setAgreedTerms(value === true)} className="mt-0.5" />
+                <label htmlFor="onboarding-legal-agreement" className="cursor-pointer text-sm leading-relaxed text-muted-foreground">
+                  I agree to the <Link to="/terms" target="_blank" className="font-medium text-foreground underline underline-offset-2">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">Privacy Policy</Link>, and I certify that I will not upload prohibited identity or financial documents to my private vault.
+                </label>
               </div>
-              <Button type="button" onClick={addLink} variant="outline" className="gap-2"><Plus className="h-4 w-4" /> Add link</Button>
+              <div className="mt-5 flex gap-3 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+                <p>Users must be at least 13. If you are a minor where you live, a parent or legal guardian must permit your use. Identity verification remains limited to adults 18+.</p>
+              </div>
             </Card>
-            <div className="space-y-2">
-              {links.map((link, index) => (
-                <Card key={`${link.url}-${index}`} className="flex items-center gap-3 p-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{link.title}</p>
-                    <p className="truncate text-xs text-muted-foreground">{link.url}</p>
-                  </div>
-                  <Button type="button" variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-destructive" onClick={() => setLinks((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${link.title}`}>
-                    Remove
-                  </Button>
-                </Card>
-              ))}
-              {!links.length && <p className="py-8 text-center text-sm text-muted-foreground">Links are optional. You can skip this step.</p>}
-            </div>
           </div>
         )}
 

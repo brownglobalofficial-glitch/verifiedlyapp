@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import { Check, ChevronRight, ExternalLink, Globe, Mail, MapPin, Share2, ShieldCheck } from "lucide-react";
+import { Check, ExternalLink, Globe, Mail, MapPin, Share2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,6 @@ interface PublicProfile {
   id_verified: boolean;
   verified_at: string | null;
   updated_at: string;
-}
-
-interface PublicLink {
-  id: string;
-  title: string;
-  url: string;
-  sort_order: number | null;
 }
 
 const THEME_CLASSES: Record<string, { page: string; card: string; muted: string; border: string }> = {
@@ -101,7 +94,6 @@ const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [sections, setSections] = useState<ProfileSection[]>([]);
-  const [links, setLinks] = useState<PublicLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -138,20 +130,12 @@ const CreatorProfile = () => {
         return;
       }
 
-      const [{ data: currentSections }, { data: currentLinks }] = await Promise.all([
-        supabase
-          .from("profile_sections")
-          .select("id, user_id, kind, position, data, is_public, created_at, updated_at")
-          .eq("user_id", currentProfile.id)
-          .eq("is_public", true)
-          .order("position", { ascending: true }),
-        supabase
-          .from("bio_links")
-          .select("id, title, url, sort_order")
-          .eq("creator_id", currentProfile.id)
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true }),
-      ]);
+      const { data: currentSections } = await supabase
+        .from("profile_sections")
+        .select("id, user_id, kind, position, data, is_public, created_at, updated_at")
+        .eq("user_id", currentProfile.id)
+        .eq("is_public", true)
+        .order("position", { ascending: true });
 
       setProfile(currentProfile as PublicProfile);
       setSections((currentSections || []).map((section) => ({
@@ -159,7 +143,6 @@ const CreatorProfile = () => {
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
       })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section)));
-      setLinks(currentLinks || []);
       setLoading(false);
 
       void supabase.from("page_views").insert({ creator_id: currentProfile.id });
@@ -313,26 +296,6 @@ const CreatorProfile = () => {
             </aside>
 
             <div className="min-w-0 p-5 sm:p-7">
-              {!!links.length && (
-                <section className="mb-7" aria-label="Links">
-                  <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Links</h2>
-                  <div className="space-y-2.5">
-                    {links.map((link) => {
-                      const url = safeExternalUrl(link.url);
-                      if (!url) return null;
-                      return (
-                        <a key={link.id} href={url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => void supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id })}>
-                          <div className={`flex min-h-14 items-center rounded-2xl border px-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${theme.card} ${theme.border}`}>
-                            <span className="flex-1 text-sm font-semibold">{link.title}</span>
-                            <ChevronRight className={`h-4 w-4 ${theme.muted}`} />
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
               <div className="space-y-6" aria-label="Profile details">
                 {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
                   const entries = sections.filter((section) => section.kind === kind);
@@ -361,7 +324,7 @@ const CreatorProfile = () => {
                     </section>
                   );
                 })}
-                {!links.length && !sections.length && <p className={`py-10 text-center text-xs ${theme.muted}`}>This profile is ready for links, experience, and credentials.</p>}
+                {!sections.length && <p className={`py-10 text-center text-xs ${theme.muted}`}>This profile is ready for experience and credentials.</p>}
               </div>
             </div>
           </div>

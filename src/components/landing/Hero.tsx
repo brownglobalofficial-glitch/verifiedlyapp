@@ -40,8 +40,8 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            Verify your identity once with your government ID. Get a checkmark that works
-            on your profile, your links, and any app that supports Sign in with Verifiedly.
+            Build an official profile for who you are and what you do. Eligible adults can add
+            a Stripe Identity checkmark and use supported Sign in with Verifiedly integrations.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -66,7 +66,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Free account · $5.99 one-time to verify · No subscription required
+            Free profile · $9.99 one-time identity check · Documents optional
           </motion.p>
         </motion.div>
 
@@ -80,10 +80,10 @@ const Hero = () => {
           <div className="bg-secondary rounded-2xl border border-border p-6 sm:p-8 md:p-12">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 text-center">
               {[
-                { value: "$5.99", label: "One-time to verify" },
+                { value: "$9.99", label: "One-time to verify" },
                 { value: "Gov ID", label: "Real identity check" },
-                { value: "<2 min", label: "To complete scan" },
-                { value: "Stripe", label: "Identity + payouts" },
+                { value: "ID + selfie", label: "Separate secure check" },
+                { value: "Stripe", label: "Identity provider" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}

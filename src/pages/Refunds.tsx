@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import DocumentsComplianceNotice from "@/components/DocumentsComplianceNotice";
 
 const Refunds = () => (
   <div className="min-h-screen bg-background px-4 py-12">
@@ -26,6 +27,8 @@ const Refunds = () => (
 
       <h2>4. How to request review</h2>
       <p>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the account email, product name, charge date, and reason. Operated by BrownGlobal Holdings LLC.</p>
+
+      <DocumentsComplianceNotice className="not-prose mt-8" />
     </div>
   </div>
 );

@@ -12,7 +12,6 @@ import {
   Loader2,
   LockKeyhole,
   MoreHorizontal,
-  ShieldCheck,
   Upload,
   X,
 } from "lucide-react";
@@ -48,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import DocumentsComplianceNotice from "@/components/DocumentsComplianceNotice";
 
 type DocumentRecord = {
   id: string;
@@ -89,7 +89,7 @@ const defaultBilling: BillingRecord = {
 
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 const allowedDocumentCategories = new Set(["degree", "certification", "professional_license", "award", "other_credential"]);
-const prohibitedDocumentLabel = /(social[\s_-]*security|\bssn\b|\bw[\s_-]*2\b|\b1099\b|tax[\s_-]*(document|return|form))/i;
+const prohibitedDocumentLabel = /(social[\s_-]*security|\bssn\b|\bw[\s_-]*2\b|\b1099\b|tax[\s_-]*(document|return|form)|passport|driver[’'\s_-]*s?[\s_-]*(license|licence)|driving[\s_-]*(license|licence)|government[\s_-]*issued[\s_-]*photo[\s_-]*id|national[\s_-]*(id|identification)|state[\s_-]*id)/i;
 const extensionFor = (file: File) => {
   if (file.type === "application/pdf") return "pdf";
   if (file.type === "image/png") return "png";
@@ -257,7 +257,7 @@ const Documents = () => {
     if (prohibitedDocumentLabel.test(`${form.title} ${file.name}`)) {
       toast({
         title: "This document is not allowed",
-        description: "Do not upload Social Security cards or numbers, W-2s, 1099s, or other tax documents.",
+        description: "Documents accepts professional credentials only. Passports, government photo IDs, Social Security records, and financial or tax records are prohibited.",
         variant: "destructive",
       });
       return;
@@ -445,10 +445,7 @@ const Documents = () => {
             </ul>
           </Card>
 
-          <div className="mx-auto mt-5 flex max-w-2xl items-start gap-3 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>Professional credentials only. Do not upload payment cards, bank records, Social Security cards or numbers, tax documents (including W-2s and 1099s), health records, passports, government IDs, or other identity documents.</p>
-          </div>
+          <DocumentsComplianceNotice className="mx-auto mt-5 max-w-2xl" />
         </div>
       </DashboardShell>
     );
@@ -622,10 +619,7 @@ const Documents = () => {
           )}
         </Card>
 
-        <div className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>Verifiedly Documents is for professional credentials. Never upload payment cards, bank documents, Social Security cards or numbers, tax documents (including W-2s and 1099s), health records, passports, or government IDs.</p>
-        </div>
+        <DocumentsComplianceNotice />
       </div>
 
       <Dialog open={!!shareDocument} onOpenChange={(open) => { if (!open) setShareDocument(null); }}>

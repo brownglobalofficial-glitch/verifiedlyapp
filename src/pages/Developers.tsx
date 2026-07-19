@@ -41,8 +41,8 @@ export function SignInWithVerifiedly({
   );
 }`;
 
-const EXCHANGE_SNIPPET = `// SERVER-SIDE ONLY (never in the browser). client_secret must not ship to
-// the client — put it in a server env var / edge function secret.
+const EXCHANGE_SNIPPET = `// Confidential web apps run this exchange server-side. Public browser/mobile
+// apps use PKCE and send code_verifier instead of ever receiving a client_secret.
 const tokenRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-token", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -51,7 +51,7 @@ const tokenRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions
     code,
     client_id: process.env.VERIFIEDLY_CLIENT_ID,
     client_secret: process.env.VERIFIEDLY_CLIENT_SECRET, // confidential clients
-    // code_verifier: pkceVerifier, // public clients using PKCE instead
+    // code_verifier: pkceVerifier, // public clients: use this instead
     redirect_uri: process.env.VERIFIEDLY_REDIRECT_URI,
   }),
 });
@@ -62,10 +62,9 @@ const userRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions/
 });
 const user = await userRes.json();
 // => {
-//   sub, username, display_name, avatar_url,
-//   verified, id_verified, verified_at, verification_kind,
-//   // only when consented via scope:
-//   email?, legal_name?, age_over_18?, age_over_21?, country?
+//   sub, username?, display_name?, avatar_url?,
+//   verified?, id_verified?, verified_at?, verification_kind?,
+//   email? // only when separately requested and approved
 // }`;
 
 const GSN_ENV_SNIPPET = `# GSN — development (.env.local) — CLIENT SIDE ONLY
@@ -128,17 +127,16 @@ const Developers = () => {
         <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Developers · Beta</span>
         <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight mb-3">Sign in with Verifiedly</h1>
         <p className="text-base text-muted-foreground mb-8">
-          Let people sign in to your app with their Verifiedly identity. You receive a stable
-          user id, handle, avatar, and — only if the user consents — their identity verification
-          status and age/country claims. The developer program is currently in beta; first-party
-          BrownGlobal integrations (GSN, Globalis) are the initial supported clients.
+          Let people sign in to your app with their Verifiedly account. Approved scopes can return a stable
+          user ID, public profile fields, and the narrow result of an identity check. The developer program
+          is currently in beta; first-party BrownGlobal integrations are the initial supported clients.
         </p>
 
         <Card className="p-6 mb-6">
           <h2 className="font-display font-semibold mb-3">1. Request a client</h2>
           <p className="text-sm text-muted-foreground mb-3">
             Email <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a> with your
-            app name, homepage URL, and one or more redirect URIs. We'll issue a <code className="text-xs bg-muted px-1 py-0.5 rounded">client_id</code> and <code className="text-xs bg-muted px-1 py-0.5 rounded">client_secret</code>.
+            app name, homepage URL, app type, and exact redirect URIs. Confidential server apps receive a <code className="text-xs bg-muted px-1 py-0.5 rounded">client_id</code> and one-time <code className="text-xs bg-muted px-1 py-0.5 rounded">client_secret</code>. Browser and mobile apps receive a public client ID and must use PKCE (S256).
           </p>
           <p className="text-xs text-muted-foreground">First-party Brown Global apps (GSN, Globalis) are pre-provisioned.</p>
         </Card>
@@ -166,9 +164,6 @@ const Developers = () => {
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> — username, display_name, avatar_url</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> — verified, id_verified, verified_at, verification_kind</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — email address (request only if needed)</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">age</code> — age_over_18 / age_over_21 booleans</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">legal_name</code> — verified legal name (only if user opted in on their profile)</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">country</code> — verified country code</li>
           </ul>
           <p className="text-xs text-muted-foreground mt-3">
             Verifiedly does not expose a "trust score", subscription tier, or endorsement signal via OAuth.
@@ -182,7 +177,6 @@ const Developers = () => {
             <li><strong>state</strong> is required on every authorize request and must be verified on the callback (CSRF).</li>
             <li>Public clients (SPA / mobile) must use <strong>Authorization Code + PKCE (S256)</strong> and no <code>client_secret</code>.</li>
             <li>Confidential clients exchange the code from a server; the <code>client_secret</code> must never appear in a <code>VITE_*</code> variable or browser bundle.</li>
-            <li>Authorize, token, and userinfo endpoints are rate-limited per client and per IP.</li>
             <li>Authorization codes are single-use and are consumed atomically at token exchange.</li>
           </ul>
         </Card>
@@ -197,7 +191,7 @@ const Developers = () => {
           <h2 className="font-display font-semibold mb-3">Step 1 — Get the client secret</h2>
           <p className="text-sm text-muted-foreground">
             Sign in as <code className="text-xs bg-muted px-1 py-0.5 rounded">support@verifiedly.app</code> and open{" "}
-            <Link to="/admin/verification" className="underline">/admin/verification</Link> → <strong>OAuth clients</strong> tab.
+            <Link to="/dashboard/admin#oauth-clients" className="underline">/dashboard/admin#oauth-clients</Link>.
             Find <strong>GSN</strong> (<code className="text-xs bg-muted px-1 py-0.5 rounded">gsn_app</code>) and click <strong>Rotate secret</strong>.
             Copy the plaintext value immediately — it is shown only once.
           </p>
@@ -220,7 +214,6 @@ const Developers = () => {
           <p className="text-sm text-muted-foreground mb-2">The <code>gsn_app</code> client accepts only these callback URLs:</p>
           <ul className="text-sm space-y-1 list-disc list-inside">
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://gsnmedia.app/auth/callback</code> (production)</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">https://globalismaps.lovable.app/auth/callback</code> (Globalis preview)</li>
             <li><code className="text-xs bg-muted px-1 py-0.5 rounded">http://localhost:8080/auth/callback</code> (development only)</li>
           </ul>
           <p className="text-xs text-muted-foreground mt-3">Need another URL (custom domain, staging)? Email support@verifiedly.app to add it.</p>
@@ -237,13 +230,10 @@ const Developers = () => {
         <Card className="p-6 mb-6">
           <h2 className="font-display font-semibold mb-3">Step 5 — Handle the callback</h2>
           <p className="text-sm text-muted-foreground">
-            A reference implementation lives at <Link to="/auth/callback" className="underline">/auth/callback</Link>{" "}
-            (<code className="text-xs bg-muted px-1 py-0.5 rounded">src/pages/AuthCallback.tsx</code>). It validates{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">state</code>, exchanges the{" "}
-            <code className="text-xs bg-muted px-1 py-0.5 rounded">code</code> for an access token server-side,
-            calls <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code>, and checks that the
-            returned scopes include <code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code>
-            and <code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> before signing the user in.
+            Your partner-app callback must compare <code className="text-xs bg-muted px-1 py-0.5 rounded">state</code> before doing anything else.
+            Confidential apps then send the code to their own server for exchange; public clients send the saved PKCE verifier.
+            After exchange, call <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code> and enforce the scopes your app requires.
+            The <Link to="/auth/callback" className="underline">Verifiedly reference callback</Link> intentionally contains no client secret.
           </p>
         </Card>
 

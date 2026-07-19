@@ -24,17 +24,19 @@ Deno.serve(async (req) => {
 
   const { data: p } = await admin
     .from("profiles")
-    .select("username, display_name, avatar_url, id_verified, verified_at, verified_country, verified_full_name, show_legal_name, verification_kind, verified_business_name")
+    .select("username, display_name, avatar_url, id_verified, verified_at, verification_kind")
     .eq("id", tok.user_id).maybeSingle();
   if (!p) return j({ error: "no_profile" }, 404);
 
   const scopes: string[] = tok.scopes || [];
   const payload: Record<string, unknown> = {
     sub: tok.user_id,
-    username: p.username,
-    display_name: p.display_name,
-    avatar_url: p.avatar_url,
   };
+  if (scopes.includes("profile")) {
+    payload.username = p.username;
+    payload.display_name = p.display_name;
+    payload.avatar_url = p.avatar_url;
+  }
   // Identity is earned through the configured identity check only. Subscription
   // or legacy account tiers are never exposed as identity signals.
   if (scopes.includes("identity")) {
@@ -42,21 +44,6 @@ Deno.serve(async (req) => {
     payload.id_verified = !!p.id_verified;
     payload.verified_at = p.verified_at || null;
     payload.verification_kind = p.verification_kind || "individual";
-    if (p.verified_business_name) payload.business_name = p.verified_business_name;
-  }
-  if (scopes.includes("legal_name") && p.show_legal_name) {
-    payload.legal_name = p.verified_full_name || null;
-  }
-  if (scopes.includes("age") && p.id_verified) {
-    const { data: over18 } = await admin.rpc("is_age_over", { _user_id: tok.user_id, _years: 18 });
-    payload.age_over_18 = !!over18;
-  }
-  if (scopes.includes("age.21") && p.id_verified) {
-    const { data: over21 } = await admin.rpc("is_age_over", { _user_id: tok.user_id, _years: 21 });
-    payload.age_over_21 = !!over21;
-  }
-  if ((scopes.includes("identity") || scopes.includes("country")) && p.verified_country) {
-    payload.country = p.verified_country;
   }
   if (scopes.includes("email")) {
     const { data: u } = await admin.auth.admin.getUserById(tok.user_id);

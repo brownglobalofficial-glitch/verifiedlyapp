@@ -7,28 +7,36 @@ import { ShieldCheck, ArrowRight } from "lucide-react";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
 const SCOPE_LABELS: Record<string, string> = {
-  openid:     "A stable user id",
-  profile:    "Your username, display name and avatar",
-  identity:   "Whether your identity is verified (and when)",
-  email:      "Your email address",
-  legal_name: "Your verified legal name",
-  age:        "Whether you are over 18",
-  "age.21":   "Whether you are over 21",
-  country:    "Your verified country",
+  openid: "A stable user ID",
+  profile: "Your username, display name, and avatar",
+  identity: "Whether your identity check passed, and when",
+  email: "Your email address",
 };
+
+interface OAuthClient {
+  name: string;
+  logo_url: string | null;
+  homepage_url: string | null;
+  redirect_uris: string[];
+  scopes: string[];
+  is_first_party: boolean;
+}
 
 const OAuthAuthorize = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [client, setClient] = useState<any>(null);
+  const [client, setClient] = useState<OAuthClient | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const client_id = params.get("client_id") || "";
-  const redirect_uri = params.get("redirect_uri") || "";
-  const scope = params.get("scope") || "profile";
+  const clientId = params.get("client_id") || "";
+  const redirectUri = params.get("redirect_uri") || "";
+  const responseType = params.get("response_type") || "";
+  const scope = params.get("scope") || "openid profile";
   const state = params.get("state") || "";
+  const codeChallenge = params.get("code_challenge") || "";
+  const codeChallengeMethod = params.get("code_challenge_method") || "";
 
   useEffect(() => {
     (async () => {
@@ -38,23 +46,50 @@ const OAuthAuthorize = () => {
         navigate(`/login?next=${next}`, { replace: true });
         return;
       }
-      if (!client_id || !redirect_uri) { setError("Missing client_id or redirect_uri"); setLoading(false); return; }
+      if (!clientId || !redirectUri || responseType !== "code" || state.length < 16) {
+        setError("A valid client_id, redirect_uri, response_type=code, and secure state value are required.");
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
-        .from("oauth_clients" as any)
+        .from("oauth_clients")
         .select("name, logo_url, homepage_url, redirect_uris, scopes, is_first_party")
-        .eq("client_id", client_id).eq("active", true).maybeSingle();
+        .eq("client_id", clientId).eq("active", true).maybeSingle();
       if (error || !data) { setError("Unknown application"); setLoading(false); return; }
-      const allowed = (data as any).redirect_uris || [];
-      if (!allowed.includes(redirect_uri)) { setError("This redirect URI isn't registered for this app."); setLoading(false); return; }
+      if (!data.redirect_uris.includes(redirectUri)) { setError("This redirect URI isn't registered for this app."); setLoading(false); return; }
+      const requestedScopes = scope.split(/\s+/).filter(Boolean);
+      if (requestedScopes.some((requestedScope) => !data.scopes.includes(requestedScope))) {
+        setError("This application requested a scope that is not approved.");
+        setLoading(false);
+        return;
+      }
+      if (codeChallenge && (codeChallengeMethod !== "S256" || !/^[A-Za-z0-9_-]{43,128}$/.test(codeChallenge))) {
+        setError("This application sent an invalid PKCE challenge.");
+        setLoading(false);
+        return;
+      }
+      if (!codeChallenge && codeChallengeMethod) {
+        setError("This application sent a PKCE method without a challenge.");
+        setLoading(false);
+        return;
+      }
       setClient(data);
       setLoading(false);
     })();
-  }, [client_id, redirect_uri, navigate]);
+  }, [clientId, codeChallenge, codeChallengeMethod, navigate, redirectUri, responseType, scope, state]);
 
   const allow = async () => {
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("oauth-authorize", {
-      body: { client_id, redirect_uri, scope, state },
+      body: {
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: responseType,
+        scope,
+        state,
+        code_challenge: codeChallenge || undefined,
+        code_challenge_method: codeChallenge ? codeChallengeMethod : undefined,
+      },
     });
     if (error || !data?.redirect_to) {
       setError(error?.message || "Could not authorize");
@@ -64,16 +99,16 @@ const OAuthAuthorize = () => {
   };
 
   const deny = () => {
-    const sep = redirect_uri.includes("?") ? "&" : "?";
-    window.location.href = `${redirect_uri}${sep}error=access_denied${state ? `&state=${encodeURIComponent(state)}` : ""}`;
+    const sep = redirectUri.includes("?") ? "&" : "?";
+    window.location.href = `${redirectUri}${sep}error=access_denied&state=${encodeURIComponent(state)}`;
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Loading…</div>;
-  if (error)   return (
+  if (error || !client) return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="p-6 max-w-md w-full text-center space-y-3">
         <p className="font-semibold">Authorization failed</p>
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">{error || "Unknown application"}</p>
         <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to dashboard</Button>
       </Card>
     </div>
@@ -122,7 +157,7 @@ const OAuthAuthorize = () => {
         </div>
 
         <p className="text-[10px] text-muted-foreground text-center mt-4">
-          You can revoke access anytime from your Verifiedly settings.
+          Approve only applications you recognize. Verifiedly shares only the fields listed above.
         </p>
       </Card>
     </div>

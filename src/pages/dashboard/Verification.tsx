@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import DocumentsComplianceNotice from "@/components/DocumentsComplianceNotice";
 import { useToast } from "@/hooks/use-toast";
 
 type IdentityStatus = "unverified" | "processing" | "requires_input" | "verified" | "canceled";
@@ -294,6 +295,8 @@ const Verification = () => {
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <p>The badge means identity checked—not background checked, credential verified, trustworthy, endorsed, or guaranteed by Verifiedly.</p>
         </div>
+
+        <DocumentsComplianceNotice />
       </div>
     </DashboardShell>
   );

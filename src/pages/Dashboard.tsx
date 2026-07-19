@@ -1,23 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Camera, Check, Copy, ExternalLink, GripVertical, MoreHorizontal, Plus, Share2, ShieldCheck } from "lucide-react";
+import { arrayMove } from "@dnd-kit/sortable";
+import { Camera, Check, Copy, ExternalLink, Share2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ProfileSectionsEditor from "@/components/profile/ProfileSectionsEditor";
@@ -25,13 +9,6 @@ import SocialIcon from "@/components/SocialIcon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -65,14 +42,6 @@ interface DashboardProfile {
   website: string | null;
   social_links: unknown;
   id_verified: boolean;
-}
-
-interface EditableLink {
-  id: string;
-  title: string;
-  url: string;
-  is_active: boolean;
-  sort_order: number;
 }
 
 const SOCIAL_FIELDS = [
@@ -117,67 +86,7 @@ const ensureFixedSections = (userId: string, sections: ProfileSection[]) => {
   return next;
 };
 
-const draftLink = (position: number): EditableLink => ({
-  id: `draft-link-${crypto.randomUUID()}`,
-  title: "",
-  url: "",
-  is_active: true,
-  sort_order: position,
-});
-
-const ensureLinkSlots = (links: EditableLink[], minimum = 3) => {
-  const next = [...links];
-  while (next.length < minimum) next.push(draftLink(next.length));
-  return next;
-};
-
 const inlineInputClass = "h-8 rounded-none border-0 border-b border-border/70 bg-transparent px-0 text-sm shadow-none placeholder:text-muted-foreground/50 focus-visible:border-foreground focus-visible:ring-0";
-
-const SortableLink = ({
-  link,
-  index,
-  onChange,
-  onRemove,
-}: {
-  link: EditableLink;
-  index: number;
-  onChange: (id: string, patch: Partial<EditableLink>) => void;
-  onRemove: (link: EditableLink) => void;
-}) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id });
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`relative rounded-2xl border px-10 py-3 transition ${link.is_active ? "border-border/80 bg-background" : "border-dashed border-border/70 bg-muted/20 opacity-70"} ${isDragging ? "z-30 shadow-lg" : ""}`}
-    >
-      <button
-        type="button"
-        className="absolute left-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 touch-none cursor-grab items-center justify-center rounded-full text-muted-foreground/55 transition hover:bg-muted hover:text-foreground active:cursor-grabbing"
-        aria-label={`Reorder link ${index + 1}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <Input aria-label={`Link ${index + 1} label`} value={link.title} onChange={(event) => onChange(link.id, { title: event.target.value })} placeholder={`Link ${index + 1} label`} maxLength={80} className="h-7 border-0 bg-transparent px-0 text-center text-sm font-semibold shadow-none placeholder:text-muted-foreground/55 focus-visible:ring-0" />
-      <Input aria-label={`Link ${index + 1} web address`} type="url" value={link.url} onChange={(event) => onChange(link.id, { url: event.target.value })} placeholder="https://example.com" maxLength={500} className="h-6 border-0 bg-transparent px-0 text-center text-[11px] text-muted-foreground shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0" />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label={`Options for link ${index + 1}`}>
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          <DropdownMenuItem onClick={() => onChange(link.id, { is_active: !link.is_active })}>{link.is_active ? "Hide" : "Show"}</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onRemove(link)}>Remove</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
-};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -185,17 +94,10 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<DashboardProfile | null>(null);
   const [form, setForm] = useState<ProfileForm>(emptyForm);
   const [sections, setSections] = useState<ProfileSection[]>([]);
-  const [links, setLinks] = useState<EditableLink[]>([]);
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
-  const [deletedLinkIds, setDeletedLinkIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileLinkCopied, setProfileLinkCopied] = useState(false);
-  const dragSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -204,7 +106,7 @@ const Dashboard = () => {
         return;
       }
 
-      const [{ data: currentProfile, error: profileError }, { data: currentSections }, { data: currentLinks }] = await Promise.all([
+      const [{ data: currentProfile, error: profileError }, { data: currentSections }] = await Promise.all([
         supabase
           .from("profiles")
           .select("id, username, display_name, category, account_type, avatar_url, website, social_links, id_verified")
@@ -215,11 +117,6 @@ const Dashboard = () => {
           .select("id, user_id, kind, position, data, is_public, created_at, updated_at")
           .eq("user_id", session.user.id)
           .order("position", { ascending: true }),
-        supabase
-          .from("bio_links")
-          .select("id, title, url, is_active, sort_order")
-          .eq("creator_id", session.user.id)
-          .order("sort_order", { ascending: true }),
       ]);
 
       if (profileError || !currentProfile) {
@@ -234,8 +131,6 @@ const Dashboard = () => {
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
       })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section));
-      const loadedLinks = (currentLinks || []) as EditableLink[];
-
       setProfile(currentProfile);
       setForm({
         accountType: currentProfile.account_type === "business" ? "business" : "creator",
@@ -245,7 +140,6 @@ const Dashboard = () => {
         socialLinks: { ...emptySocialLinks, ...socials },
       });
       setSections(ensureFixedSections(currentProfile.id, loadedSections));
-      setLinks(ensureLinkSlots(loadedLinks));
       setLoading(false);
     };
 
@@ -271,25 +165,6 @@ const Dashboard = () => {
 
   const changeVisibility = (section: ProfileSection, isPublic: boolean) => {
     setSections((current) => current.map((item) => item.id === section.id ? { ...item, is_public: isPublic } : item));
-  };
-
-  const changeLink = (id: string, patch: Partial<EditableLink>) => {
-    setLinks((current) => current.map((link) => link.id === id ? { ...link, ...patch } : link));
-  };
-
-  const removeLink = (link: EditableLink) => {
-    if (!link.id.startsWith("draft-link-")) setDeletedLinkIds((current) => [...current, link.id]);
-    setLinks((current) => ensureLinkSlots(current.filter((item) => item.id !== link.id)));
-  };
-
-  const reorderLinks = (event: DragEndEvent) => {
-    if (!event.over || event.active.id === event.over.id) return;
-    setLinks((current) => {
-      const oldIndex = current.findIndex((link) => link.id === event.active.id);
-      const newIndex = current.findIndex((link) => link.id === event.over?.id);
-      if (oldIndex < 0 || newIndex < 0) return current;
-      return arrayMove(current, oldIndex, newIndex).map((link, sortOrder) => ({ ...link, sort_order: sortOrder }));
-    });
   };
 
   const reorderSections = (kind: ProfileSectionKind, activeId: string, overId: string) => {
@@ -346,14 +221,6 @@ const Dashboard = () => {
       return;
     }
 
-    const completedLinks = links.filter((link) => link.title.trim() || link.url.trim());
-    for (const link of completedLinks) {
-      if (!link.title.trim() || !link.url.trim() || !safeExternalUrl(link.url.trim())) {
-        toast({ title: "Finish each link", description: "Every link needs a label and valid web address.", variant: "destructive" });
-        return;
-      }
-    }
-
     setSaving(true);
     try {
       const cleanSocials = Object.fromEntries(
@@ -400,34 +267,6 @@ const Dashboard = () => {
         }
       }
 
-      const emptyExistingLinkIds = links
-        .filter((link) => !link.id.startsWith("draft-link-") && !link.title.trim() && !link.url.trim())
-        .map((link) => link.id);
-      const linkIdsToDelete = [...new Set([...deletedLinkIds, ...emptyExistingLinkIds])];
-      if (linkIdsToDelete.length) {
-        const { error } = await supabase.from("bio_links").delete().in("id", linkIdsToDelete).eq("creator_id", profile.id);
-        if (error) throw error;
-      }
-
-      const savedLinks: EditableLink[] = [];
-      for (const [index, link] of completedLinks.entries()) {
-        const url = safeExternalUrl(link.url.trim())!;
-        const payload = { title: link.title.trim(), url, is_active: link.is_active, sort_order: index, icon: null };
-        if (link.id.startsWith("draft-link-")) {
-          const { data, error } = await supabase
-            .from("bio_links")
-            .insert({ creator_id: profile.id, ...payload })
-            .select("id, title, url, is_active, sort_order")
-            .single();
-          if (error || !data) throw error || new Error("Link was not saved");
-          savedLinks.push(data as EditableLink);
-        } else {
-          const { error } = await supabase.from("bio_links").update(payload).eq("id", link.id).eq("creator_id", profile.id);
-          if (error) throw error;
-          savedLinks.push({ ...link, ...payload });
-        }
-      }
-
       setProfile({
         ...profile,
         account_type: form.accountType,
@@ -437,9 +276,7 @@ const Dashboard = () => {
         social_links: cleanSocials,
       });
       setSections(ensureFixedSections(profile.id, savedSections));
-      setLinks(ensureLinkSlots(savedLinks));
       setDeletedSectionIds([]);
-      setDeletedLinkIds([]);
       toast({ title: "Profile saved" });
     } catch (error: unknown) {
       toast({ title: "Profile not saved", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
@@ -540,8 +377,8 @@ const Dashboard = () => {
             </div>
           </section>
 
-          <div className="grid gap-0 lg:grid-cols-[minmax(180px,0.8fr)_minmax(320px,1.45fr)_minmax(220px,1fr)]">
-            <aside className="order-2 border-t border-border/70 p-4 lg:order-1 lg:border-r lg:border-t-0 lg:p-5">
+          <div className="grid gap-0 lg:grid-cols-[minmax(220px,0.85fr)_minmax(0,2fr)]">
+            <aside className="border-b border-border/70 p-4 lg:border-b-0 lg:border-r lg:p-5">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Profile information</p>
               <div className="space-y-3">
                 <label className="block">
@@ -564,26 +401,10 @@ const Dashboard = () => {
               <p className="mt-4 text-[10px] leading-relaxed text-muted-foreground">Only add contact details you want shown publicly.</p>
             </aside>
 
-            <main className="order-1 min-w-0 p-4 sm:p-5 lg:order-2 lg:p-6">
-              <section id="links" className="mx-auto max-w-md">
-                <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Links</p>
-                <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={reorderLinks}>
-                  <SortableContext items={links.map((link) => link.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-2.5">
-                      {links.map((link, index) => <SortableLink key={link.id} link={link} index={index} onChange={changeLink} onRemove={removeLink} />)}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-                <Button type="button" variant="ghost" size="sm" className="mx-auto mt-2.5 flex h-7 gap-1 text-[11px] text-muted-foreground" onClick={() => setLinks((current) => [...current, draftLink(current.length)])}>
-                  <Plus className="h-3 w-3" /> Add link
-                </Button>
-              </section>
-            </main>
-
-            <aside className="order-3 border-t border-border/70 p-4 lg:border-l lg:border-t-0 lg:p-5">
+            <main className="min-w-0 p-4 sm:p-5 lg:p-6">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Profile details</p>
               <ProfileSectionsEditor sections={sections} onAdd={addSection} onChange={changeSection} onRemove={removeSection} onVisibilityChange={changeVisibility} onReorder={reorderSections} />
-            </aside>
+            </main>
           </div>
         </Card>
 

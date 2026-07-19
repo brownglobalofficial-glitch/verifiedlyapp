@@ -24,7 +24,7 @@ const Terms = () => (
       <p>You are responsible for accurate registration information, safeguarding your login, and activity under your account. Notify <strong>support@verifiedly.app</strong> promptly if you believe your account has been accessed without permission. We may require additional checks before restoring account access.</p>
 
       <h2>4. Public profiles</h2>
-      <p>Verifiedly lets individuals and organizations publish structured profiles containing names, photos or logos, links, work, education, credentials, licenses, awards, and accomplishments. You retain ownership of information you submit and grant us a limited, non-exclusive license to host, format, display, and distribute it as needed to operate the service.</p>
+      <p>Verifiedly lets individuals and organizations publish structured profiles containing names, photos or logos, official websites, social profiles, work, education, credentials, licenses, awards, and accomplishments. You retain ownership of information you submit and grant us a limited, non-exclusive license to host, format, display, and distribute it as needed to operate the service.</p>
       <p>You must have the right to publish everything you add. You may not impersonate another person or organization or submit deceptive, unlawful, infringing, defamatory, or privacy-invasive information.</p>
 
       <h2>5. Verifiedly Identity</h2>
