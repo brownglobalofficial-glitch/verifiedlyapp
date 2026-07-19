@@ -61,7 +61,7 @@ const UpgradePrompt = ({ currentTier, trigger }: UpgradePromptProps) => {
           <Zap className="w-8 h-8 mb-3" />
           <h3 className="font-display font-semibold text-lg">Upgrade Plan</h3>
           <p className="text-sm text-muted-foreground">
-            {currentTier === "free" ? "Get verified from $4.99/mo" : "Manage your subscription"}
+            {currentTier === "free" ? "Verify from $9.99 one-time" : "Manage your subscription"}
           </p>
         </Card>
       )}
