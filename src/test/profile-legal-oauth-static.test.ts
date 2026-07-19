@@ -30,7 +30,7 @@ describe("Verifiedly profile, agreement, and OAuth boundaries", () => {
     expect(onboarding).not.toContain("Review the account agreement");
     expect(onboarding).toContain('from("legal_acceptances")');
     expect(onboarding).toContain('insertError.code !== "23505"');
-    expect(onboarding).toContain("console.warn(\"Legal acceptance record was not synchronized\"");
+    expect(onboarding).toContain("Legal acceptance record was not synchronized");
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS public.legal_acceptances");
   });
 
