@@ -274,6 +274,65 @@ export type Database = {
         }
         Relationships: []
       }
+      credential_verifications: {
+        Row: {
+          created_at: string
+          credential_type: string
+          display_public: boolean
+          expires_at: string | null
+          id: string
+          provider: string
+          provider_name: string
+          section_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_issuer: string | null
+          verified_title: string
+        }
+        Insert: {
+          created_at?: string
+          credential_type: string
+          display_public?: boolean
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          provider_name?: string
+          section_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_issuer?: string | null
+          verified_title: string
+        }
+        Update: {
+          created_at?: string
+          credential_type?: string
+          display_public?: boolean
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          provider_name?: string
+          section_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_issuer?: string | null
+          verified_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_verifications_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: true
+            referencedRelation: "profile_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string
@@ -862,9 +921,14 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepts_verification_requests: boolean
           account_type: string | null
           avatar_url: string | null
           bio: string | null
+          business_verification_expires_at: string | null
+          business_verification_provider: string | null
+          business_verified: boolean
+          business_verified_at: string | null
           category: string | null
           comp_tier: string | null
           created_at: string
@@ -881,10 +945,14 @@ export type Database = {
           link_layout: string
           membership_button_label: string | null
           onboarding_completed: boolean | null
+          organization_country: string | null
+          organization_industry: string | null
+          organization_legal_name: string | null
           payout_status_public: boolean
           pro_identity_check_used: boolean
           referral_code: string | null
           referred_by: string | null
+          search_visible: boolean
           show_legal_name: boolean
           signal_breakdown_public: boolean
           social_links: Json | null
@@ -913,9 +981,14 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          business_verification_expires_at?: string | null
+          business_verification_provider?: string | null
+          business_verified?: boolean
+          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -932,10 +1005,14 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
+          organization_country?: string | null
+          organization_industry?: string | null
+          organization_legal_name?: string | null
           payout_status_public?: boolean
           pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          search_visible?: boolean
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
@@ -964,9 +1041,14 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          business_verification_expires_at?: string | null
+          business_verification_provider?: string | null
+          business_verified?: boolean
+          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -983,10 +1065,14 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
+          organization_country?: string | null
+          organization_industry?: string | null
+          organization_legal_name?: string | null
           payout_status_public?: boolean
           pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          search_visible?: boolean
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
