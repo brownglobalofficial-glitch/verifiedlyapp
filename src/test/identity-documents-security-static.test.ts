@@ -34,6 +34,14 @@ describe("Verifiedly Identity and Documents boundaries", () => {
     expect(migration).not.toMatch(/CREATE POLICY "Public docs are visible"/);
   });
 
+  it("restricts Documents to professional credential categories and rejects prohibited labels", () => {
+    expect(migration).toContain("documents_professional_credential_type");
+    expect(migration).toContain("documents_no_prohibited_labels");
+    expect(migration).toMatch(/social\[ _-\]\*security/);
+    expect(migration).toMatch(/1099/);
+    expect(migration).toMatch(/tax\[ _-\]\*\(document\|return\|form\)/);
+  });
+
   it("requires an active Documents plan for reads and uploads", () => {
     expect(migration).toMatch(/Subscribers read own document files[\s\S]*has_active_documents_access\(\)/);
     expect(migration).toMatch(/Subscribers upload own document files[\s\S]*has_active_documents_access\(\)/);

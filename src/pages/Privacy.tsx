@@ -33,7 +33,7 @@ const Privacy = () => (
 
       <h3>Private professional documents</h3>
       <p>If you subscribe to Verifiedly Documents, we collect the professional credential files you upload and metadata such as title, type, issuer, dates, original filename, file type, file size, storage path, and upload time. Files are stored in a private Supabase Storage bucket. They are not part of your public profile.</p>
-      <p>Do not upload payment cards, banking records, Social Security or national-identification numbers, health records, passports, government IDs, identity selfies, birth or marriage certificates, passwords, or authentication codes.</p>
+      <p>Do not upload payment cards, banking records, Social Security cards or numbers, national-identification numbers, tax documents (including W-2s and 1099s), health records, passports, government IDs, identity selfies, birth or marriage certificates, passwords, or authentication codes.</p>
 
       <h3>Secure-link and usage information</h3>
       <p>When you create a document link, we store a one-way hash of the link token, expiration, view limit, view count, revocation status, and access timestamps. If you add a password, we store a salted password-derived hash rather than the plaintext password. A recipient's successful access produces a short-lived file URL.</p>

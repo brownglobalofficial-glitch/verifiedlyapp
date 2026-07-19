@@ -34,7 +34,7 @@ const Terms = () => (
 
       <h2>6. Verifiedly Documents</h2>
       <p>Verifiedly Documents is an optional subscription priced at <strong>$4.99 per month</strong> or <strong>$39 per year</strong>. It provides private storage for professional credentials such as degrees, certifications, professional licenses, and awards, subject to file-type and size limits shown in the product.</p>
-      <p><strong>Do not upload</strong> payment cards, bank or investment records, Social Security or national-identification numbers, health records, passports, government IDs, identity selfies, passwords, authentication codes, birth or marriage certificates, or other information that the product identifies as prohibited. Verifiedly may remove prohibited content to protect users and the service.</p>
+      <p><strong>Do not upload</strong> payment cards, bank or investment records, Social Security cards or numbers, national-identification numbers, tax documents (including W-2s and 1099s), health records, passports, government IDs, identity selfies, passwords, authentication codes, birth or marriage certificates, or other information that the product identifies as prohibited. Verifiedly may remove prohibited content to protect users and the service.</p>
       <p>Files are not published on your public profile. If you create a secure link, anyone who has the link and any required password may access the selected file until the link expires, is revoked, or reaches its view limit. You are responsible for choosing recipients and sending passwords separately. No storage or sharing method is completely risk-free.</p>
 
       <h2>7. Payments, renewal, and cancellation</h2>

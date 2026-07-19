@@ -88,6 +88,8 @@ const defaultBilling: BillingRecord = {
 };
 
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const allowedDocumentCategories = new Set(["degree", "certification", "professional_license", "award", "other_credential"]);
+const prohibitedDocumentLabel = /(social[\s_-]*security|\bssn\b|\bw[\s_-]*2\b|\b1099\b|tax[\s_-]*(document|return|form))/i;
 const extensionFor = (file: File) => {
   if (file.type === "application/pdf") return "pdf";
   if (file.type === "image/png") return "png";
@@ -108,6 +110,13 @@ const formatType = (value: string) => ({
   award: "Award",
   other_credential: "Other credential",
 }[value] ?? "Credential");
+
+const shareStatus = (share: ShareRecord) => {
+  if (share.revoked_at) return "Revoked";
+  if (share.view_count >= share.max_views) return "View limit reached";
+  if (new Date(share.expires_at) <= new Date()) return "Expired";
+  return "Active";
+};
 
 const Documents = () => {
   const navigate = useNavigate();
@@ -140,6 +149,8 @@ const Documents = () => {
       || new Date(billing.documents_current_period_end) > new Date();
     return current && beforeEnd;
   }, [billing]);
+
+  const documentNames = useMemo(() => new Map(documents.map((document) => [document.id, document.title])), [documents]);
 
   const load = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -239,6 +250,18 @@ const Documents = () => {
 
   const upload = async () => {
     if (!file || !form.title.trim() || !userId || !active) return;
+    if (!allowedDocumentCategories.has(form.doc_type)) {
+      toast({ title: "Choose a professional credential type", variant: "destructive" });
+      return;
+    }
+    if (prohibitedDocumentLabel.test(`${form.title} ${file.name}`)) {
+      toast({
+        title: "This document is not allowed",
+        description: "Do not upload Social Security cards or numbers, W-2s, 1099s, or other tax documents.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!allowedTypes.has(file.type)) {
       toast({ title: "Unsupported file", description: "Use a PDF, JPG, PNG, or WebP file.", variant: "destructive" });
       return;
@@ -424,7 +447,7 @@ const Documents = () => {
 
           <div className="mx-auto mt-5 flex max-w-2xl items-start gap-3 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>Professional credentials only. Do not upload payment cards, bank records, Social Security numbers, health records, passports, government IDs, or other identity documents.</p>
+            <p>Professional credentials only. Do not upload payment cards, bank records, Social Security cards or numbers, tax documents (including W-2s and 1099s), health records, passports, government IDs, or other identity documents.</p>
           </div>
         </div>
       </DashboardShell>
@@ -549,9 +572,59 @@ const Documents = () => {
           </Card>
         </div>
 
+        <Card className="rounded-3xl p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-display text-lg font-bold">Link Sharing History</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Every 24-hour document link appears here, including expired and revoked links.</p>
+            </div>
+            <CalendarDays className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </div>
+
+          {shares.length === 0 ? (
+            <div className="rounded-2xl border border-dashed px-5 py-8 text-center">
+              <Link2 className="mx-auto h-5 w-5 text-muted-foreground" />
+              <p className="mt-2 text-sm font-medium">No shared links yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">Create a secure link from a document to begin the history.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border">
+              <table className="w-full min-w-[720px] text-left text-xs">
+                <thead className="border-b bg-muted/35 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Document</th>
+                    <th className="px-4 py-3 font-semibold">Created</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Expires</th>
+                    <th className="px-4 py-3 font-semibold">Opens</th>
+                    <th className="px-4 py-3 text-right font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {shares.map((share) => {
+                    const status = shareStatus(share);
+                    return (
+                      <tr key={share.id} className="transition-colors hover:bg-muted/20">
+                        <td className="max-w-56 truncate px-4 py-3 font-medium">{documentNames.get(share.document_id) || "Removed document"}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{new Date(share.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-medium ${status === "Active" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200" : "bg-muted text-muted-foreground"}`}>{status}</span></td>
+                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{new Date(share.expires_at).toLocaleString()}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{share.view_count}/{share.max_views}</td>
+                        <td className="px-4 py-3 text-right">
+                          {status === "Active" ? <Button variant="ghost" size="sm" className="h-7 rounded-lg px-2 text-xs" onClick={() => void revokeShare(share)}>Revoke</Button> : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
         <div className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>Verifiedly Documents is for professional credentials. Never upload payment cards, bank documents, Social Security numbers, health records, passports, or government IDs.</p>
+          <p>Verifiedly Documents is for professional credentials. Never upload payment cards, bank documents, Social Security cards or numbers, tax documents (including W-2s and 1099s), health records, passports, or government IDs.</p>
         </div>
       </div>
 

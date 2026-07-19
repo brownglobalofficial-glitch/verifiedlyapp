@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Camera, ExternalLink, GripVertical, MoreHorizontal, Plus, Share2, ShieldCheck } from "lucide-react";
+import { Camera, Check, Copy, ExternalLink, GripVertical, MoreHorizontal, Plus, Share2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ProfileSectionsEditor from "@/components/profile/ProfileSectionsEditor";
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -189,6 +190,7 @@ const Dashboard = () => {
   const [deletedLinkIds, setDeletedLinkIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [profileLinkCopied, setProfileLinkCopied] = useState(false);
   const dragSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -312,6 +314,17 @@ const Dashboard = () => {
     } catch (error: unknown) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       toast({ title: "Could not share the profile", variant: "destructive" });
+    }
+  };
+
+  const copyProfileLink = async () => {
+    if (!profile) return;
+    try {
+      await navigator.clipboard.writeText(`https://verifiedly.app/${profile.username}`);
+      setProfileLinkCopied(true);
+      window.setTimeout(() => setProfileLinkCopied(false), 1800);
+    } catch {
+      toast({ title: "Could not copy the profile link", variant: "destructive" });
     }
   };
 
@@ -444,8 +457,19 @@ const Dashboard = () => {
   return (
     <DashboardShell title="Edit profile" hidePreview>
       <div className="mx-auto max-w-6xl px-3 py-3 sm:px-5 sm:py-5">
-        <div className="sticky top-14 z-20 -mx-3 mb-3 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
-          <p className="min-w-0 truncate text-xs text-muted-foreground">verifiedly.app/{profile?.username}</p>
+        <div className="sticky top-14 z-20 -mx-3 mb-3 flex items-center justify-between gap-2 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-1">
+            <p className="min-w-0 truncate text-xs text-muted-foreground">verifiedly.app/{profile?.username}</p>
+            <Tooltip open={profileLinkCopied ? true : undefined}>
+              <TooltipTrigger asChild>
+                <Button type="button" onClick={() => void copyProfileLink()} variant="ghost" size="sm" className="h-7 shrink-0 gap-1 rounded-full px-2 text-[11px]" aria-label="Copy profile link">
+                  {profileLinkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  <span className="hidden md:inline">{profileLinkCopied ? "Copied!" : "Copy link"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs"><p>{profileLinkCopied ? "Copied!" : "Copy link"}</p></TooltipContent>
+            </Tooltip>
+          </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <Button type="button" onClick={() => void shareProfile()} variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs">
               <Share2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Share</span>
@@ -486,6 +510,11 @@ const Dashboard = () => {
                 className="h-9 min-w-0 border-0 bg-transparent p-0 text-center font-display text-2xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0"
               />
               {profile?.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0" label={form.accountType === "business" ? "Account holder verified" : "Identity verified"} />}
+              {!profile?.id_verified && (
+                <Link to="/dashboard/verification" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-muted-foreground/35 px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-foreground/50 hover:text-foreground" title="Get verified">
+                  <ShieldCheck className="h-3 w-3" /> Get verified
+                </Link>
+              )}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">@{profile?.username}</p>
 

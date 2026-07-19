@@ -217,8 +217,9 @@ const Verification = () => {
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Verifiedly Identity</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Identity verification</p>
                   <h1 className="mt-1 text-2xl font-display font-bold">Verify the person behind the profile</h1>
+                  <p className="mt-1 text-xs opacity-70">Powered by Stripe</p>
                 </div>
               </div>
             </div>

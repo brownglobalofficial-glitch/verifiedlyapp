@@ -64,7 +64,7 @@ const Pricing = () => (
       </div>
 
       <div className="mx-auto mt-6 max-w-3xl rounded-2xl bg-muted/50 p-4 text-center text-xs leading-relaxed text-muted-foreground">
-        Documents is for professional credentials only—not payment cards, banking records, government IDs, Social Security numbers, health records, or passports. Stripe collects identity evidence directly for Identity checks.
+        Documents is for professional credentials only—not payment cards, banking records, government IDs, Social Security cards or numbers, tax documents such as W-2s or 1099s, health records, or passports. Stripe collects identity evidence directly for Identity checks.
       </div>
     </div>
   </section>

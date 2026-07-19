@@ -106,6 +106,34 @@ ON CONFLICT (id) DO UPDATE SET
 ALTER TABLE public.documents
   ADD COLUMN IF NOT EXISTS original_filename TEXT;
 
+-- Documents is intentionally a professional-credential vault, not a general
+-- repository for high-risk identity, payroll, or tax records. NOT VALID keeps
+-- the migration safe for existing rows while enforcing both checks for every
+-- new or changed row.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'documents_professional_credential_type'
+  ) THEN
+    ALTER TABLE public.documents
+      ADD CONSTRAINT documents_professional_credential_type
+      CHECK (doc_type IN ('degree', 'certification', 'professional_license', 'award', 'other_credential'))
+      NOT VALID;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'documents_no_prohibited_labels'
+  ) THEN
+    ALTER TABLE public.documents
+      ADD CONSTRAINT documents_no_prohibited_labels
+      CHECK (
+        lower(coalesce(title, '') || ' ' || coalesce(original_filename, '')) !~
+        '(social[ _-]*security|(^|[^a-z0-9])ssn([^a-z0-9]|$)|(^|[^a-z0-9])w[ _-]*2([^a-z0-9]|$)|(^|[^a-z0-9])1099([^a-z0-9]|$)|tax[ _-]*(document|return|form))'
+      )
+      NOT VALID;
+  END IF;
+END $$;
+
 UPDATE public.documents SET is_public = false WHERE is_public = true;
 ALTER TABLE public.documents ALTER COLUMN is_public SET DEFAULT false;
 

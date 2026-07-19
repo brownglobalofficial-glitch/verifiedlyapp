@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import { Check, ChevronRight, ExternalLink, Globe, Mail, MapPin, Share2 } from "lucide-react";
+import { Check, ChevronRight, ExternalLink, Globe, Mail, MapPin, Share2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -105,6 +105,23 @@ const CreatorProfile = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [viewerUserId, setViewerUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) setViewerUserId(data.session?.user.id ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) setViewerUserId(session?.user.id ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!username) return;
@@ -168,10 +185,9 @@ const CreatorProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background px-4 py-16">
-        <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-3">
-          <Skeleton className="h-48 rounded-2xl" />
-          <div className="space-y-4"><Skeleton className="mx-auto h-24 w-24 rounded-full" /><Skeleton className="h-16 rounded-2xl" /><Skeleton className="h-16 rounded-2xl" /></div>
-          <Skeleton className="h-64 rounded-2xl" />
+        <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border bg-card lg:grid-cols-[minmax(240px,1fr)_minmax(0,2fr)]">
+          <div className="space-y-4 border-b p-6 lg:border-b-0 lg:border-r"><Skeleton className="mx-auto h-24 w-24 rounded-full" /><Skeleton className="mx-auto h-8 w-40 rounded-full" /><Skeleton className="h-40 rounded-2xl" /></div>
+          <div className="space-y-4 p-6"><Skeleton className="h-16 rounded-2xl" /><Skeleton className="h-16 rounded-2xl" /><Skeleton className="h-56 rounded-2xl" /></div>
         </div>
       </div>
     );
@@ -196,6 +212,7 @@ const CreatorProfile = () => {
   const description = profile.category ? `${displayName} · ${profile.category}` : `Official Verifiedly profile for ${displayName}.`;
   const profileUrl = `https://verifiedly.app/${profile.username}`;
   const shareImage = profile.avatar_url || new URL(logoMark, window.location.origin).href;
+  const isOwner = viewerUserId === profile.id;
 
   const shareProfile = async () => {
     try {
@@ -244,85 +261,92 @@ const CreatorProfile = () => {
             <Button type="button" onClick={() => void shareProfile()} size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full px-3 text-xs">
               {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />} {linkCopied ? "Copied" : "Share"}
             </Button>
-            <Button asChild size="sm" variant="outline" className={`h-8 rounded-full text-xs ${theme.card} ${theme.border}`}><Link to="/signup">Create profile</Link></Button>
+            <Button asChild size="sm" variant="outline" className={`h-8 rounded-full text-xs ${theme.card} ${theme.border}`}>
+              <Link to={isOwner ? "/dashboard" : "/signup"}>{isOwner ? "Edit profile" : "Create profile"}</Link>
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:py-8">
         <Card className={`overflow-hidden rounded-3xl shadow-sm ${theme.card} ${theme.border}`}>
-          <section className={`border-b px-5 py-6 text-center sm:px-7 sm:py-7 ${theme.border}`}>
-            <Avatar className="mx-auto h-24 w-24 bg-muted sm:h-28 sm:w-28">
-              {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
-              <AvatarFallback className="text-3xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-            </Avatar>
+          <div className="grid lg:grid-cols-[minmax(240px,1fr)_minmax(0,2fr)]">
+            <aside className={`border-b p-5 sm:p-7 lg:border-b-0 lg:border-r ${theme.border}`}>
+              <div className="text-center">
+                <Avatar className="mx-auto h-24 w-24 bg-muted sm:h-28 sm:w-28">
+                  {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
+                  <AvatarFallback className="text-3xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
 
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
-              {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label={isOrganization ? "Account holder verified" : "Identity verified"} />}
-            </div>
-            <p className={`mt-1 text-xs ${theme.muted}`}>@{profile.username}</p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+                  {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label={isOrganization ? "Account holder verified" : "Identity verified"} />}
+                  {isOwner && !profile.id_verified && (
+                    <Link to="/dashboard/verification" className={`inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-1 text-[10px] font-medium transition hover:opacity-70 ${theme.muted} ${theme.border}`} title="Get verified">
+                      <ShieldCheck className="h-3 w-3" /> Get verified
+                    </Link>
+                  )}
+                </div>
+                <p className={`mt-1 text-xs ${theme.muted}`}>@{profile.username}</p>
 
-            {!!socials.length && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2" aria-label="Social profiles">
-                {socials.map(({ platform, url }) => (
-                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 hover:opacity-75 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}>
-                    <SocialIcon platform={platform} className="h-3.5 w-3.5" />
-                  </a>
-                ))}
+                {!!socials.length && (
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2" aria-label="Social profiles">
+                    {socials.map(({ platform, url }) => (
+                      <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 hover:opacity-75 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}>
+                        <SocialIcon platform={platform} className="h-3.5 w-3.5" />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </section>
 
-          <div className="grid lg:grid-cols-[minmax(180px,0.8fr)_minmax(320px,1.45fr)_minmax(220px,1fr)]">
-            <aside className={`order-2 border-t p-5 lg:order-1 lg:border-r lg:border-t-0 lg:p-6 ${theme.border}`}>
-              <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Profile information</h2>
-              <div className="space-y-3 text-xs">
-                {profile.category && <p className="text-sm font-medium">{profile.category}</p>}
-                {location && <div className="flex items-start gap-2"><MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>{location}</span></div>}
-                {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 transition hover:opacity-70"><Mail className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">{publicEmail}</span></a>}
-                {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 transition hover:opacity-70"><Globe className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">Website</span></a>}
-                {!profile.category && !location && !publicEmail && !website && <p className={theme.muted}>No public profile information yet.</p>}
-              </div>
+              <section className={`mt-6 rounded-2xl border p-4 text-left ${theme.border}`}>
+                <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Profile information</h2>
+                <div className="space-y-3 text-xs">
+                  {profile.category && <p className="text-sm font-medium">{profile.category}</p>}
+                  {location && <div className="flex items-start gap-2"><MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>{location}</span></div>}
+                  {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 transition hover:opacity-70"><Mail className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">{publicEmail}</span></a>}
+                  {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 transition hover:opacity-70"><Globe className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">Website</span></a>}
+                  {!profile.category && !location && !publicEmail && !website && <p className={theme.muted}>No public profile information yet.</p>}
+                </div>
+              </section>
             </aside>
 
-            <section className={`order-1 min-w-0 p-5 text-center sm:p-6 lg:order-2 lg:border-r ${theme.border}`}>
-              <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Links</h2>
+            <div className="min-w-0 p-5 sm:p-7">
               {!!links.length && (
-                <div className="mx-auto max-w-md space-y-2.5" aria-label="Links">
-                  {links.map((link) => {
-                    const url = safeExternalUrl(link.url);
-                    if (!url) return null;
-                    return (
-                      <a key={link.id} href={url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => void supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id })}>
-                        <div className={`flex min-h-14 items-center rounded-2xl border px-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${theme.card} ${theme.border}`}>
-                          <span className="flex-1 text-sm font-semibold">{link.title}</span>
-                          <ChevronRight className={`h-4 w-4 ${theme.muted}`} />
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
+                <section className="mb-7" aria-label="Links">
+                  <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>Links</h2>
+                  <div className="space-y-2.5">
+                    {links.map((link) => {
+                      const url = safeExternalUrl(link.url);
+                      if (!url) return null;
+                      return (
+                        <a key={link.id} href={url} target="_blank" rel="noopener noreferrer" className="block" onClick={() => void supabase.from("link_clicks").insert({ link_id: link.id, creator_id: profile.id })}>
+                          <div className={`flex min-h-14 items-center rounded-2xl border px-4 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${theme.card} ${theme.border}`}>
+                            <span className="flex-1 text-sm font-semibold">{link.title}</span>
+                            <ChevronRight className={`h-4 w-4 ${theme.muted}`} />
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
 
-              {!links.length && <p className={`text-xs ${theme.muted}`}>This profile has no public links yet.</p>}
-            </section>
-
-            <aside className="order-3 p-5 lg:p-6" aria-label="Profile details">
-              <div className="divide-y divide-border/60">
+              <div className="space-y-6" aria-label="Profile details">
                 {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
                   const entries = sections.filter((section) => section.kind === kind);
                   if (!entries.length) return null;
                   return (
-                    <section key={kind} className="py-4 first:pt-0 last:pb-0">
-                      <h2 className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>{PROFILE_SECTION_DEFINITIONS[kind].label}</h2>
-                      <div className="space-y-3">
+                    <section key={kind}>
+                      <h2 className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] ${theme.muted}`}>{PROFILE_SECTION_DEFINITIONS[kind].label}</h2>
+                      <div className="divide-y divide-border/60 rounded-2xl border px-4 sm:px-5">
                         {entries.map((section) => {
                           const heading = sectionHeading(section);
                           const meta = sectionMeta(section);
                           const url = safeExternalUrl(section.data?.url);
                           return (
-                            <article key={section.id}>
+                            <article key={section.id} className="py-4">
                               <div className="flex items-start gap-2">
                                 <div className="min-w-0 flex-1">
                                   <h3 className="text-sm font-semibold leading-snug">{heading}</h3>
@@ -337,9 +361,9 @@ const CreatorProfile = () => {
                     </section>
                   );
                 })}
-                {!sections.length && <p className={`text-xs ${theme.muted}`}>No public credentials or experience yet.</p>}
+                {!links.length && !sections.length && <p className={`py-10 text-center text-xs ${theme.muted}`}>This profile is ready for links, experience, and credentials.</p>}
               </div>
-            </aside>
+            </div>
           </div>
         </Card>
 
