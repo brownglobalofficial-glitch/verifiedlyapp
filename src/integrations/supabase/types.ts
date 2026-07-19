@@ -118,6 +118,33 @@ export type Database = {
         }
         Relationships: []
       }
+      business_verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaign_applications: {
         Row: {
           campaign_id: string
@@ -329,6 +356,56 @@ export type Database = {
             columns: ["section_id"]
             isOneToOne: true
             referencedRelation: "profile_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_share_links: {
+        Row: {
+          created_at: string
+          document_id: string
+          expires_at: string
+          id: string
+          max_views: number | null
+          owner_id: string
+          password_hash: string | null
+          revoked_at: string | null
+          token_hash: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          expires_at: string
+          id?: string
+          max_views?: number | null
+          owner_id: string
+          password_hash?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          expires_at?: string
+          id?: string
+          max_views?: number | null
+          owner_id?: string
+          password_hash?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_share_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -1631,6 +1708,54 @@ export type Database = {
         }
         Relationships: []
       }
+      verifiedly_billing: {
+        Row: {
+          created_at: string
+          documents_cancel_at_period_end: boolean
+          documents_current_period_end: string | null
+          documents_interval: string | null
+          documents_status: string
+          identity_attempt_count: number
+          identity_last_session_id: string | null
+          identity_status: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+          verification_checkout_session_id: string | null
+          verification_payment_status: string
+        }
+        Insert: {
+          created_at?: string
+          documents_cancel_at_period_end?: boolean
+          documents_current_period_end?: string | null
+          documents_interval?: string | null
+          documents_status?: string
+          identity_attempt_count?: number
+          identity_last_session_id?: string | null
+          identity_status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+          verification_checkout_session_id?: string | null
+          verification_payment_status?: string
+        }
+        Update: {
+          created_at?: string
+          documents_cancel_at_period_end?: boolean
+          documents_current_period_end?: string | null
+          documents_interval?: string | null
+          documents_status?: string
+          identity_attempt_count?: number
+          identity_last_session_id?: string | null
+          identity_status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string
+          verification_checkout_session_id?: string | null
+          verification_payment_status?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           event_type: string
@@ -1733,6 +1858,11 @@ export type Database = {
       recompute_trust_score: { Args: { _user_id: string }; Returns: number }
       record_stripe_agreement: {
         Args: { _context: string; _ip: string; _user_agent: string }
+        Returns: string
+      }
+      request_business_verification: { Args: never; Returns: string }
+      request_credential_verification: {
+        Args: { _credential_type: string; _section_id: string }
         Returns: string
       }
     }
