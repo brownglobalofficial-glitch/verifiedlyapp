@@ -13,6 +13,7 @@ import {
   MapPin,
   Share2,
   ShieldCheck,
+  Link as LinkIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,18 +34,20 @@ import {
   type ProfileSectionKind,
 } from "@/lib/profile-sections";
 
-const PUBLIC_PROFILE_FIELDS = "id, username, display_name, category, account_type, avatar_url, website, social_links, theme_color, id_verified, verified_at, updated_at, organization_legal_name, organization_industry, organization_country, business_verified, business_verified_at, business_verification_expires_at, business_verification_provider";
+const PUBLIC_PROFILE_FIELDS = "id, username, display_name, bio, category, account_type, avatar_url, website, social_links, theme_color, link_layout, id_verified, verified_at, updated_at, organization_legal_name, organization_industry, organization_country, business_verified, business_verified_at, business_verification_expires_at, business_verification_provider";
 
 interface PublicProfile {
   id: string;
   username: string;
   display_name: string | null;
+  bio: string | null;
   category: string | null;
   account_type: string | null;
   avatar_url: string | null;
   website: string | null;
   social_links: unknown;
   theme_color: string | null;
+  link_layout: string | null;
   id_verified: boolean;
   verified_at: string | null;
   updated_at: string;
@@ -55,6 +58,14 @@ interface PublicProfile {
   business_verified_at: string | null;
   business_verification_expires_at: string | null;
   business_verification_provider: string | null;
+}
+
+interface FeaturedLink {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail_url: string | null;
+  icon: string | null;
 }
 
 const THEME_CLASSES: Record<string, { page: string; card: string; muted: string; border: string; soft: string }> = {
@@ -124,6 +135,7 @@ const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [sections, setSections] = useState<ProfileSection[]>([]);
+  const [featuredLinks, setFeaturedLinks] = useState<FeaturedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -162,12 +174,20 @@ const CreatorProfile = () => {
         .eq("is_public", true)
         .order("position", { ascending: true });
 
+      const { data: currentLinks } = await supabase
+        .from("bio_links")
+        .select("id, title, url, thumbnail_url, icon, is_active, sort_order")
+        .eq("creator_id", currentProfile.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
       setProfile(currentProfile as PublicProfile);
       setSections((currentSections || []).map((section) => ({
         ...section,
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
-      })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section)));
+      })).filter((section) => (isProfileEditorSectionKind(section.kind) || section.kind === "project") && hasVisibleSectionData(section)));
+      setFeaturedLinks((currentLinks || []) as FeaturedLink[]);
       setLoading(false);
       void supabase.from("page_views").insert({ creator_id: currentProfile.id });
     };
