@@ -35,14 +35,14 @@ export interface SectionDefinition {
 export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefinition> = {
   about: {
     label: "About",
-    description: "A fuller introduction than the one-line bio under your name.",
+    description: "A fuller introduction than the one-line title under your name.",
     fields: [
       { key: "text", label: "About", placeholder: "Share what you do and what matters to you.", type: "textarea" },
     ],
   },
   work: {
     label: "Work",
-    description: "A current or previous role.",
+    description: "A current or previous professional role.",
     fields: [
       { key: "role", label: "Role", placeholder: "Founder, player, designer…" },
       { key: "organization", label: "Organization", placeholder: "Organization name" },
@@ -53,7 +53,7 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
   },
   education: {
     label: "Education",
-    description: "A school, program, course, or training experience.",
+    description: "A school, degree, program, course, or training experience.",
     fields: [
       { key: "school", label: "School or program", placeholder: "School or program name" },
       { key: "program", label: "Area of study", placeholder: "Program, degree, or subject" },
@@ -72,14 +72,14 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
     ],
   },
   credential: {
-    label: "Credentials & licenses",
-    description: "A certificate, license, degree, or other qualification.",
+    label: "Licenses & certifications",
+    description: "A professional license, certification, or formal qualification.",
     fields: [
-      { key: "name", label: "Credential", placeholder: "Credential name" },
+      { key: "name", label: "License or certification", placeholder: "License or certification name" },
       { key: "issuer", label: "Issuer", placeholder: "Issuing organization" },
       { key: "issued", label: "Issued", placeholder: "2025" },
       { key: "expires", label: "Expires", placeholder: "Optional" },
-      { key: "url", label: "Verification or official link", placeholder: "https://…", type: "url" },
+      { key: "url", label: "Official link", placeholder: "https://…", type: "url" },
     ],
   },
   project: {
@@ -96,14 +96,12 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
 
 export const PROFILE_SECTION_KINDS = Object.keys(PROFILE_SECTION_DEFINITIONS) as ProfileSectionKind[];
 
-// About and project records remain supported so existing data is never removed.
-// The current official-profile experience intentionally keeps only these concise,
-// structured categories visible.
+// Legacy section types remain supported so previously entered data is never deleted.
+// Official profiles intentionally use only the essential structured categories below.
 export const PROFILE_EDITOR_SECTION_KINDS: ProfileSectionKind[] = [
   "work",
   "education",
   "credential",
-  "accomplishment",
 ];
 
 export const isProfileEditorSectionKind = (kind: ProfileSectionKind) =>
