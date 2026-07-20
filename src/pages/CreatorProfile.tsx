@@ -279,6 +279,8 @@ const CreatorProfile = () => {
             <p className={`mt-1 text-sm ${theme.muted}`}>@{profile.username}</p>
             {location && <p className={`mt-3 inline-flex items-center gap-1.5 text-xs ${theme.muted}`}><MapPin className="h-3.5 w-3.5" />{location}</p>}
 
+            {profile.bio && <p className={`mx-auto mt-4 max-w-xl whitespace-pre-line text-sm leading-relaxed sm:text-[15px]`}>{profile.bio}</p>}
+
             {hasOfficialLinks && (
               <div className="mx-auto mt-6 max-w-2xl">
                 <p className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.muted}`}>Official links</p>
@@ -299,6 +301,53 @@ const CreatorProfile = () => {
             </section>
           )}
         </Card>
+
+        {featuredLinks.length > 0 && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.16em]">Featured links</h2>
+              <span className={`text-[11px] ${theme.muted}`}>{featuredLinks.length} {featuredLinks.length === 1 ? "link" : "links"}</span>
+            </div>
+            <div className={`grid gap-3 ${profile.link_layout === "compact" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
+              {featuredLinks.map((link) => {
+                const href = safeExternalUrl(link.url);
+                if (!href) return null;
+                return (
+                  <a
+                    key={link.id}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`group flex items-center gap-3 rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${theme.card} ${theme.border}`}
+                  >
+                    {link.thumbnail_url ? (
+                      <img src={link.thumbnail_url} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${theme.soft}`}><LinkIcon className="h-4 w-4" /></span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{link.title}</span>
+                    <ExternalLink className={`h-4 w-4 shrink-0 transition group-hover:translate-x-0.5 ${theme.muted}`} />
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {(() => {
+          const aboutSection = sections.find((s) => s.kind === "about");
+          const aboutText = String(aboutSection?.data?.text || "").trim();
+          if (!aboutText) return null;
+          return (
+            <Card className={`mt-6 rounded-3xl border p-5 shadow-sm sm:p-6 ${theme.card} ${theme.border}`}>
+              <div className="mb-3 flex items-center gap-3">
+                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${theme.soft}`}><FileBadge className="h-5 w-5" /></span>
+                <h2 className="font-display text-lg font-bold">About</h2>
+              </div>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{aboutText}</p>
+            </Card>
+          );
+        })()}
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
