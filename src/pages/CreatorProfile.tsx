@@ -90,6 +90,7 @@ const sectionHeading = (section: ProfileSection) => {
     case "education": return data.program || data.school || "Education";
     case "accomplishment": return data.title || "Accomplishment";
     case "credential": return data.name || "Credential";
+    case "project": return data.name || "Project";
     default: return "Profile detail";
   }
 };
@@ -102,6 +103,7 @@ const sectionMeta = (section: ProfileSection) => {
     case "education": return [data.school, dateRange].filter(Boolean).join(" · ");
     case "accomplishment": return data.date || "";
     case "credential": return [data.issuer, dateRange].filter(Boolean).join(" · ");
+    case "project": return [data.role, data.description].filter(Boolean).join(" · ");
     default: return "";
   }
 };
