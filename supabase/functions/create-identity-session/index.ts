@@ -26,14 +26,15 @@ serve(async (req) => {
     const verificationKind = "individual";
 
     const { data: profile } = await admin.from("profiles")
-      .select("verification_status, id_verified, stripe_identity_session_id")
+      .select("verification_status, id_verified, stripe_identity_session_id, is_pro, is_elite, pro_identity_check_used")
       .eq("id", user.id).maybeSingle();
     if (!profile) throw new Error("Profile not found");
     if (profile.id_verified) throw new Error("Already verified");
 
     const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin");
     const isAdmin = !!(roles && roles.length > 0);
-    if (!isAdmin && profile.verification_status !== "paid" && profile.verification_status !== "processing") {
+    const proIncludedAvailable = (profile.is_pro || profile.is_elite) && !profile.pro_identity_check_used;
+    if (!isAdmin && !proIncludedAvailable && profile.verification_status !== "paid" && profile.verification_status !== "processing") {
       throw new Error("Payment required. Please complete the verification fee first.");
     }
 
@@ -66,6 +67,9 @@ serve(async (req) => {
       verification_status: "processing",
       verification_kind: verificationKind,
     };
+    // Mark the Pro included check as consumed the moment we open a new session
+    // on Pro's dime. Reuses above don't count.
+    if (proIncludedAvailable && !isAdmin) update.pro_identity_check_used = true;
 
     await admin.from("profiles").update(update).eq("id", user.id);
 

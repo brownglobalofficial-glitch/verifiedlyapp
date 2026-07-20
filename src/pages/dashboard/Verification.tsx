@@ -20,7 +20,7 @@ const Verification = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { navigate("/login"); return; }
     const { data: p } = await supabase.from("profiles")
-      .select("id, username, verification_status, id_verified, verified_at, verified_full_name, verified_country, show_legal_name")
+      .select("id, username, verification_status, id_verified, verified_at, verified_full_name, verified_country, show_legal_name, is_pro, pro_identity_check_used")
       .eq("id", session.user.id).maybeSingle();
     setProfile(p);
     setLoading(false);
@@ -55,6 +55,11 @@ const Verification = () => {
     try {
       const { data, error } = await supabase.functions.invoke("create-identity-checkout");
       if (error) throw error;
+      if (data?.pro_bypass) {
+        // Pro subscriber — skip Checkout and go straight to the ID scan.
+        await startIdScan();
+        return;
+      }
       if (data?.url) window.location.href = data.url;
     } catch (e: any) {
       toast({ title: "Couldn't start", description: e.message || String(e), variant: "destructive" });
@@ -85,7 +90,9 @@ const Verification = () => {
 
   const status = profile?.verification_status || "unverified";
   const isVerified = !!profile?.id_verified;
-  const priceLabel = "$12.99";
+  const isPro = !!profile?.is_pro;
+  const proIncludedAvailable = isPro && !profile?.pro_identity_check_used;
+  const priceLabel = proIncludedAvailable ? "Included with Pro" : "$4.99";
 
   return (
     <DashboardShell title="Verification">
@@ -173,13 +180,28 @@ const Verification = () => {
           </Card>
         )}
 
+        {/* Pro perk callout */}
+        {!isVerified && isPro && proIncludedAvailable && (
+          <Card className="p-4 bg-foreground text-background">
+            <div className="flex gap-2 items-start">
+              <Sparkles className="w-4 h-4 mt-0.5 shrink-0" />
+              <p className="text-sm">You're on Pro — your subscription includes one identity check. We'll skip the fee and take you straight to the ID scan.</p>
+            </div>
+          </Card>
+        )}
+        {!isVerified && isPro && !proIncludedAvailable && (
+          <Card className="p-4 bg-muted">
+            <p className="text-xs text-muted-foreground">Your Pro plan's one included identity check has already been used. Additional attempts cost $4.99. Contact support if you believe this is a mistake.</p>
+          </Card>
+        )}
+
         {/* How it works */}
         {!isVerified && (
           <Card className="p-6">
             <h2 className="font-display font-semibold mb-4">How it works</h2>
             <ol className="space-y-3 text-sm">
               <li className="flex gap-3"><span className="w-6 h-6 rounded-full bg-foreground text-background text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
-                <div><p className="font-medium">Pay a one-time $12.99 verification fee</p><p className="text-xs text-muted-foreground">Covers Stripe Identity + a small platform fee. Non-refundable once the ID scan runs — you're paying for the check attempt, not a guaranteed badge.</p></div>
+                <div><p className="font-medium">{proIncludedAvailable ? "Included with your Pro plan" : "Pay a one-time $4.99 verification fee"}</p><p className="text-xs text-muted-foreground">{proIncludedAvailable ? "Pro includes one identity check when it's first activated. Additional checks cost $4.99." : "Covers Stripe Identity + a small platform fee. Non-refundable once the ID scan runs — you're paying for the check attempt, not a guaranteed badge."}</p></div>
               </li>
               <li className="flex gap-3"><span className="w-6 h-6 rounded-full bg-foreground text-background text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
                 <div><p className="font-medium">Scan your government ID + a quick selfie</p><p className="text-xs text-muted-foreground">Handled entirely by Stripe Identity — takes about 2 minutes on your phone.</p></div>

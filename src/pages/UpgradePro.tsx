@@ -82,16 +82,17 @@ const UpgradePro = () => {
   };
 
   const freeFeatures = [
-    "Public identity profile + link-in-bio",
-    "Custom sections: about, work, education, accomplishments",
-    "Sign in with Verifiedly (OAuth) for partner apps",
-    "$12.99 one-time identity check available anytime",
+    "Public profile + link-in-bio",
+    "Sell digital products & accept tips",
+    "10% platform fee on earnings",
+    "$4.99 identity check available anytime",
   ];
   const proFeatures = [
     "Everything in Free",
-    "Private document vault (diplomas, certifications, licenses)",
-    "Custom domain on your profile",
-    "Advanced profile analytics",
+    "3% platform fee (down from 10%)",
+    "One identity check included on activation",
+    "Paid subscriptions + exclusive content",
+    "Advanced analytics",
     "Priority support",
   ];
 
@@ -107,18 +108,24 @@ const UpgradePro = () => {
 
       <div className="container mx-auto max-w-4xl px-4 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight">More on your verified profile</h1>
+          <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight">Keep more of every sale</h1>
           <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
-            A private vault for your credentials, a custom domain on your profile, deeper analytics, and priority support. The verified badge itself is only granted through a successful Stripe Identity check ($12.99, one-time).
+            Drop your Verifiedly platform fee from 10% to 3%, and get one identity check included when Pro is first activated. The verified badge is only granted through Stripe Identity.
           </p>
         </div>
+
+        {/* Savings example */}
+        <Card className="p-5 mb-8 bg-muted/40">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">If you sell $1,000/mo</p>
+          <p className="text-sm">Free keeps <span className="font-display font-bold">$900</span> (before Stripe fees) · Pro keeps <span className="font-display font-bold">$970</span> minus the $9.99 subscription = <span className="font-display font-bold">$960.01</span>. Stripe processing fees are separate.</p>
+        </Card>
 
         <div className="grid md:grid-cols-2 gap-5">
           {/* Free */}
           <Card className={`p-6 flex flex-col ${currentTier === "free" ? "border-2 border-foreground" : ""}`}>
             <h3 className="font-display font-bold text-xl mb-1">Free</h3>
             <p className="text-3xl font-display font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Public profile + link-in-bio</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">10% platform fee</p>
             <ul className="space-y-2 text-sm flex-1">
               {freeFeatures.map((f) => (
                 <li key={f} className="flex items-start gap-2"><Check className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" /> {f}</li>
@@ -133,7 +140,7 @@ const UpgradePro = () => {
           <Card className={`p-6 flex flex-col bg-foreground text-background ${currentTier === "pro" ? "ring-2 ring-foreground/30" : ""}`}>
             <h3 className="font-display font-bold text-xl mb-1">Verifiedly Pro</h3>
             <p className="text-3xl font-display font-bold">${STRIPE_TIERS.pro.price}<span className="text-sm font-normal opacity-60">/mo</span></p>
-            <p className="text-xs opacity-60 mt-1 mb-4">Document vault + custom domain</p>
+            <p className="text-xs opacity-60 mt-1 mb-4">3% platform fee</p>
             <ul className="space-y-2 text-sm flex-1">
               {proFeatures.map((f) => (
                 <li key={f} className="flex items-start gap-2"><Check className="w-4 h-4 flex-shrink-0 mt-0.5" /> {f}</li>
@@ -154,7 +161,7 @@ const UpgradePro = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Cancel anytime. The $12.99 identity check is billed separately when you verify.
+          Stripe processing fees (~2.9% + 30¢) apply on both plans. Cancel anytime.
         </p>
 
         <Card className="mt-10 p-5 max-w-md mx-auto">

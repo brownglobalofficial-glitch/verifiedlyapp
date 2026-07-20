@@ -47,7 +47,6 @@ const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Purchases = lazy(() => import("./pages/dashboard/Purchases"));
 const Pricing = lazy(() => import("./pages/Pricing"));
-const Documents = lazy(() => import("./pages/dashboard/Documents"));
 
 const queryClient = new QueryClient();
 
@@ -179,7 +178,6 @@ const App = () => (
             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
             <Route path="/dashboard/monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
             <Route path="/dashboard/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
-            <Route path="/dashboard/documents" element={<AuthGuard><Documents /></AuthGuard>} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<Membership />} />
             <Route path="/:username/p/:productId" element={<Product />} />
