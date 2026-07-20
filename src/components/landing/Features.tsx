@@ -1,36 +1,36 @@
 import { motion } from "framer-motion";
-import { Link2, DollarSign, ShoppingBag, Users, BadgeCheck, Video } from "lucide-react";
+import { BadgeCheck, BriefcaseBusiness, FileLock2, KeyRound, Share2, UserRound } from "lucide-react";
 
 const features = [
   {
-    icon: Link2,
-    title: "Link in Bio",
-    description: "Your custom profile page with all your social links, bio, and content in one place.",
+    icon: UserRound,
+    title: "Official Profile",
+    description: "A focused public identity page for an individual or organization—without posts or clutter.",
   },
   {
-    icon: DollarSign,
-    title: "Tips & Donations",
-    description: "Let fans and customers support you directly with tips via Stripe. Get paid instantly.",
-  },
-  {
-    icon: Users,
-    title: "Subscriptions",
-    description: "Create recurring subscription tiers with custom perks for exclusive content access.",
-  },
-  {
-    icon: ShoppingBag,
-    title: "Digital Products",
-    description: "Sell e-books, presets, templates, courses, game assets, and more on your profile.",
-  },
-  {
-    icon: Video,
-    title: "Videos & Live Streams",
-    description: "Upload subscriber-only videos, go live on YouTube/Twitch/Kick, and manage exclusive content.",
+    icon: BriefcaseBusiness,
+    title: "Structured Experience",
+    description: "Present work, education, credentials, licenses, awards, and accomplishments in a consistent format.",
   },
   {
     icon: BadgeCheck,
-    title: "Get Verified",
-    description: "Get your verification badge, lower fees, and boost visibility across the platform.",
+    title: "Identity Verification",
+    description: "Eligible adults can complete a separate Stripe-hosted ID and selfie check for a clearly labeled badge.",
+  },
+  {
+    icon: FileLock2,
+    title: "Private Documents",
+    description: "Keep permitted professional credentials separate from the public profile in private storage.",
+  },
+  {
+    icon: Share2,
+    title: "Controlled Sharing",
+    description: "Create expiring, revocable links for an individual professional credential when needed.",
+  },
+  {
+    icon: KeyRound,
+    title: "Sign in with Verifiedly",
+    description: "Approved apps can request consented profile and identity-status data through OAuth 2.0.",
   },
 ];
 
@@ -58,10 +58,10 @@ const Features = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-            Everything you need to earn
+            A clearer way to establish who you are
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            One platform, every revenue stream. Built for creators, athletes, businesses & teams.
+            Built for individuals, athletes, businesses, clubs, and teams that need a professional profile they can share.
           </p>
         </motion.div>
         <motion.div

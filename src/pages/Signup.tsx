@@ -8,8 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import logo from "@/assets/verifiedly-logo.webp";
 import { Eye, EyeOff } from "lucide-react";
+
+const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +20,6 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [dob, setDob] = useState(""); // YYYY-MM-DD, must be 18+
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
   const returnTo = searchParams.get("returnTo") || "";
@@ -29,10 +31,22 @@ const Signup = () => {
   const { toast } = useToast();
 
   const handleOAuth = async (provider: "google" | "apple") => {
+    if (!agreedTerms) {
+      toast({ title: "Agreement required", description: "Review and accept the Terms, Privacy Policy, and vault restrictions first.", variant: "destructive" });
+      return;
+    }
+
+    window.localStorage.setItem(LEGAL_ACCEPTANCE_STORAGE_KEY, JSON.stringify({
+      acceptedAt: new Date().toISOString(),
+      termsVersion: LEGAL_TERMS_VERSION,
+      vaultPolicyVersion: VAULT_POLICY_VERSION,
+    }));
+
     const { error } = await lovable.auth.signInWithOAuth(provider, {
       redirect_uri: returnTo ? `${window.location.origin}${returnTo}` : window.location.origin,
     });
     if (error) {
+      window.localStorage.removeItem(LEGAL_ACCEPTANCE_STORAGE_KEY);
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     }
   };
@@ -41,9 +55,9 @@ const Signup = () => {
     if (username.length < 3) { setUsernameAvailable(null); return; }
     setCheckingUsername(true);
     const timer = setTimeout(async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles").select("id").eq("username", username.toLowerCase()).maybeSingle();
-      setUsernameAvailable(!data);
+      setUsernameAvailable(error ? null : !data);
       setCheckingUsername(false);
     }, 400);
     return () => clearTimeout(timer);
@@ -55,19 +69,8 @@ const Signup = () => {
       toast({ title: "Username too short", description: "Must be at least 3 characters.", variant: "destructive" });
       return;
     }
-    if (usernameAvailable === false) {
-      toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
-      return;
-    }
-    if (!dob) {
-      toast({ title: "Date of birth required", description: "You must be 18 or older to use Verifiedly.", variant: "destructive" });
-      return;
-    }
-    const dobDate = new Date(dob);
-    const eighteenYearsAgo = new Date();
-    eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
-    if (isNaN(dobDate.getTime()) || dobDate > eighteenYearsAgo) {
-      toast({ title: "Must be 18 or older", description: "Verifiedly is not available to users under 18.", variant: "destructive" });
+    if (usernameAvailable !== true) {
+      toast({ title: usernameAvailable === false ? "Username taken" : "Username not checked", description: usernameAvailable === false ? "Please choose another username." : "Please wait for the handle check and try again.", variant: "destructive" });
       return;
     }
     if (!agreedTerms) {
@@ -76,6 +79,7 @@ const Signup = () => {
     }
     setLoading(true);
     try {
+      const acceptedAt = new Date().toISOString();
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -88,7 +92,10 @@ const Signup = () => {
             display_name: displayName,
             account_type: "creator",
             referred_by: referralCode,
-            date_of_birth: dob,
+            legal_terms_accepted_at: acceptedAt,
+            legal_terms_version: LEGAL_TERMS_VERSION,
+            vault_policy_certified: true,
+            vault_policy_version: VAULT_POLICY_VERSION,
           },
         },
       });
@@ -100,8 +107,12 @@ const Signup = () => {
         `/login?confirmed=pending&email=${encodeURIComponent(email)}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`,
         { replace: true }
       );
-    } catch (err: any) {
-      toast({ title: "Signup failed", description: err?.message ?? "Unknown error", variant: "destructive" });
+    } catch (err: unknown) {
+      toast({
+        title: "Signup failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -115,7 +126,7 @@ const Signup = () => {
             <img src={logo} alt="Verifiedly Logo" className="h-8 mx-auto mb-6" />
           </Link>
           <h1 className="text-2xl font-display font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Verify. Share. Earn.</p>
+          <p className="text-sm text-muted-foreground mt-1">Create. Verify. Share.</p>
         </div>
 
         <div className="space-y-3">
@@ -147,8 +158,8 @@ const Signup = () => {
               <Input id="username" value={username} onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} required className="pl-[110px]" placeholder="username" />
             </div>
             {username.length >= 3 && (
-              <p className={`text-xs mt-1 ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-[hsl(var(--success))]" : "text-destructive"}`}>
-                {checkingUsername ? "Checking..." : usernameAvailable ? "✓ Available" : "✗ Username taken"}
+              <p className={`text-xs mt-1 ${checkingUsername || usernameAvailable === null ? "text-muted-foreground" : usernameAvailable ? "text-[hsl(var(--success))]" : "text-destructive"}`}>
+                {checkingUsername ? "Checking..." : usernameAvailable === null ? "Could not check this username yet" : usernameAvailable ? "✓ Available" : "✗ Username taken"}
               </p>
             )}
           </div>
@@ -165,12 +176,6 @@ const Signup = () => {
               </button>
             </div>
           </div>
-          <div>
-            <Label htmlFor="dob">Date of birth</Label>
-            <Input id="dob" type="date" value={dob} onChange={e => setDob(e.target.value)} required max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0,10)} />
-            <p className="text-xs text-muted-foreground mt-1">You must be 18 or older to use Verifiedly.</p>
-          </div>
-
           {referralCode && (
             <div className="bg-secondary rounded-lg p-3">
               <p className="text-xs text-muted-foreground">Referred by code: <span className="font-mono font-medium text-foreground">{referralCode}</span></p>
@@ -180,10 +185,11 @@ const Signup = () => {
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
             <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
-              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>
+              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>, and I certify that I will not upload prohibited identity or financial documents to my private vault.
             </label>
           </div>
-          <Button type="submit" className="w-full" disabled={loading || !agreedTerms}>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">You must be at least 13. If you are a minor where you live, a parent or legal guardian must permit your use. Identity verification is limited to adults 18+.</p>
+          <Button type="submit" className="w-full" disabled={loading || !agreedTerms || checkingUsername || usernameAvailable !== true}>
             {loading ? "Creating account..." : "Sign up"}
           </Button>
         </form>

@@ -2,103 +2,91 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 const Privacy = () => (
-  <div className="min-h-screen bg-background py-12 px-4">
+  <div className="min-h-screen bg-background px-4 py-12">
     <Helmet>
       <title>Privacy Policy — Verifiedly</title>
-      <meta name="description" content="How Verifiedly collects, uses, and protects your personal information, including Stripe Identity verification data and account details." />
+      <meta name="description" content="How Verifiedly handles public profiles, identity results, private professional documents, and payments." />
       <link rel="canonical" href="https://verifiedly.app/privacy" />
-      <meta property="og:title" content="Privacy Policy — Verifiedly" />
-      <meta property="og:description" content="How Verifiedly collects, uses, and protects your personal information across the platform." />
-      <meta property="og:url" content="https://verifiedly.app/privacy" />
     </Helmet>
-    <div className="max-w-3xl mx-auto prose prose-sm dark:prose-invert">
-      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground mb-6 inline-block">← Back to home</Link>
+    <div className="prose prose-sm mx-auto max-w-3xl dark:prose-invert">
+      <Link to="/" className="mb-6 inline-block text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground"><em>Last updated: March 27, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 18, 2026</em></p>
+      <p>This policy explains how <strong>BrownGlobal Holdings LLC</strong>, operating Verifiedly, collects, uses, shares, and protects information.</p>
 
-      <p>This Privacy Policy describes how <strong>BrownGlobal Holdings LLC</strong> ("the Company," "we," "us," or "our"), operating the Verifiedly platform ("the Platform"), collects, uses, and protects your personal information.</p>
-
-      <h2>1. Information We Collect</h2>
-      <h3>Information You Provide</h3>
+      <h2>1. Information we collect</h2>
+      <h3>Account information</h3>
       <ul>
-        <li><strong>Account Information:</strong> Name, email address, username, password</li>
-        <li><strong>Date of Birth:</strong> Collected at signup to confirm you are 18 or older. Stored securely and never displayed publicly.</li>
-        <li><strong>Profile Information:</strong> Display name, biography, avatar image, social media links, category</li>
-        <li><strong>Content:</strong> Digital products, bio links, subscription tiers, and other creator content</li>
-        <li><strong>Payment Information:</strong> Processed securely by our third-party payment processor (Stripe). We do not store your full payment card details.</li>
-        <li><strong>Identity Verification Data:</strong> If you choose to verify your identity, the ID document image and selfie are collected and processed by <strong>Stripe Identity</strong> — not by us. We only receive and store the verification result (verified / not verified), your legal name, country, and date of birth. Business accounts also submit their business name and country of registration. Verification is optional and required only to earn the blue checkmark.</li>
-        <li><strong>Communications:</strong> Messages sent through the Platform, support requests</li>
-      </ul>
-      <h3>Information Collected Automatically</h3>
-      <ul>
-        <li><strong>Usage Data:</strong> Page views, link clicks, interaction analytics, referral sources</li>
-        <li><strong>Device Information:</strong> Browser type, operating system, IP address (hashed for analytics)</li>
-        <li><strong>Cookies:</strong> Essential cookies for authentication and session management</li>
+        <li>Name, email address, handle, authentication records, account type, and settings</li>
+        <li>Support requests and communications you send us</li>
       </ul>
 
-      <h2>2. How We Use Your Information</h2>
+      <h3>Public profile information</h3>
       <ul>
-        <li>To provide, maintain, and improve the Platform</li>
-        <li>To process transactions and manage subscriptions</li>
-        <li>To provide analytics to creators about their audience</li>
-        <li>To communicate with you about your account, updates, and promotional offers</li>
-        <li>To enforce our Terms of Service and protect against fraud</li>
-        <li>To comply with legal obligations</li>
-        <li>To administer the referral program</li>
+        <li>Display name, photo or logo, location, public email, website, and social links</li>
+        <li>Work, education, credentials, licenses, awards, accomplishments, dates, and supporting links</li>
+      </ul>
+      <p>Information on a public profile can be viewed, copied, indexed, or shared by others. Do not publish sensitive information that you do not want made public.</p>
+
+      <h3>Identity-check information</h3>
+      <p>If an adult chooses Verifiedly Identity, Stripe collects the government ID and selfie in a Stripe-hosted flow. Both Stripe and Verifiedly can have access to information submitted through that flow under their respective roles and terms. Verifiedly is designed to retain only a Stripe session reference, result, attempt count, and check date in its ordinary database. Verifiedly does not intentionally copy government-ID or selfie images into Verifiedly Documents.</p>
+
+      <h3>Private professional documents</h3>
+      <p>If you subscribe to Verifiedly Documents, we collect the professional credential files you upload and metadata such as title, type, issuer, dates, original filename, file type, file size, storage path, and upload time. Files are stored in a private Supabase Storage bucket. They are not part of your public profile.</p>
+      <p>Do not upload payment cards, banking records, Social Security cards or numbers, national-identification numbers, tax documents (including W-2s and 1099s), health records, passports, government IDs, identity selfies, birth or marriage certificates, passwords, or authentication codes.</p>
+
+      <h3>Secure-link and usage information</h3>
+      <p>When you create a document link, we store a one-way hash of the link token, expiration, view limit, view count, revocation status, and access timestamps. If you add a password, we store a salted password-derived hash rather than the plaintext password. A recipient's successful access produces a short-lived file URL.</p>
+
+      <h3>Payment and technical information</h3>
+      <ul>
+        <li>Stripe customer, checkout, payment, subscription, and billing-status references</li>
+        <li>Profile views, link clicks, referral pages, device, browser, IP, session, timestamps, and security events needed to operate and protect the service</li>
+      </ul>
+      <p>Stripe processes complete payment-card details. Verifiedly does not store complete payment-card numbers.</p>
+
+      <h2>2. How we use information</h2>
+      <ul>
+        <li>Provide, secure, maintain, and improve Verifiedly</li>
+        <li>Create and display public profiles</li>
+        <li>Operate identity checks and display accurate badge meaning</li>
+        <li>Store private professional documents and issue controlled access links</li>
+        <li>Process payments, subscriptions, cancellations, support, and refunds</li>
+        <li>Prevent fraud, enforce our Terms, and meet legal obligations</li>
+        <li>Measure service usage and investigate security incidents</li>
       </ul>
 
-      <h2>3. Information Sharing</h2>
-      <p>BrownGlobal Holdings LLC does not sell your personal information. We may share information with:</p>
+      <h2>3. How we disclose information</h2>
+      <p>We do not sell personal information. We may disclose information:</p>
       <ul>
-        <li><strong>Service Providers:</strong> Third-party services that help us operate the Platform, including hosting (Supabase), payment processing (Stripe), and analytics</li>
-        <li><strong>Legal Requirements:</strong> When required by law, subpoena, court order, or to protect our rights, property, or safety</li>
-        <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, reorganization, or sale of assets</li>
-        <li><strong>With Your Consent:</strong> When you explicitly authorize sharing</li>
+        <li><strong>Publicly:</strong> when you publish it on your profile</li>
+        <li><strong>At your direction:</strong> when you create and provide a document link to another person</li>
+        <li><strong>To service providers:</strong> including Supabase for hosting, authentication, database, and storage, and Stripe for payments and identity checks</li>
+        <li><strong>For legal and safety reasons:</strong> when required by law or reasonably necessary to protect users, rights, or the service</li>
+        <li><strong>During a business transaction:</strong> such as a merger, financing, acquisition, or sale, subject to appropriate safeguards</li>
       </ul>
 
-      <h2>4. Data Security</h2>
-      <p>We implement industry-standard security measures including encryption in transit (TLS/SSL), secure password hashing, row-level security on all database tables, and column-level access controls on sensitive fields (date of birth and identity data are restricted to service-role access only). ID document images and selfies are handled exclusively by Stripe Identity and never touch our servers. However, no method of electronic transmission or storage is 100% secure, and we cannot guarantee absolute security.</p>
+      <h2>4. Security</h2>
+      <p>We use administrative and technical safeguards including encrypted network connections, authentication, private storage, row-level access rules, short-lived file URLs, hashed sharing tokens, optional password protection, access limits, and revocation controls. No service can guarantee absolute security. Do not use Verifiedly Documents for prohibited high-risk records.</p>
 
-      <h2>5. Data Retention</h2>
-      <p>We retain your personal information for as long as your account is active or as needed to provide services. Upon account deletion, we will remove your personal data within 30 days, except where retention is required by law or for legitimate business purposes (e.g., fraud prevention).</p>
+      <h2>5. Retention and deletion</h2>
+      <p>We retain information while your account is active and as reasonably needed to provide the service, handle disputes, prevent fraud, enforce agreements, and comply with law. Ending a Documents subscription ends access according to the paid billing period but does not itself guarantee immediate file deletion. You can remove files while access is active or request deletion through <strong>support@verifiedly.app</strong>. Account deletion requests include associated private files, subject to legally required or permitted retention.</p>
+      <p>Public information may remain in search caches, recipient copies, or other third-party systems outside our control. A recipient may copy a document while a secure link is valid; revoking the link cannot delete copies already made.</p>
 
-      <h2>6. Your Rights</h2>
-      <p>Depending on your jurisdiction, you may have the right to:</p>
-      <ul>
-        <li>Access and receive a copy of your personal data</li>
-        <li>Correct inaccurate personal data</li>
-        <li>Request deletion of your account and personal data</li>
-        <li>Object to or restrict processing of your data</li>
-        <li>Data portability</li>
-        <li>Opt out of marketing communications</li>
-        <li>Withdraw consent at any time</li>
-      </ul>
-      <p>To exercise these rights, contact <strong>support@verifiedly.app</strong>.</p>
+      <h2>6. Your choices and rights</h2>
+      <p>You can edit public profile information, remove private documents, revoke sharing links, manage a subscription, and request account deletion. Depending on where you live, you may have rights to access, correct, delete, restrict, object to processing, withdraw consent, or receive a portable copy. Contact <strong>support@verifiedly.app</strong>. We may need to verify your identity before completing a request.</p>
 
-      <h2>7. Cookies</h2>
-      <p>We use essential cookies for authentication and session management. We do not use third-party advertising or tracking cookies. You can configure your browser to refuse cookies, but some Platform features may not function properly.</p>
+      <h2>7. Young users</h2>
+      <p>Verifiedly is not intended for children under 13. Users who are minors where they live must have permission from a parent or legal guardian. Verifiedly Identity is restricted to adults age 18 or older. If we learn that a child under 13 created an account, we may close the account and delete associated information as required by law.</p>
 
-      <h2>8. Children's Privacy</h2>
-      <p>The Platform is not intended for users under 18 years of age. We do not knowingly collect personal information from minors. If we learn that we have collected data from a minor, we will delete it promptly.</p>
+      <h2>8. International processing</h2>
+      <p>Verifiedly is operated from the United States, and information may be processed in the United States and other countries where service providers operate. Provider coverage varies by country. Where required, we use legally recognized transfer mechanisms. Local privacy rights remain available where applicable.</p>
 
-      <h2>9. International Data Transfers</h2>
-      <p>BrownGlobal Holdings LLC is organized under the laws of the State of Georgia, United States, and operates the Platform from the United States. Your personal data may be processed in the United States and other countries where our service providers operate. For users in the European Economic Area, the United Kingdom, or Switzerland, we rely on Standard Contractual Clauses or other appropriate safeguards as required by GDPR / UK GDPR. EU/UK residents have the right to lodge a complaint with their local supervisory authority.</p>
+      <h2>9. Changes</h2>
+      <p>We may update this policy. We will provide reasonable notice of material changes and update the date above.</p>
 
-      <h2>9a. International Users (GDPR / UK / Global)</h2>
-      <p>If you are accessing the Platform from outside the United States, you acknowledge and consent to the collection, transfer, storage, and processing of your information in the United States. We honor data-subject rights granted by the GDPR, UK GDPR, and similar laws including Brazil (LGPD), Canada (PIPEDA), and Australia (Privacy Act). Requests can be submitted to <strong>support@verifiedly.app</strong>.</p>
-
-      <h2>10. California Privacy Rights (CCPA)</h2>
-      <p>California residents have additional rights under the CCPA, including the right to know what personal information is collected, the right to delete, and the right to opt out of the sale of personal information. We do not sell personal information.</p>
-
-      <h2>11. Changes to This Policy</h2>
-      <p>BrownGlobal Holdings LLC may update this Privacy Policy from time to time. We will notify registered users of material changes via email. The "Last updated" date at the top indicates when the policy was last revised.</p>
-
-      <h2>12. Contact</h2>
-      <p>For privacy-related questions or to exercise your rights, contact us at:</p>
-      <p>
-        <strong>BrownGlobal Holdings LLC</strong><br />
-        Email: <strong>support@verifiedly.app</strong>
-      </p>
+      <h2>10. Contact</h2>
+      <p><strong>BrownGlobal Holdings LLC</strong><br />Email: <strong>support@verifiedly.app</strong></p>
     </div>
   </div>
 );

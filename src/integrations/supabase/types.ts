@@ -118,6 +118,33 @@ export type Database = {
         }
         Relationships: []
       }
+      business_verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaign_applications: {
         Row: {
           campaign_id: string
@@ -274,6 +301,169 @@ export type Database = {
         }
         Relationships: []
       }
+      credential_verifications: {
+        Row: {
+          created_at: string
+          credential_type: string
+          display_public: boolean
+          expires_at: string | null
+          id: string
+          provider: string
+          provider_name: string
+          section_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_issuer: string | null
+          verified_title: string
+        }
+        Insert: {
+          created_at?: string
+          credential_type: string
+          display_public?: boolean
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          provider_name?: string
+          section_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_issuer?: string | null
+          verified_title: string
+        }
+        Update: {
+          created_at?: string
+          credential_type?: string
+          display_public?: boolean
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          provider_name?: string
+          section_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_issuer?: string | null
+          verified_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credential_verifications_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: true
+            referencedRelation: "profile_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_share_links: {
+        Row: {
+          created_at: string
+          document_id: string
+          expires_at: string
+          id: string
+          max_views: number | null
+          owner_id: string
+          password_hash: string | null
+          revoked_at: string | null
+          token_hash: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          expires_at: string
+          id?: string
+          max_views?: number | null
+          owner_id: string
+          password_hash?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          expires_at?: string
+          id?: string
+          max_views?: number | null
+          owner_id?: string
+          password_hash?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_share_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          expiry_date: string | null
+          file_size: number | null
+          id: string
+          is_public: boolean
+          issue_date: string | null
+          issuer: string | null
+          mime_type: string | null
+          note: string | null
+          original_filename: string | null
+          storage_path: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          is_public?: boolean
+          issue_date?: string | null
+          issuer?: string | null
+          mime_type?: string | null
+          note?: string | null
+          original_filename?: string | null
+          storage_path: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          is_public?: boolean
+          issue_date?: string | null
+          issuer?: string | null
+          mime_type?: string | null
+          note?: string | null
+          original_filename?: string | null
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -417,6 +607,33 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          id: string
+          source: string
+          terms_version: string
+          user_id: string
+          vault_policy_version: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          source: string
+          terms_version: string
+          user_id: string
+          vault_policy_version: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          source?: string
+          terms_version?: string
+          user_id?: string
+          vault_policy_version?: string
+        }
+        Relationships: []
+      }
       link_clicks: {
         Row: {
           created_at: string
@@ -508,6 +725,8 @@ export type Database = {
         Row: {
           client_id: string
           code: string
+          code_challenge: string | null
+          code_challenge_method: string | null
           created_at: string
           expires_at: string
           redirect_uri: string
@@ -518,6 +737,8 @@ export type Database = {
         Insert: {
           client_id: string
           code: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
           created_at?: string
           expires_at: string
           redirect_uri: string
@@ -528,6 +749,8 @@ export type Database = {
         Update: {
           client_id?: string
           code?: string
+          code_challenge?: string | null
+          code_challenge_method?: string | null
           created_at?: string
           expires_at?: string
           redirect_uri?: string
@@ -740,11 +963,49 @@ export type Database = {
           },
         ]
       }
+      profile_sections: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          is_public: boolean
+          kind: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_public?: boolean
+          kind: string
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_public?: boolean
+          kind?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          accepts_verification_requests: boolean
           account_type: string | null
           avatar_url: string | null
           bio: string | null
+          business_verification_expires_at: string | null
+          business_verification_provider: string | null
+          business_verified: boolean
+          business_verified_at: string | null
           category: string | null
           comp_tier: string | null
           created_at: string
@@ -761,9 +1022,14 @@ export type Database = {
           link_layout: string
           membership_button_label: string | null
           onboarding_completed: boolean | null
+          organization_country: string | null
+          organization_industry: string | null
+          organization_legal_name: string | null
           payout_status_public: boolean
+          pro_identity_check_used: boolean
           referral_code: string | null
           referred_by: string | null
+          search_visible: boolean
           show_legal_name: boolean
           signal_breakdown_public: boolean
           social_links: Json | null
@@ -792,9 +1058,14 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          business_verification_expires_at?: string | null
+          business_verification_provider?: string | null
+          business_verified?: boolean
+          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -811,9 +1082,14 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
+          organization_country?: string | null
+          organization_industry?: string | null
+          organization_legal_name?: string | null
           payout_status_public?: boolean
+          pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          search_visible?: boolean
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
@@ -842,9 +1118,14 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          accepts_verification_requests?: boolean
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          business_verification_expires_at?: string | null
+          business_verification_provider?: string | null
+          business_verified?: boolean
+          business_verified_at?: string | null
           category?: string | null
           comp_tier?: string | null
           created_at?: string
@@ -861,9 +1142,14 @@ export type Database = {
           link_layout?: string
           membership_button_label?: string | null
           onboarding_completed?: boolean | null
+          organization_country?: string | null
+          organization_industry?: string | null
+          organization_legal_name?: string | null
           payout_status_public?: boolean
+          pro_identity_check_used?: boolean
           referral_code?: string | null
           referred_by?: string | null
+          search_visible?: boolean
           show_legal_name?: boolean
           signal_breakdown_public?: boolean
           social_links?: Json | null
@@ -1422,6 +1708,54 @@ export type Database = {
         }
         Relationships: []
       }
+      verifiedly_billing: {
+        Row: {
+          created_at: string
+          documents_cancel_at_period_end: boolean
+          documents_current_period_end: string | null
+          documents_interval: string | null
+          documents_status: string
+          identity_attempt_count: number
+          identity_last_session_id: string | null
+          identity_status: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+          verification_checkout_session_id: string | null
+          verification_payment_status: string
+        }
+        Insert: {
+          created_at?: string
+          documents_cancel_at_period_end?: boolean
+          documents_current_period_end?: string | null
+          documents_interval?: string | null
+          documents_status?: string
+          identity_attempt_count?: number
+          identity_last_session_id?: string | null
+          identity_status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+          verification_checkout_session_id?: string | null
+          verification_payment_status?: string
+        }
+        Update: {
+          created_at?: string
+          documents_cancel_at_period_end?: boolean
+          documents_current_period_end?: string | null
+          documents_interval?: string | null
+          documents_status?: string
+          identity_attempt_count?: number
+          identity_last_session_id?: string | null
+          identity_status?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string
+          verification_checkout_session_id?: string | null
+          verification_payment_status?: string
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           event_type: string
@@ -1454,6 +1788,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_oauth_code: {
+        Args: { _client_id: string; _code: string; _redirect_uri: string }
+        Returns: {
+          code_challenge: string
+          code_challenge_method: string
+          scopes: string[]
+          user_id: string
+        }[]
+      }
       creator_has_payments: { Args: { _creator_id: string }; Returns: boolean }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -1515,6 +1858,11 @@ export type Database = {
       recompute_trust_score: { Args: { _user_id: string }; Returns: number }
       record_stripe_agreement: {
         Args: { _context: string; _ip: string; _user_agent: string }
+        Returns: string
+      }
+      request_business_verification: { Args: never; Returns: string }
+      request_credential_verification: {
+        Args: { _credential_type: string; _section_id: string }
         Returns: string
       }
     }

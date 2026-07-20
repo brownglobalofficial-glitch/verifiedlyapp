@@ -1,14 +1,16 @@
 // Stripe tier configuration
 export const STRIPE_TIERS = {
   pro: {
-    price_id: "price_1Tj8n91hrOAc8qE8BRJoXtxv",
-    product_id: "prod_UiZxt9S0G6T6LU",
+    price_id: "price_1TuNUT1hrOAc8qE8Zg1OnTwd",
+    product_id: "prod_UuBsV3AvLLkgR1",
     name: "Pro",
-    price: 9.99,
-    // Pro creators pay a 3% platform fee (down from 10% Free) AND receive
-    // free ID verification as part of their subscription.
-    fee_percent: 3,
-    includes_id_verification: true,
+    price: 4.99,
+    // Pro is now identity-first: custom domain, document vault, priority
+    // support. It does NOT include the identity check (that's a separate
+    // one-time purchase) and no longer sets a platform fee — commerce is
+    // being retired from the product.
+    fee_percent: 0,
+    includes_id_verification: false,
   },
   // Legacy tier — grandfathered for pre-existing subscribers only. Not
   // advertised in the UI. Fee tables read `is_elite` at runtime to honor it.
@@ -24,15 +26,15 @@ export const STRIPE_TIERS = {
     product_id: null,
     name: "Free",
     price: 0,
-    fee_percent: 10,
+    fee_percent: 0,
   },
 } as const;
 
-// One-time Stripe Identity verification fee. Grants the blue checkmark.
-// Non-refundable once the ID scan runs. Free for Verifiedly Pro subscribers.
+// Legacy configuration retained only so old, unreachable screens compile.
+// New verification enrollment and pricing are paused.
 export const IDENTITY_VERIFICATION = {
-  price_id: "price_1TtYw41hrOAc8qE8bFdRF341",
-  amount_usd: 4.99,
+  price_id: null,
+  amount_usd: null,
 } as const;
 
 export type SubscriptionTier = keyof typeof STRIPE_TIERS;

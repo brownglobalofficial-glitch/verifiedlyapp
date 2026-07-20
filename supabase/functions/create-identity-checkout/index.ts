@@ -8,63 +8,133 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Verifiedly Identity Verification fee — one-time $4.99.
-// Free for Verifiedly Pro subscribers (short-circuited before Checkout).
-const VERIFY_PRICE_ID = "price_1TtYw41hrOAc8qE8bFdRF341";
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+});
+
+const allowedOrigins = () => new Set([
+  "https://verifiedly.app",
+  "https://www.verifiedly.app",
+  "https://id-preview--173dd0e3-02ca-4666-9958-5d8eb32162c8.lovable.app",
+  ...(Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+]);
+
+const safeOrigin = (value: string | null) => {
+  if (!value) return "https://verifiedly.app";
+  try {
+    const url = new URL(value);
+    const allowed = allowedOrigins().has(url.origin)
+      || url.hostname === "localhost"
+      || url.hostname === "127.0.0.1";
+    return allowed ? url.origin : "https://verifiedly.app";
+  } catch {
+    return "https://verifiedly.app";
+  }
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-    const authHeader = req.headers.get("Authorization")!;
-    const { data } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    const user = data.user;
-    if (!user?.email) throw new Error("Not authenticated");
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-    // Pro subscribers get ID verification free — skip Checkout and mark as paid so
-    // the subsequent create-identity-session call can start the ID scan directly.
+  try {
+    if (Deno.env.get("STRIPE_IDENTITY_USE_CASE_APPROVED") !== "true") {
+      return json({
+        error: "Identity verification is not available yet. Verifiedly is completing provider approval for this use case.",
+      }, 503);
+    }
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("Stripe is not configured yet.");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Please sign in again." }, 401);
+
+    const anon = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    );
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } },
     );
-    const { data: prof } = await admin.from("profiles")
-      .select("is_pro, is_elite, id_verified, verification_status").eq("id", user.id).maybeSingle();
-    if (prof?.id_verified) throw new Error("Already verified");
-    if (prof?.is_pro || prof?.is_elite) {
-      if (prof.verification_status !== "paid" && prof.verification_status !== "processing") {
-        await admin.from("profiles").update({ verification_status: "paid" }).eq("id", user.id);
-      }
-      return new Response(JSON.stringify({ pro_bypass: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+    const { data: userData } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
+    const user = userData.user;
+    if (!user?.email) return json({ error: "Please sign in again." }, 401);
+
+    const { data: profile } = await admin.from("profiles")
+      .select("id_verified")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profile?.id_verified) return json({ already_verified: true });
+
+    const { data: billing } = await admin.from("verifiedly_billing")
+      .select("stripe_customer_id, verification_payment_status, verification_checkout_session_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (billing?.verification_payment_status === "paid" && billing.verification_checkout_session_id) {
+      return json({
+        already_paid: true,
+        checkout_session_id: billing.verification_checkout_session_id,
       });
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
-    const origin = req.headers.get("origin") || "https://verifiedly.app";
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    let customerId = billing?.stripe_customer_id ?? null;
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      customerId = customers.data[0]?.id ?? null;
+    }
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { verifiedly_user_id: user.id },
+      });
+      customerId = customer.id;
+    }
 
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    const customerId = customers.data[0]?.id;
+    await admin.from("verifiedly_billing").upsert({
+      user_id: user.id,
+      stripe_customer_id: customerId,
+    }, { onConflict: "user_id" });
 
+    const origin = safeOrigin(req.headers.get("origin"));
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: VERIFY_PRICE_ID, quantity: 1 }],
       mode: "payment",
-      metadata: { type: "identity_verification", user_id: user.id },
-      payment_intent_data: { metadata: { type: "identity_verification", user_id: user.id } },
-      success_url: `${origin}/dashboard/verification?paid=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/dashboard/verification?canceled=1`,
+      locale: "auto",
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: 999,
+          product_data: {
+            name: "Verifiedly Identity",
+            description: "One government ID and selfie identity-verification service",
+          },
+        },
+      }],
+      success_url: `${origin}/dashboard/verification?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard/verification?checkout=cancelled`,
+      metadata: {
+        type: "verifiedly_identity_payment",
+        user_id: user.id,
+      },
+      payment_intent_data: {
+        metadata: {
+          type: "verifiedly_identity_payment",
+          user_id: user.id,
+        },
+      },
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500,
-    });
+    return json({ url: session.url });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to begin checkout.";
+    return json({ error: message }, 500);
   }
 });

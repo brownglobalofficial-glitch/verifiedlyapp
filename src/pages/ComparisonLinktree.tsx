@@ -5,13 +5,13 @@ import { Check, X, ShieldCheck } from "lucide-react";
 
 const rows: { feature: string; verifiedly: string | boolean; linktree: string | boolean }[] = [
   { feature: "Government-ID verified profiles", verifiedly: true, linktree: false },
-  { feature: "Blue verification badge (Stripe Identity)", verifiedly: "$4.99 one-time", linktree: false },
-  { feature: "Platform fee on paid products", verifiedly: "3% on Pro (10% on Free)", linktree: "Varies" },
-  { feature: "Tips, digital products & memberships", verifiedly: true, linktree: "Limited" },
+  { feature: "Blue verification badge (Stripe Identity)", verifiedly: "$9.99 one-time", linktree: false },
+  { feature: "Verifiedly platform fee on paid products", verifiedly: "3% on Pro / 10% on Free", linktree: "See Linktree pricing" },
+  { feature: "Tips, digital products & memberships", verifiedly: true, linktree: true },
   { feature: "Sign in with Verifiedly (OAuth for other apps)", verifiedly: true, linktree: false },
-  { feature: "Free plan", verifiedly: "Yes — 10% fee", linktree: "Yes" },
-  { feature: "Pro plan pricing", verifiedly: "$9.99 / month", linktree: "$5–$24 / month" },
-  { feature: "Custom domain", verifiedly: true, linktree: "Paid tiers only" },
+  { feature: "Free plan available", verifiedly: "Yes — 10% Verifiedly fee", linktree: "Yes" },
+  { feature: "Verifiedly Pro pricing", verifiedly: "$9.99 / month", linktree: "See Linktree pricing" },
+  { feature: "Broader design / marketing / integrations ecosystem", verifiedly: "Focused", linktree: true },
 ];
 
 const Cell = ({ value }: { value: string | boolean }) => {
@@ -45,8 +45,10 @@ const ComparisonLinktree = () => (
       </h1>
       <p className="text-muted-foreground mb-10 text-base leading-relaxed">
         Both are link in bio tools — but they solve different problems. Linktree gives anyone
-        a shareable page of links. Verifiedly gives you a <strong className="text-foreground">government-ID verified profile</strong>{" "}
-        so followers, brands, and other apps know you are the real person behind the link.
+        a shareable page of links, and offers a broader, more mature ecosystem of themes, marketing
+        integrations, and monetization tools. Verifiedly's differentiator is optional
+        <strong className="text-foreground"> government-ID verification</strong>, built-in creator commerce,
+        lower stated Verifiedly platform fees, and partner identity sign-in.
       </p>
 
       <div className="border border-border rounded-2xl overflow-hidden mb-10">
@@ -72,15 +74,18 @@ const ComparisonLinktree = () => (
 
       <h2 className="text-2xl font-display font-bold mb-3">Why professional creators pick Verifiedly</h2>
       <p className="text-muted-foreground leading-relaxed mb-4">
-        The blue check on Verifiedly isn't cosmetic — it's a real ID + selfie check run through
-        Stripe Identity. That means audiences and brands can trust the person on the other end of the profile,
-        and other apps can plug into "Sign in with Verifiedly" to skip building their own verification stack.
+        The blue check on Verifiedly is a real ID + selfie check run through Stripe Identity — it
+        confirms identity, not endorsement, honesty, or safety. Brands can confirm the profile owner's
+        identity, and other apps can plug into "Sign in with Verifiedly" to receive a verified handle
+        without building their own KYC stack.
       </p>
       <h2 className="text-2xl font-display font-bold mb-3">When Linktree is fine</h2>
       <p className="text-muted-foreground leading-relaxed mb-8">
-        If you just need a simple list of links and don't sell anything, Linktree's free tier is enough.
-        Once you're selling, running memberships, or want to prove you're real, Verifiedly's 3% Pro fee and
-        built-in identity check pay for themselves quickly.
+        If you want the widest set of themes, marketing integrations, and analytics for a link-in-bio
+        page, Linktree has a mature ecosystem that's hard to match. Once identity verification, lower
+        Verifiedly platform fees, or partner identity sign-in matter to you, Verifiedly is built for that.
+        For current Linktree pricing and fees, see{" "}
+        <a href="https://linktr.ee/pricing" target="_blank" rel="noopener noreferrer" className="underline">linktr.ee/pricing</a>.
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3">

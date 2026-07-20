@@ -1,380 +1,425 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { Building2, Camera, Check, ShieldCheck, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, ChevronRight, ChevronLeft, Check, Plus, Trash2 } from "lucide-react";
+import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import logo from "@/assets/verifiedly-logo.webp";
-import { motion, AnimatePresence } from "framer-motion";
 
-const THEMES = [
-  { id: "default", label: "Classic", bg: "bg-background", accent: "bg-foreground" },
-  { id: "midnight", label: "Midnight", bg: "bg-[hsl(230,25%,12%)]", accent: "bg-[hsl(230,60%,60%)]" },
-  { id: "sunset", label: "Sunset", bg: "bg-[hsl(20,30%,97%)]", accent: "bg-[hsl(20,90%,55%)]" },
-  { id: "forest", label: "Forest", bg: "bg-[hsl(150,20%,96%)]", accent: "bg-[hsl(150,60%,35%)]" },
-  { id: "ocean", label: "Ocean", bg: "bg-[hsl(200,30%,96%)]", accent: "bg-[hsl(200,80%,45%)]" },
-  { id: "lavender", label: "Lavender", bg: "bg-[hsl(270,30%,96%)]", accent: "bg-[hsl(270,60%,55%)]" },
-];
+const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
 
-const CREATOR_CATEGORIES = [
-  "Player", "Musician", "Artist", "Influencer",
-  "Coach", "Trainer", "Content Creator",
-  "Podcaster", "Streamer", "Photographer",
-  "Entrepreneur", "Writer", "Designer", "Developer",
-  "Fitness", "Chef", "Educator",
-];
+type AccountType = "creator" | "business";
 
-const BUSINESS_CATEGORIES = [
-  "Brand", "Agency", "Team", "Organization",
-  "Startup", "Non-Profit", "E-Commerce", "Media Company",
-];
+type PendingLegalAcceptance = {
+  acceptedAt: string;
+  termsVersion: string;
+  vaultPolicyVersion: string;
+};
+
+const normalizeUrl = (value: string) => {
+  const candidate = value.trim();
+  if (!candidate) return null;
+  try {
+    const parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : "Please try again.";
+
+const readPendingLegalAcceptance = (): PendingLegalAcceptance | null => {
+  try {
+    const raw = window.localStorage.getItem(LEGAL_ACCEPTANCE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingLegalAcceptance>;
+    if (
+      typeof parsed.acceptedAt !== "string" ||
+      typeof parsed.termsVersion !== "string" ||
+      typeof parsed.vaultPolicyVersion !== "string"
+    ) return null;
+    return parsed as PendingLegalAcceptance;
+  } catch {
+    return null;
+  }
+};
+
+const syncLegalAcceptance = async (
+  userId: string,
+  metadata: Record<string, unknown>,
+) => {
+  const metadataAcceptedAt = typeof metadata.legal_terms_accepted_at === "string"
+    ? metadata.legal_terms_accepted_at
+    : null;
+  const pending = readPendingLegalAcceptance();
+  const pendingIsCurrent = pending?.termsVersion === LEGAL_TERMS_VERSION
+    && pending.vaultPolicyVersion === VAULT_POLICY_VERSION;
+  const acceptedAt = metadataAcceptedAt || (pendingIsCurrent ? pending?.acceptedAt : null);
+
+  if (!acceptedAt) return;
+
+  if (!metadataAcceptedAt && pendingIsCurrent) {
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: {
+        legal_terms_accepted_at: acceptedAt,
+        legal_terms_version: LEGAL_TERMS_VERSION,
+        vault_policy_certified: true,
+        vault_policy_version: VAULT_POLICY_VERSION,
+      },
+    });
+    if (metadataError) console.warn("Legal acceptance metadata was not synchronized", metadataError);
+  }
+
+  const { data: existingAcceptance, error: lookupError } = await supabase
+    .from("legal_acceptances")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("terms_version", LEGAL_TERMS_VERSION)
+    .eq("vault_policy_version", VAULT_POLICY_VERSION)
+    .limit(1)
+    .maybeSingle();
+
+  if (lookupError) {
+    console.warn("Legal acceptance lookup failed", lookupError);
+    return;
+  }
+
+  if (!existingAcceptance) {
+    const { error: insertError } = await supabase.from("legal_acceptances").insert({
+      user_id: userId,
+      terms_version: LEGAL_TERMS_VERSION,
+      vault_policy_version: VAULT_POLICY_VERSION,
+      source: metadataAcceptedAt ? "signup" : "oauth_signup",
+    });
+    if (insertError && insertError.code !== "23505") {
+      console.warn("Legal acceptance record was not synchronized", insertError);
+      return;
+    }
+  }
+
+  if (pendingIsCurrent) window.localStorage.removeItem(LEGAL_ACCEPTANCE_STORAGE_KEY);
+};
 
 const Onboarding = () => {
-  const [step, setStep] = useState(0);
-  const [userId, setUserId] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [isOAuth, setIsOAuth] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [userId, setUserId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Step 0: Account type & category
-  const [accountType, setAccountType] = useState("creator");
-  const [category, setCategory] = useState("");
-
-  // Step 1: Profile basics (includes username for OAuth users)
+  const [accountType, setAccountType] = useState<AccountType>("creator");
   const [username, setUsername] = useState("");
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
+  const [category, setCategory] = useState("");
+  const [organizationLegalName, setOrganizationLegalName] = useState("");
+  const [organizationIndustry, setOrganizationIndustry] = useState("");
+  const [organizationCountry, setOrganizationCountry] = useState("");
+  const [location, setLocation] = useState("");
+  const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [instagram, setInstagram] = useState("");
-  const [twitter, setTwitter] = useState("");
-  const [youtube, setYoutube] = useState("");
-  const [tiktok, setTiktok] = useState("");
-
-  // Step 2: Links
-  const [links, setLinks] = useState<{ title: string; url: string; icon: string }[]>([]);
-  const [newLinkTitle, setNewLinkTitle] = useState("");
-  const [newLinkUrl, setNewLinkUrl] = useState("");
-  const [newLinkIcon, setNewLinkIcon] = useState("");
-
-  // Step 3: Theme
-  const [theme, setTheme] = useState("default");
-
-  const steps = ["Profile", "Links", "Theme"];
+  const [existingSocialLinks, setExistingSocialLinks] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { navigate("/login"); return; }
-      setUserId(session.user.id);
-      const provider = session.user.app_metadata?.provider;
-      const oauthUser = !!(provider && provider !== "email");
-      setIsOAuth(oauthUser);
-      
-      setDisplayName(
-        session.user.user_metadata?.display_name ||
-        session.user.user_metadata?.full_name ||
-        session.user.user_metadata?.name ||
-        ""
-      );
-      setAccountType(session.user.user_metadata?.account_type || "creator");
-      setCategory(session.user.user_metadata?.category || "");
-      
-      if (oauthUser && session.user.user_metadata?.avatar_url) {
-        setAvatarUrl(session.user.user_metadata.avatar_url);
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login");
+        return;
       }
 
-      supabase.from("profiles").select("username, avatar_url").eq("id", session.user.id).maybeSingle().then(({ data }) => {
-        if (data) {
-          const autoGenerated = data.username && /^[a-f0-9]{32}$/.test(data.username);
-          if (!autoGenerated && data.username) {
-            setUsername(data.username);
-          }
-          if (data.avatar_url) setAvatarUrl(data.avatar_url);
-        }
-      });
+      const metadata = (session.user.user_metadata || {}) as Record<string, unknown>;
+      setUserId(session.user.id);
+      setDisplayName(
+        (typeof metadata.display_name === "string" && metadata.display_name) ||
+        (typeof metadata.full_name === "string" && metadata.full_name) ||
+        (typeof metadata.name === "string" && metadata.name) ||
+        "",
+      );
+      if (metadata.account_type === "business") setAccountType("business");
+      if (typeof metadata.username === "string" && !/^[a-f0-9]{32}$/.test(metadata.username)) {
+        setUsername(metadata.username);
+      }
 
-    });
-  }, [navigate]);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("username, display_name, category, account_type, avatar_url, website, social_links, organization_legal_name, organization_industry, organization_country")
+        .eq("id", session.user.id)
+        .maybeSingle();
 
-  // Username availability check
+      if (error) {
+        toast({ title: "Profile details could not be loaded", description: error.message, variant: "destructive" });
+        return;
+      }
+      if (!data) return;
+
+      const autoGenerated = /^[a-f0-9]{32}$/.test(data.username || "");
+      if (!autoGenerated && data.username) setUsername(data.username);
+      if (data.display_name) setDisplayName(data.display_name);
+      if (data.category) setCategory(data.category);
+      if (data.account_type === "business") setAccountType("business");
+      if (data.organization_legal_name) setOrganizationLegalName(data.organization_legal_name);
+      if (data.organization_industry) setOrganizationIndustry(data.organization_industry);
+      if (data.organization_country) setOrganizationCountry(data.organization_country);
+      if (data.avatar_url) setAvatarUrl(data.avatar_url);
+      if (data.website) setWebsite(data.website);
+
+      const socials = (data.social_links || {}) as Record<string, string>;
+      setExistingSocialLinks(socials);
+      setLocation(socials.location || "");
+    };
+
+    void load();
+  }, [navigate, toast]);
+
   useEffect(() => {
-    if (username.length < 3) { setUsernameAvailable(null); return; }
-    setCheckingUsername(true);
-    const timer = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles").select("id").eq("username", username.toLowerCase()).neq("id", userId).maybeSingle();
-      setUsernameAvailable(!data);
-      setCheckingUsername(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [username, userId]);
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 2MB.", variant: "destructive" });
+    if (!userId || username.length < 3) {
+      setUsernameAvailable(null);
       return;
     }
+
+    setCheckingUsername(true);
+    const timer = window.setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .neq("id", userId)
+        .maybeSingle();
+      setUsernameAvailable(error ? null : !data);
+      setCheckingUsername(false);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [username, userId]);
+
+  const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      toast({ title: "Choose an image under 2 MB", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/avatar.${ext}`;
-    await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${userId}/avatar.${extension}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) {
+      setUploading(false);
+      toast({ title: "Photo not uploaded", description: error.message, variant: "destructive" });
+      return;
+    }
+
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = `${publicUrl}?t=${Date.now()}`;
-    await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
-    setAvatarUrl(url);
+    const nextAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+    setAvatarUrl(nextAvatarUrl);
     setUploading(false);
   };
 
-  const addLink = () => {
-    if (!newLinkTitle.trim() || !newLinkUrl.trim()) return;
-    let url = newLinkUrl.trim();
-    if (!url.startsWith("http")) url = `https://${url}`;
-    setLinks([...links, { title: newLinkTitle.trim(), url, icon: newLinkIcon.trim() || "🔗" }]);
-    setNewLinkTitle(""); setNewLinkUrl(""); setNewLinkIcon("");
-  };
-
-  const removeLink = (i: number) => setLinks(links.filter((_, idx) => idx !== i));
-
-  const handleFinish = async () => {
-    if (username.length < 3) {
-      toast({ title: "Username required", description: "Choose a username with at least 3 characters.", variant: "destructive" });
-      setStep(1);
+  const finish = async () => {
+    if (!userId || username.length < 3 || usernameAvailable !== true || !displayName.trim()) {
+      toast({ title: "Complete the required profile fields", variant: "destructive" });
       return;
     }
-    if (usernameAvailable === false) {
-      toast({ title: "Username taken", description: "Please choose another username.", variant: "destructive" });
-      setStep(1);
+
+    const normalizedWebsite = accountType === "business" && website.trim() ? normalizeUrl(website) : null;
+    if (accountType === "business" && website.trim() && !normalizedWebsite) {
+      toast({ title: "Enter a valid official website", variant: "destructive" });
       return;
     }
 
     setSaving(true);
     try {
-      // Use upsert so this works even if the profile row is missing
-      // (e.g. trigger failed silently or user signed up before trigger fix).
-      const { error: profileErr } = await supabase.from("profiles").upsert({
+      const nextSocialLinks = { ...existingSocialLinks };
+      if (location.trim()) nextSocialLinks.location = location.trim();
+      else delete nextSocialLinks.location;
+
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
         username: username.toLowerCase(),
-        display_name: displayName,
-        bio,
+        display_name: displayName.trim(),
+        category: category.trim() || null,
         account_type: accountType,
-        category: category || null,
-        social_links: { instagram, twitter, youtube, tiktok },
-        theme_color: theme,
+        organization_legal_name: accountType === "business" ? organizationLegalName.trim() || null : null,
+        organization_industry: accountType === "business" ? organizationIndustry.trim() || null : null,
+        organization_country: accountType === "business" ? organizationCountry.trim() || null : null,
+        avatar_url: avatarUrl || null,
+        website: normalizedWebsite,
+        social_links: nextSocialLinks,
         onboarding_completed: true,
       }, { onConflict: "id" });
-      if (profileErr) throw profileErr;
+      if (profileError) throw profileError;
 
-      if (links.length > 0) {
-        const { error: linksErr } = await supabase.from("bio_links").insert(
-          links.map((l, i) => ({
-            creator_id: userId, title: l.title, url: l.url,
-            icon: l.icon || null, sort_order: i,
-          }))
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await syncLegalAcceptance(
+          session.user.id,
+          (session.user.user_metadata || {}) as Record<string, unknown>,
         );
-        if (linksErr) throw linksErr;
       }
 
-      toast({ title: "You're all set! 🎉", description: "Your profile is live." });
+      toast({ title: "Your official profile is ready" });
       navigate("/dashboard");
-    } catch (err: any) {
-      console.error("Onboarding finish error:", err);
-      toast({ title: "Setup failed", description: err.message || "Could not complete setup. Please try again.", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Setup not completed", description: errorMessage(error), variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-  const canProceed = () => {
-    if (step === 0) return displayName.trim().length > 0 && username.length >= 3 && usernameAvailable !== false;
-    return true;
-  };
-
-  const categories = accountType === "business" ? BUSINESS_CATEGORIES : accountType === "creator" ? CREATOR_CATEGORIES : [];
-  void categories;
+  const canCreate = displayName.trim().length > 0
+    && username.length >= 3
+    && usernameAvailable === true
+    && !checkingUsername
+    && !saving;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border h-16 flex items-center px-4">
-        <div className="container mx-auto flex items-center">
+        <div className="container mx-auto max-w-2xl">
           <img src={logo} alt="Verifiedly" className="h-7" />
         </div>
       </nav>
 
-      <div className="container mx-auto max-w-2xl px-4 pt-8">
-        <div className="flex items-center gap-2 mb-2">
-          {steps.map((_, i) => (
-            <div key={i} className="flex-1">
-              <div className={`h-2 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
+      <main className="container mx-auto max-w-2xl flex-1 px-4 py-8">
+        <div className="mb-8">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Create. Verify. Share.</p>
+          <h1 className="mt-2 text-3xl font-display font-bold">Build your official profile</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Start with the essentials. Social links, work, education, and credentials can be added after your profile is created.</p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setAccountType("creator")}
+              className={`rounded-xl border p-4 text-left transition ${accountType === "creator" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
+            >
+              <UserRound className="mb-3 h-5 w-5" />
+              <p className="font-semibold">Person</p>
+              <p className="mt-1 text-xs text-muted-foreground">An official profile for an individual.</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountType("business")}
+              className={`rounded-xl border p-4 text-left transition ${accountType === "business" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
+            >
+              <Building2 className="mb-3 h-5 w-5" />
+              <p className="font-semibold">Organization</p>
+              <p className="mt-1 text-xs text-muted-foreground">A page for a business, club, team, nonprofit, or group.</p>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button type="button" className="group relative rounded-full" onClick={() => fileInputRef.current?.click()} aria-label="Upload profile photo">
+              <Avatar className="h-20 w-20">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+                <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+              </Avatar>
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                <Camera className="h-5 w-5 text-background" />
+              </span>
+            </button>
+            <div>
+              <p className="text-sm font-medium">Profile photo or logo</p>
+              <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "Optional · image up to 2 MB"}</p>
             </div>
-          ))}
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground mb-8">
-          {steps.map((s, i) => (
-            <span key={s} className={i === step ? "text-foreground font-medium" : ""}>{s}</span>
-          ))}
-        </div>
-      </div>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          </div>
 
-      <div className="container mx-auto max-w-2xl px-4 flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {step === 0 && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-2xl font-display font-bold">Set up your profile</h1>
-                  <p className="text-muted-foreground mt-1">Tell your audience who you are</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> Your username becomes your public link — <span className="font-mono">verifiedly.app/yourname</span>. Pick something short and memorable.
-                </div>
+          <div>
+            <Label htmlFor="username">Handle *</Label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
+              <Input
+                id="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
+                className="pl-[110px]"
+                placeholder="yourname"
+                minLength={3}
+                maxLength={30}
+              />
+            </div>
+            {username.length >= 3 && (
+              <p className={`mt-1 text-xs ${checkingUsername || usernameAvailable === null ? "text-muted-foreground" : usernameAvailable ? "text-emerald-600" : "text-destructive"}`}>
+                {checkingUsername ? "Checking…" : usernameAvailable === null ? "Could not check this handle yet" : usernameAvailable ? "Available" : "That handle is already taken"}
+              </p>
+            )}
+          </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                    <Avatar className="w-20 h-20">
-                      {avatarUrl ? <AvatarImage src={avatarUrl} /> : null}
-                      <AvatarFallback className="text-2xl font-display font-bold">
-                        {displayName?.[0]?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute inset-0 rounded-full bg-foreground/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-5 h-5 text-background" />
-                    </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">{uploading ? "Uploading..." : "Upload a profile photo"}</p>
-                </div>
-
-                <div>
-                  <Label>Username *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
-                    <Input
-                      value={username}
-                      onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
-                      required
-                      className="pl-[110px]"
-                      placeholder="username"
-                    />
-                  </div>
-                  {username.length >= 3 && (
-                    <p className={`text-xs mt-1 ${checkingUsername ? "text-muted-foreground" : usernameAvailable ? "text-primary" : "text-destructive"}`}>
-                      {checkingUsername ? "Checking..." : usernameAvailable ? "✓ Available" : "✗ Username taken"}
-                    </p>
-                  )}
-                </div>
-
-                <div><Label>Display Name *</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your Name" /></div>
-                <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell your fans about yourself..." /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Instagram</Label><Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@username" /></div>
-                  <div><Label>Twitter / X</Label><Input value={twitter} onChange={e => setTwitter(e.target.value)} placeholder="@username" /></div>
-                  <div><Label>YouTube</Label><Input value={youtube} onChange={e => setYoutube(e.target.value)} placeholder="Channel URL" /></div>
-                  <div><Label>TikTok</Label><Input value={tiktok} onChange={e => setTiktok(e.target.value)} placeholder="@username" /></div>
-                </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="display-name">{accountType === "business" ? "Organization name" : "Display name"} *</Label>
+              <Input id="display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1" maxLength={80} />
+            </div>
+            <div>
+              <Label htmlFor="category">{accountType === "business" ? "Organization type" : "Professional label"}</Label>
+              <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder={accountType === "business" ? "Football club, academy, business, nonprofit…" : "Footballer, student, founder, photographer…"} maxLength={60} />
+            </div>
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input id="location" value={location} onChange={(event) => setLocation(event.target.value)} className="mt-1" placeholder="City, country" maxLength={120} />
+            </div>
+            {accountType === "business" && (
+              <div>
+                <Label htmlFor="website">Official website</Label>
+                <Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://organization.org" inputMode="url" maxLength={500} />
               </div>
             )}
+          </div>
 
-            {step === 2 && (
-              <div className="space-y-6">
+          {accountType === "business" && (
+            <Card className="p-4">
+              <div className="flex items-start gap-3">
+                <Building2 className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <h1 className="text-2xl font-display font-bold">Add your links</h1>
-                  <p className="text-muted-foreground mt-1">These will appear on your profile as clickable cards</p>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> Start with 3–5 of your most important links (latest content, store, socials). You can reorder and add more anytime.
-                </div>
-
-                <Card className="p-4 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div><Label>Title</Label><Input value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="My Latest Video" /></div>
-                    <div><Label>URL</Label><Input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} placeholder="https://..." /></div>
-                  </div>
-                  <div className="flex gap-3 items-end">
-                    <div><Label>Icon (emoji)</Label><Input value={newLinkIcon} onChange={e => setNewLinkIcon(e.target.value)} placeholder="🔗" className="w-20" /></div>
-                    <Button onClick={addLink} disabled={!newLinkTitle.trim() || !newLinkUrl.trim()} className="gap-1"><Plus className="w-4 h-4" /> Add</Button>
-                  </div>
-                </Card>
-
-                <div className="space-y-2">
-                  {links.map((link, i) => (
-                    <Card key={i} className="p-3 flex items-center gap-3">
-                      <span>{link.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{link.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeLink(i)}><Trash2 className="w-4 h-4" /></Button>
-                    </Card>
-                  ))}
-                  {links.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No links yet. You can always add them later.</p>}
+                  <p className="text-sm font-medium">Organization record</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">These optional details prepare the profile for a separate business-registration check. Registration numbers and supporting documents will be collected by an approved verification provider, not in onboarding.</p>
                 </div>
               </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-6">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Label htmlFor="organization-legal-name">Legal organization name</Label>
+                  <Input id="organization-legal-name" value={organizationLegalName} onChange={(event) => setOrganizationLegalName(event.target.value)} className="mt-1" placeholder="Registered legal name" maxLength={160} />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-display font-bold">Choose your theme</h1>
-                  <p className="text-muted-foreground mt-1">Pick a style for your public profile</p>
+                  <Label htmlFor="organization-industry">Industry</Label>
+                  <Input id="organization-industry" value={organizationIndustry} onChange={(event) => setOrganizationIndustry(event.target.value)} className="mt-1" placeholder="Sports, media, technology…" maxLength={100} />
                 </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  💡 <span className="font-medium text-foreground">Tip:</span> You can switch themes anytime from Profile Settings — try a few and see what feels right.
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {THEMES.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTheme(t.id)}
-                      className={`rounded-xl border-2 p-4 text-center transition-all ${theme === t.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-muted-foreground/30"}`}
-                    >
-                      <div className={`${t.bg} rounded-lg h-20 mb-2 flex items-end justify-center p-2`}>
-                        <div className={`${t.accent} rounded-full h-3 w-12`} />
-                      </div>
-                      <p className="text-sm font-medium">{t.label}</p>
-                      {theme === t.id && <Check className="w-4 h-4 mx-auto mt-1 text-primary" />}
-                    </button>
-                  ))}
+                <div>
+                  <Label htmlFor="organization-country">Registered country</Label>
+                  <Input id="organization-country" value={organizationCountry} onChange={(event) => setOrganizationCountry(event.target.value)} className="mt-1" placeholder="Country" maxLength={100} />
                 </div>
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      <div className="border-t border-border bg-background sticky bottom-0">
-        <div className="container mx-auto max-w-2xl px-4 py-4 flex justify-between">
-          <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={step === 0} className="gap-1">
-            <ChevronLeft className="w-4 h-4" /> Back
-          </Button>
-          {step < steps.length - 1 ? (
-            <Button onClick={() => setStep(step + 1)} disabled={!canProceed()} className="gap-1">
-              Next <ChevronRight className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button onClick={handleFinish} disabled={saving} className="gap-1">
-              {saving ? "Setting up..." : "Finish Setup"} <Check className="w-4 h-4" />
-            </Button>
+            </Card>
           )}
+
+          <Card className="border-dashed p-4">
+            <div className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+              <p>Your profile starts unverified. Identity verification is a separate optional $9.99 service for adults 18+, and an organization account-holder check does not verify the organization itself.</p>
+            </div>
+          </Card>
         </div>
-      </div>
+      </main>
+
+      <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
+        <div className="container mx-auto flex max-w-2xl justify-end px-4 py-4">
+          <Button type="button" onClick={finish} disabled={!canCreate} className="gap-2">
+            {saving ? "Creating…" : accountType === "business" ? "Create organization profile" : "Create profile"} <Check className="h-4 w-4" />
+          </Button>
+        </div>
+      </footer>
     </div>
   );
 };

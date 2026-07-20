@@ -172,7 +172,7 @@ const Analytics = () => {
           requires="pro"
           userTier={userTier}
           title="Advanced analytics"
-          description="Detailed earnings, audience, and link analytics are available on Verifiedly Pro and Elite."
+          description="Detailed earnings, audience, and link analytics are available on Verifiedly Pro."
         >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>

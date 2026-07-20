@@ -45,29 +45,16 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      // Try to fetch account type, but don't block navigation if it fails/times out
-      let accountType: string | null = null;
-      try {
-        const profilePromise = supabase
-          .from("profiles")
-          .select("account_type")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        const timeout = new Promise<{ data: null }>((resolve) =>
-          setTimeout(() => resolve({ data: null }), 1500)
-        );
-        const result: any = await Promise.race([profilePromise, timeout]);
-        accountType = result?.data?.account_type ?? null;
-      } catch {
-        // ignore — fall back to default route
-      }
-      void accountType;
       const dest = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
         ? nextPath
         : "/dashboard";
       navigate(dest, { replace: true });
-    } catch (err: any) {
-      toast({ title: "Login failed", description: err?.message ?? "Unknown error", variant: "destructive" });
+    } catch (err: unknown) {
+      toast({
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
       setLoading(false);
     }
   };

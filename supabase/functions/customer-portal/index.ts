@@ -39,14 +39,40 @@ serve(async (req) => {
     logStep("User authenticated", { email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) throw new Error("No Stripe customer found for this user");
-
-    const customerId = customers.data[0].id;
-    const origin = req.headers.get("origin") || "https://verifiedly.app";
+    const { data: billing } = await supabaseClient.from("verifiedly_billing")
+      .select("stripe_customer_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    let customerId = billing?.stripe_customer_id ?? null;
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      customerId = customers.data[0]?.id ?? null;
+    }
+    if (!customerId) throw new Error("No Stripe customer found for this user");
+    const body = await req.json().catch(() => ({}));
+    const requestedPath = typeof body?.return_path === "string" ? body.return_path : "/dashboard";
+    const returnPath = requestedPath === "/dashboard/documents" ? requestedPath : "/dashboard";
+    const requestOrigin = req.headers.get("origin") || "https://verifiedly.app";
+    let origin = "https://verifiedly.app";
+    try {
+      const parsed = new URL(requestOrigin);
+      const configuredOrigins = (Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+      const allowed = new Set([
+        "https://verifiedly.app",
+        "https://www.verifiedly.app",
+        "https://id-preview--173dd0e3-02ca-4666-9958-5d8eb32162c8.lovable.app",
+        ...configuredOrigins,
+      ]).has(parsed.origin)
+        || parsed.hostname === "localhost"
+        || parsed.hostname === "127.0.0.1";
+      if (allowed) origin = parsed.origin;
+    } catch { /* use production origin */ }
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/dashboard`,
+      return_url: `${origin}${returnPath}`,
     });
     logStep("Portal session created", { url: portalSession.url });
 

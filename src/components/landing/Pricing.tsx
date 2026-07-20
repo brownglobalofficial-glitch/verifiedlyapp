@@ -1,127 +1,82 @@
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { BadgeCheck, Check, FolderLock, ShieldCheck, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import DocumentsComplianceNotice from "@/components/DocumentsComplianceNotice";
 
-const Pricing = () => {
-  return (
-    <section id="pricing" className="py-16 sm:py-24 px-4">
-      <div className="container mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 sm:mb-16"
-        >
-          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Pricing</span>
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tight">Simple, honest pricing</h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Free account. One-time fee to verify your identity. Optional Pro subscription if you monetize.
-          </p>
-        </motion.div>
-        <div className="grid md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
-          {/* Free */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="rounded-xl border border-border p-8 hover:shadow-lg transition-shadow duration-300"
-          >
-            <h3 className="text-xl font-display font-semibold mb-2">Free</h3>
-            <p className="text-4xl font-display font-bold mb-1">$0<span className="text-lg text-muted-foreground font-normal">/mo</span></p>
-            <p className="text-sm text-muted-foreground mb-6">10% platform fee on earnings</p>
-            <ul className="space-y-3 mb-8">
-              {["Public profile + link-in-bio", "Sell digital products & accept tips", "Sign in with Verifiedly (OAuth)", "Basic analytics"].map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-[hsl(var(--success))]" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link to="/signup">
-              <Button variant="outline" className="w-full">Start free</Button>
-            </Link>
-          </motion.div>
+const plans = [
+  {
+    name: "Public profile",
+    price: "$0",
+    cadence: "forever",
+    icon: UserRound,
+    description: "Create one clear place for who you are, what you do, and where people can find you.",
+    features: ["Personal or organization profile", "Work, education, and credentials", "Optional profile discovery", "Clean verifiedly.app handle"],
+    cta: "Create profile",
+    note: "No platform subscription",
+  },
+  {
+    name: "Verifiedly Identity",
+    price: "$9.99",
+    cadence: "one time",
+    icon: ShieldCheck,
+    description: "Verify the identity of the account holder through a Stripe-hosted ID and selfie check.",
+    features: ["Government ID authenticity check", "Selfie matched to the ID", "One retry when available", "Identity badge after approval"],
+    cta: "Create profile to verify",
+    note: "Available to adults 18+",
+  },
+  {
+    name: "Verified credentials",
+    price: "$19.99+",
+    cadence: "per check",
+    icon: BadgeCheck,
+    description: "Independently verify a degree, professional license, or certification and choose whether to display the claim.",
+    features: ["$24.99 planned U.S. degree check", "$19.99 planned license check", "Provider and checked date shown", "No raw report on the public profile"],
+    cta: "Create profile for pilot",
+    note: "No charge until the provider integration is approved",
+  },
+  {
+    name: "Verifiedly Documents",
+    price: "$4.99",
+    cadence: "per month",
+    icon: FolderLock,
+    description: "Keep professional credentials private and share them through controlled, expiring links.",
+    features: ["Private PDF and image storage", "10 MB per credential", "Password-optional 24-hour links", "Revoke links anytime"],
+    cta: "Create profile for Documents",
+    note: "$39/year when billed annually",
+  },
+];
 
-          {/* Verify */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.05 }}
-            className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300"
-          >
-            <div className="absolute -top-3 left-6 bg-foreground text-background px-3 py-1 rounded-full text-xs font-semibold">
-              MOST POPULAR
-            </div>
-            <h3 className="text-xl font-display font-semibold mb-2">Identity Verification</h3>
-            <p className="text-4xl font-display font-bold mb-1">$4.99<span className="text-lg text-muted-foreground font-normal"> once</span></p>
-            <p className="text-sm text-muted-foreground mb-6">Blue checkmark, forever. Free with Pro.</p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Government ID + selfie check",
-                "Verified blue checkmark on your profile",
-                "Real name on profile (optional)",
-                "Age verification for partner apps",
-                "Powered by Stripe Identity",
-              ].map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4 text-[hsl(var(--success))]" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link to="/signup">
-              <Button className="w-full">Get verified</Button>
-            </Link>
-          </motion.div>
-
-          {/* Pro */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-xl border-2 border-foreground p-8 relative hover:shadow-xl transition-shadow duration-300 bg-foreground text-background"
-          >
-            <div className="absolute -top-3 left-6 bg-background text-foreground px-3 py-1 rounded-full text-xs font-semibold">
-              PRO
-            </div>
-            <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
-            <p className="text-4xl font-display font-bold mb-1">$9.99<span className="text-lg opacity-60 font-normal">/mo</span></p>
-            <p className="text-sm opacity-60 mb-6">3% platform fee (down from 10%) + free ID verification</p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Everything in Free",
-                "3% platform fee on every sale",
-                "Free identity verification ($4.99 value)",
-                "Paid subscription tiers + exclusive content",
-                "Advanced analytics",
-                "Priority support",
-              ].map(f => (
-                <li key={f} className="flex items-center gap-2 text-sm">
-                  <Check className="w-4 h-4" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Link to="/signup">
-              <Button variant="outline" className="w-full border-background text-foreground bg-background hover:bg-background/90">Go Pro</Button>
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Fee comparison table */}
-        <p className="text-center text-xs text-muted-foreground mt-10 max-w-2xl mx-auto">
-          The verified badge is only granted through Stripe Identity — never for a Pro subscription.
-          Payments processed by Stripe. Standard Stripe processing fees (~2.9% + 30¢) apply on sales.
-          Identity verification fee is non-refundable once the ID scan runs.
-        </p>
+const Pricing = () => (
+  <section className="px-4 py-14 sm:py-20">
+    <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple pricing</p>
+        <h2 className="mt-3 text-3xl font-display font-bold tracking-tight sm:text-4xl">Your profile is free. Pay only for what needs checking or protection.</h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Identity, individual credential checks, and private document storage are separate products. Each badge explains exactly what was checked.</p>
       </div>
-    </section>
-  );
-};
+
+      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {plans.map((plan, index) => (
+          <Card key={plan.name} className={`flex rounded-3xl p-6 shadow-sm ${index === 1 ? "border-foreground" : "border-foreground/10"}`}>
+            <div className="flex w-full flex-col">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background"><plan.icon className="h-5 w-5" /></div>
+              <h3 className="mt-5 font-display text-xl font-bold">{plan.name}</h3>
+              <p className="mt-3 text-4xl font-display font-bold">{plan.price}<span className="ml-1 text-sm font-normal text-muted-foreground">{plan.cadence}</span></p>
+              <p className="mt-4 min-h-16 text-sm leading-relaxed text-muted-foreground">{plan.description}</p>
+              <ul className="mt-5 flex-1 space-y-3 text-sm">
+                {plan.features.map((feature) => <li key={feature} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0" /> {feature}</li>)}
+              </ul>
+              <Button asChild variant={index === 1 ? "default" : "outline"} className="mt-7 h-11 rounded-xl"><Link to="/signup">{plan.cta}</Link></Button>
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">{plan.note}</p>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <DocumentsComplianceNotice className="mx-auto mt-6 max-w-3xl text-left" />
+    </div>
+  </section>
+);
 
 export default Pricing;
