@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import {
-  Award,
   BriefcaseBusiness,
   Check,
   ExternalLink,
@@ -77,19 +76,17 @@ const sectionHeading = (section: ProfileSection) => {
   switch (section.kind) {
     case "work": return data.role || data.organization || "Work";
     case "education": return data.program || data.school || "Education";
-    case "accomplishment": return data.title || "Accomplishment";
-    case "credential": return data.name || "Credential";
+    case "credential": return data.name || "License or certification";
     default: return "Profile detail";
   }
 };
 
 const sectionMeta = (section: ProfileSection) => {
   const data = section.data || {};
-  const dateRange = [data.start || data.issued || data.date, data.end || data.expires].filter(Boolean).join(" – ");
+  const dateRange = [data.start || data.issued, data.end || data.expires].filter(Boolean).join(" – ");
   switch (section.kind) {
     case "work": return [data.organization, dateRange].filter(Boolean).join(" · ");
     case "education": return [data.school, dateRange].filter(Boolean).join(" · ");
-    case "accomplishment": return data.date || "";
     case "credential": return [data.issuer, dateRange].filter(Boolean).join(" · ");
     default: return "";
   }
@@ -99,7 +96,7 @@ const SECTION_ICONS: Record<ProfileSectionKind, typeof BriefcaseBusiness> = {
   about: FileBadge,
   work: BriefcaseBusiness,
   education: GraduationCap,
-  accomplishment: Award,
+  accomplishment: FileBadge,
   credential: FileBadge,
   project: FileBadge,
 };
@@ -186,7 +183,7 @@ const CreatorProfile = () => {
   const location = String(socialValues.location || "").trim() || null;
 
   if (loading) {
-    return <div className="min-h-screen bg-background px-4 py-16"><div className="mx-auto max-w-5xl space-y-5"><Skeleton className="h-80 rounded-[2rem]" /><div className="grid gap-5 md:grid-cols-2"><Skeleton className="h-56 rounded-3xl" /><Skeleton className="h-56 rounded-3xl" /></div></div></div>;
+    return <div className="min-h-screen bg-background px-3 py-10"><div className="mx-auto max-w-5xl space-y-3"><Skeleton className="h-44 rounded-3xl" /><Skeleton className="h-72 rounded-3xl" /></div></div>;
   }
 
   if (notFound || !profile) {
@@ -201,7 +198,7 @@ const CreatorProfile = () => {
   const profileUrl = `https://verifiedly.app/${profile.username}`;
   const shareImage = profile.avatar_url || new URL(logoMark, window.location.origin).href;
   const isOwner = viewerUserId === profile.id;
-  const hasOfficialLinks = !!(website || publicEmail || socials.length);
+  const hasContact = !!(website || publicEmail || location || socials.length);
 
   const shareProfile = async () => {
     try {
@@ -231,82 +228,82 @@ const CreatorProfile = () => {
         <script type="application/ld+json">{JSON.stringify({ "@context": "https://schema.org", "@type": isOrganization ? "Organization" : "Person", name: displayName, url: profileUrl, image: profile.avatar_url || undefined, sameAs: [...socials.map((social) => social.url), website].filter(Boolean) })}</script>
       </Helmet>
 
-      <header className={`border-b ${theme.border} backdrop-blur`}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logoMark} alt="" className="h-6 w-6" /> Verifiedly</Link>
-          <div className="flex items-center gap-2">
-            <Button type="button" onClick={() => void shareProfile()} size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full px-3 text-xs">{linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}{linkCopied ? "Copied" : "Share"}</Button>
-            <Button asChild size="sm" variant="outline" className={`h-8 rounded-full text-xs ${theme.card} ${theme.border}`}><Link to={isOwner ? "/dashboard" : "/signup"}>{isOwner ? "Edit profile" : "Create yours"}</Link></Button>
+      <header className={`border-b ${theme.border}`}>
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-3 py-2.5 sm:px-4">
+          <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logoMark} alt="" className="h-5 w-5" /> Verifiedly</Link>
+          <div className="flex items-center gap-1.5">
+            <Button type="button" onClick={() => void shareProfile()} size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full px-2.5 text-xs">{linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}{linkCopied ? "Copied" : "Share"}</Button>
+            <Button asChild size="sm" variant="outline" className={`h-8 rounded-full px-3 text-xs ${theme.card} ${theme.border}`}><Link to={isOwner ? "/dashboard" : "/signup"}>{isOwner ? "Edit" : "Create yours"}</Link></Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
-        <Card className={`relative overflow-hidden rounded-[2rem] border shadow-[0_24px_70px_-40px_rgba(0,0,0,0.35)] ${theme.card} ${theme.border}`}>
-          <div className={`absolute inset-x-0 top-0 h-28 ${theme.soft}`} />
-          <section className="relative px-5 pb-7 pt-12 text-center sm:px-10 sm:pb-9 sm:pt-14">
-            <Avatar className={`mx-auto h-28 w-28 border-4 shadow-lg sm:h-32 sm:w-32 ${theme.card} ${theme.border}`}>
+      <main className="mx-auto max-w-5xl px-3 py-3 sm:px-4 sm:py-5">
+        <Card className={`overflow-hidden rounded-3xl border shadow-[0_18px_55px_-38px_rgba(0,0,0,0.45)] ${theme.card} ${theme.border}`}>
+          <section className="flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-5">
+            <Avatar className={`h-20 w-20 shrink-0 border-2 sm:h-24 sm:w-24 ${theme.card} ${theme.border}`}>
               {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
-              <AvatarFallback className="text-4xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+              <AvatarFallback className="text-2xl font-display font-bold sm:text-3xl">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
             </Avatar>
-            <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-2">
-              <h1 className="break-words font-display text-3xl font-bold tracking-tight sm:text-4xl">{displayName}</h1>
-              {profile.id_verified && <VerifiedBadge className="h-7 w-7 shrink-0" label="Verifiedly identity verified" />}
-              {isOrganization && profile.business_verified && <BusinessVerificationBadge compact />}
-              {isOwner && !profile.id_verified && <Link to="/dashboard/verification" className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium ${theme.muted} ${theme.border}`}><ShieldCheck className="h-3 w-3" /> Get verified</Link>}
-            </div>
-            {profile.category && <p className="mt-2 text-base font-medium sm:text-lg">{profile.category}</p>}
-            <p className={`mt-1 text-sm ${theme.muted}`}>@{profile.username}</p>
-            {location && <p className={`mt-3 inline-flex items-center gap-1.5 text-xs ${theme.muted}`}><MapPin className="h-3.5 w-3.5" />{location}</p>}
-
-            {hasOfficialLinks && (
-              <div className="mx-auto mt-6 max-w-2xl">
-                <p className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.muted}`}>Official links</p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {website && <a href={website} target="_blank" rel="noopener noreferrer" className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-xs font-medium transition hover:-translate-y-0.5 ${theme.card} ${theme.border}`}><Globe className="h-4 w-4" /> Website</a>}
-                  {publicEmail && <a href={`mailto:${publicEmail}`} className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-xs font-medium transition hover:-translate-y-0.5 ${theme.card} ${theme.border}`}><Mail className="h-4 w-4" /> Email</a>}
-                  {socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition hover:-translate-y-0.5 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}><SocialIcon platform={platform} className="h-4 w-4" /></a>)}
-                </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+                {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label="Verifiedly identity verified" />}
+                {isOrganization && profile.business_verified && <BusinessVerificationBadge compact />}
               </div>
-            )}
+              {profile.category && <p className="mt-0.5 text-sm font-medium sm:text-base">{profile.category}</p>}
+              <div className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${theme.muted}`}>
+                <span>@{profile.username}</span>
+                {location && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{location}</span>}
+              </div>
+              {!!socials.length && <div className="mt-2.5 flex flex-wrap items-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:opacity-70 ${theme.card} ${theme.border}`} aria-label={platform} title={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
+              {isOwner && !profile.id_verified && <Link to="/dashboard/verification" className={`mt-2 inline-flex items-center gap-1 text-[11px] font-medium ${theme.muted}`}><ShieldCheck className="h-3.5 w-3.5" /> Verify identity</Link>}
+            </div>
           </section>
 
-          {isOrganization && (profile.organization_legal_name || profile.organization_industry || profile.organization_country) && (
-            <section className={`grid gap-4 border-t px-5 py-5 text-center sm:grid-cols-3 sm:px-10 ${theme.border} ${theme.soft}`}>
-              {profile.organization_legal_name && <div><p className={`text-[10px] uppercase tracking-[0.14em] ${theme.muted}`}>Official name</p><p className="mt-1 text-sm font-semibold">{profile.organization_legal_name}</p></div>}
-              {profile.organization_industry && <div><p className={`text-[10px] uppercase tracking-[0.14em] ${theme.muted}`}>Industry</p><p className="mt-1 text-sm font-semibold">{profile.organization_industry}</p></div>}
-              {profile.organization_country && <div><p className={`text-[10px] uppercase tracking-[0.14em] ${theme.muted}`}>Country</p><p className="mt-1 text-sm font-semibold">{profile.organization_country}</p></div>}
-            </section>
-          )}
+          <div className={`grid border-t lg:grid-cols-[220px_minmax(0,1fr)] ${theme.border}`}>
+            <aside className={`border-b p-4 lg:border-b-0 lg:border-r ${theme.border} ${theme.soft}`}>
+              <h2 className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${theme.muted}`}>Official information</h2>
+              <div className="mt-3 space-y-2.5 text-xs">
+                {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 transition hover:opacity-70"><Mail className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span className="break-all">{publicEmail}</span></a>}
+                {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 transition hover:opacity-70"><Globe className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>Official website</span></a>}
+                {location && <div className="flex items-start gap-2"><MapPin className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.muted}`} /><span>{location}</span></div>}
+                {isOrganization && profile.organization_industry && <div><p className={`text-[9px] uppercase tracking-[0.12em] ${theme.muted}`}>Industry</p><p className="mt-0.5 font-medium">{profile.organization_industry}</p></div>}
+                {isOrganization && profile.organization_country && <div><p className={`text-[9px] uppercase tracking-[0.12em] ${theme.muted}`}>Country</p><p className="mt-0.5 font-medium">{profile.organization_country}</p></div>}
+                {!hasContact && !profile.organization_industry && !profile.organization_country && <p className={theme.muted}>No public contact information.</p>}
+              </div>
+            </aside>
+
+            <div className="min-w-0 p-4 sm:p-5">
+              <div className="grid gap-4 md:grid-cols-3">
+                {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
+                  const entries = sections.filter((section) => section.kind === kind);
+                  if (!entries.length) return null;
+                  const Icon = SECTION_ICONS[kind];
+                  return (
+                    <section key={kind} className="min-w-0">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${theme.soft}`}><Icon className="h-3.5 w-3.5" /></span>
+                        <h2 className="text-sm font-semibold">{PROFILE_SECTION_DEFINITIONS[kind].label}</h2>
+                      </div>
+                      <div className="space-y-2">
+                        {entries.map((section) => {
+                          const heading = sectionHeading(section);
+                          const meta = sectionMeta(section);
+                          const url = safeExternalUrl(section.data?.url);
+                          return <article key={section.id} className={`rounded-xl border px-3 py-2.5 ${theme.border}`}><div className="flex items-start gap-2"><div className="min-w-0 flex-1"><h3 className="text-xs font-semibold leading-snug">{heading}</h3>{meta && <p className={`mt-0.5 text-[10px] leading-relaxed ${theme.muted}`}>{meta}</p>}</div>{url && <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 pt-0.5 ${theme.muted}`} aria-label={`Open official link for ${heading}`}><ExternalLink className="h-3.5 w-3.5" /></a>}</div></article>;
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+              {!sections.length && <div className="py-7 text-center"><p className="text-sm font-semibold">Official profile ready</p><p className={`mt-1 text-xs ${theme.muted}`}>Work, education, and licenses can be added here.</p></div>}
+            </div>
+          </div>
         </Card>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
-            const entries = sections.filter((section) => section.kind === kind);
-            if (!entries.length) return null;
-            const Icon = SECTION_ICONS[kind];
-            return (
-              <Card key={kind} className={`rounded-3xl border p-5 shadow-sm sm:p-6 ${theme.card} ${theme.border}`}>
-                <div className="mb-5 flex items-center gap-3">
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${theme.soft}`}><Icon className="h-5 w-5" /></span>
-                  <div><h2 className="font-display text-lg font-bold">{PROFILE_SECTION_DEFINITIONS[kind].label}</h2><p className={`text-[11px] ${theme.muted}`}>{entries.length} {entries.length === 1 ? "entry" : "entries"}</p></div>
-                </div>
-                <div className="space-y-3">
-                  {entries.map((section) => {
-                    const heading = sectionHeading(section);
-                    const meta = sectionMeta(section);
-                    const url = safeExternalUrl(section.data?.url);
-                    return <article key={section.id} className={`group rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${theme.border}`}><div className="flex items-start gap-3"><div className="min-w-0 flex-1"><h3 className="text-sm font-semibold leading-snug">{heading}</h3>{meta && <p className={`mt-1 text-xs leading-relaxed ${theme.muted}`}>{meta}</p>}</div>{url && <a href={url} target="_blank" rel="noopener noreferrer" className={`shrink-0 rounded-full p-1.5 transition group-hover:opacity-100 ${theme.muted}`} aria-label={`Open supporting link for ${heading}`}><ExternalLink className="h-4 w-4" /></a>}</div></article>;
-                  })}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        {!sections.length && <Card className={`mt-6 rounded-3xl border p-10 text-center ${theme.card} ${theme.border}`}><p className="font-display text-lg font-semibold">Official profile ready</p><p className={`mx-auto mt-2 max-w-md text-sm ${theme.muted}`}>Work, education, accomplishments, and credentials can be added here.</p></Card>}
-
-        <footer className={`mt-7 text-center text-[11px] ${theme.muted}`}>
+        <footer className={`mt-4 text-center text-[10px] ${theme.muted}`}>
           <div className="flex items-center justify-center gap-4"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link><Link to="/login">Sign in</Link></div>
         </footer>
       </main>
