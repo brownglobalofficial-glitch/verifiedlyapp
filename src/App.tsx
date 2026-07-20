@@ -24,11 +24,8 @@ const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
-const Documents = lazy(() => import("./pages/dashboard/Documents"));
-const Credentials = lazy(() => import("./pages/dashboard/Credentials"));
 const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
 const Directory = lazy(() => import("./pages/Directory"));
-const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Developers = lazy(() => import("./pages/Developers"));
@@ -49,6 +46,8 @@ const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/disputes",
   "/dashboard/monetization",
   "/dashboard/purchases",
+  "/dashboard/credentials",
+  "/dashboard/documents",
 ];
 
 const LegacyProfileRedirect = () => {
@@ -159,8 +158,6 @@ const App = () => (
             <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
-            <Route path="/dashboard/documents" element={<AuthGuard><Documents /></AuthGuard>} />
-            <Route path="/dashboard/credentials" element={<AuthGuard><Credentials /></AuthGuard>} />
             <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
@@ -175,7 +172,6 @@ const App = () => (
             ))}
             <Route path="/comparison/verifiedly-vs-linktree" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<Pricing />} />
-            <Route path="/documents/shared/:token" element={<SharedDocument />} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<LegacyProfileRedirect />} />
             <Route path="/:username/p/:productId" element={<LegacyProfileRedirect />} />
