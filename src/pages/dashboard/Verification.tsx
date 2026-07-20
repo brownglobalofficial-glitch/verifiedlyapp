@@ -163,8 +163,8 @@ const Verification = () => {
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><ShieldCheck className="h-5 w-5" /></div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Verifiedly Verification Badge</p>
-                  <h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">{"\n"}</p>
+                  <h1 className="mt-1 text-2xl font-display font-bold">Verification Badge</h1>
                   <p className="mt-1 text-xs opacity-70">We use Stripe Identity to verify your identity.</p>
                 </div>
               </div>
