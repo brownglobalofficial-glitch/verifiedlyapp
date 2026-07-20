@@ -62,14 +62,14 @@ const Index = () => {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[300px]">
-          Your profile is free. Identity verification and private supporting files are optional.
+          {"\n"}
         </p>
 
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-          <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
+          <Link to="/refunds" className="hover:text-foreground transition-colors">{"\n"}</Link>
           <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
         </footer>
       </main>
