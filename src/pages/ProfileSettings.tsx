@@ -509,7 +509,7 @@ const ProfileSettings = () => {
               <h2 className="text-xl font-display font-bold">Profile Theme</h2>
               <p className="text-sm text-muted-foreground">
                 Choose how your public profile looks. Premium themes are available on{" "}
-                <Link to="/pro" className="underline">Verifiedly Pro</Link>.
+                <Link to="/pro" className="underline">Verifiedly Pro & Elite</Link>.
               </p>
             </div>
 

@@ -91,12 +91,12 @@ const Pricing = () => {
             </div>
             <h3 className="text-xl font-display font-semibold mb-2">Verifiedly Pro</h3>
             <p className="text-4xl font-display font-bold mb-1">$9.99<span className="text-lg opacity-60 font-normal">/mo</span></p>
-            <p className="text-sm opacity-60 mb-6">3% platform fee (down from 10%) + one included identity check</p>
+            <p className="text-sm opacity-60 mb-6">3% platform fee (down from 10%) + free ID verification</p>
             <ul className="space-y-3 mb-8">
               {[
                 "Everything in Free",
                 "3% platform fee on every sale",
-                "One identity check included on activation ($4.99 value)",
+                "Free identity verification ($4.99 value)",
                 "Paid subscription tiers + exclusive content",
                 "Advanced analytics",
                 "Priority support",

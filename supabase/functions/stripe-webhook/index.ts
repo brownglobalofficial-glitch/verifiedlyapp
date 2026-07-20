@@ -293,12 +293,10 @@ serve(async (req) => {
 
         const tier = metadata.tier;
         if (tier === "pro" || tier === "elite") {
-          // NEVER set is_verified / id_verified here. Identity verification is
-          // granted ONLY by Stripe Identity via check-identity-status. A paid
-          // subscription is not proof of identity.
           await supabase.from("profiles").update({
             is_pro: tier === "pro" || tier === "elite",
             is_elite: tier === "elite",
+            is_verified: true,
           }).eq("id", metadata.user_id);
 
           log("Profile upgraded", { tier, userId: metadata.user_id });

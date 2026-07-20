@@ -10,7 +10,6 @@ interface Props {
   amountUsd: number;
   kind: Kind;
   isPro: boolean;
-  /** @deprecated Elite is retired; accepted for backward compatibility only. */
   isElite?: boolean;
   compact?: boolean;
 }
@@ -32,9 +31,8 @@ const labels: Record<Kind, string> = {
  * fee based on the seller's current plan, plus a clear "you receive" total.
  * Used inside the dashboard only — never surfaced on public checkout.
  */
-export default function FeeBreakdown({ amountUsd, kind, isPro, isElite: _isElite = false, compact = false }: Props) {
-  void _isElite;
-  const feePercent = isPro ? 3 : 10;
+export default function FeeBreakdown({ amountUsd, kind, isPro, isElite = false, compact = false }: Props) {
+  const feePercent = isElite ? 0 : isPro ? 3 : 10;
 
   const rows = useMemo(() => {
     const amount = Math.max(0, Number(amountUsd) || 0);
@@ -46,7 +44,7 @@ export default function FeeBreakdown({ amountUsd, kind, isPro, isElite: _isElite
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
-  const proSavings = !isPro ? (rows.amount * (10 - 3)) / 100 : 0;
+  const proSavings = !isPro && !isElite ? (rows.amount * (10 - 3)) / 100 : 0;
 
   return (
     <Card className={compact ? "p-3" : "p-4"}>
@@ -83,7 +81,7 @@ export default function FeeBreakdown({ amountUsd, kind, isPro, isElite: _isElite
         </div>
         <div className="flex justify-between">
           <dt className="text-muted-foreground">
-            Verifiedly platform fee ({feePercent}% · {isPro ? "Pro" : "Free"})
+            Verifiedly platform fee ({feePercent}% · {isElite ? "legacy" : isPro ? "Pro" : "Free"})
           </dt>
           <dd className="font-mono">−{fmt(rows.platformCut)}</dd>
         </div>

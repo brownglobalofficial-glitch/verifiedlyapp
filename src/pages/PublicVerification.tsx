@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, ExternalLink } from "lucide-react";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import { ArrowLeft, Check, X, ExternalLink } from "lucide-react";
+import TrustScore from "@/components/TrustScore";
 
 const PLATFORM_URL: Record<string, (h: string) => string> = {
   instagram: (h) => `https://instagram.com/${h}`,
@@ -21,18 +22,22 @@ const PublicVerification = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [socials, setSocials] = useState<any[]>([]);
+  const [hasStripe, setHasStripe] = useState(false);
+  const [linksCount, setLinksCount] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url, id_verified, verified_at, show_legal_name, verified_full_name")
-        .eq("username", username)
-        .maybeSingle();
+      const { data: p } = await supabase.from("profiles").select("*").eq("username", username).maybeSingle();
       if (!p) { setLoading(false); return; }
-      const { data: vs } = await (supabase.from("verified_socials" as any).select("platform, handle, verification_status").eq("user_id", p.id) as any);
+      const [{ data: vs }, payout, { count: lc }] = await Promise.all([
+        (supabase.from("verified_socials" as any).select("*").eq("user_id", p.id) as any),
+        (supabase.rpc as any)("creator_has_payments", { _creator_id: p.id }),
+        supabase.from("bio_links").select("*", { count: "exact", head: true }).eq("creator_id", p.id),
+      ]);
       setProfile(p);
       setSocials(vs || []);
+      setHasStripe(!!payout?.data);
+      setLinksCount(lc || 0);
       setLoading(false);
     })();
   }, [username]);
@@ -40,18 +45,37 @@ const PublicVerification = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Loading…</div>;
   if (!profile) return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="p-6 text-center"><p>Profile not found.</p></Card>
+      <Card className="p-6 text-center"><p>Creator not found.</p></Card>
     </div>
   );
 
-  const isVerified = !!profile.id_verified;
-  const connectedSocials = socials.filter((s: any) => s.verification_status === "verified");
-  const ogTitle = isVerified
-    ? `@${profile.username} · Verified identity on Verifiedly`
-    : `@${profile.username} · Verifiedly`;
-  const ogDesc = isVerified
-    ? `${profile.display_name || profile.username} has completed identity verification via Stripe Identity on Verifiedly.`
-    : `${profile.display_name || profile.username} has not completed identity verification on Verifiedly.`;
+  const score = profile.trust_score ?? 0;
+  const verifiedSocials = socials.filter(s => s.verification_status === "verified");
+  const isVerified = score >= 80;
+  const showScore = profile.trust_score_public !== false;
+  const showBreakdown = profile.signal_breakdown_public !== false;
+  const showSocials = profile.verified_socials_public !== false;
+  const showPayout = profile.payout_status_public !== false;
+  const optedOut = !!profile.trust_score_opt_out;
+
+  const allSignals = [
+    { label: "Username claimed",          done: !!profile.username },
+    { label: "Display name + avatar",     done: !!profile.avatar_url && !!profile.display_name },
+    { label: "Bio + at least one link",   done: (profile.bio?.length ?? 0) >= 10 && linksCount >= 1 },
+    ...(showPayout ? [{ label: "Stripe payouts active", done: hasStripe }] : []),
+    { label: `Verified socials (${verifiedSocials.length})`, done: verifiedSocials.length > 0 },
+    { label: "Domain verified",           done: !!profile.domain_verified },
+  ];
+  const signals = allSignals;
+
+  const ogTitle = optedOut
+    ? `@${profile.username} · Verifiedly`
+    : isVerified
+    ? `@${profile.username} · Verified on Verifiedly`
+    : `@${profile.username} · Verification status`;
+  const ogDesc = optedOut
+    ? `${profile.display_name || profile.username} has opted out of public verification.`
+    : `${profile.display_name || profile.username} · Trust Score ${score}/100 on Verifiedly.`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,60 +88,65 @@ const PublicVerification = () => {
         <meta property="og:url" content={`https://verifiedly.app/verify/${profile.username}`} />
         <meta property="og:type" content="profile" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDesc} />
       </Helmet>
 
-      <div className="container mx-auto px-4 py-10 max-w-xl">
-        <Link to={`/${profile.username}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-8">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Link to={`/${profile.username}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-4 h-4" /> Back to profile
         </Link>
 
-        <Card className="p-8 text-center">
-          {profile.avatar_url && (
-            <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full mx-auto mb-4 object-cover" />
-          )}
-          <h1 className="text-2xl font-display font-bold tracking-tight">
+        <div className="text-center mb-6">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Verification status</p>
+          <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight">
             {profile.display_name || profile.username}
           </h1>
-          <p className="text-sm text-muted-foreground mb-6">@{profile.username}</p>
-
-          {isVerified ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background mb-3">
-              <VerifiedBadge className="w-5 h-5" />
-              <span className="text-sm font-medium">Verified identity</span>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-muted-foreground mb-3">
-              <span className="text-sm font-medium">Not identity verified</span>
+          <p className="text-sm text-muted-foreground">@{profile.username}</p>
+          {!optedOut && showScore && (
+            <div className="mt-3 flex justify-center">
+              <TrustScore score={score} isElite={!!profile.is_elite} />
             </div>
           )}
+        </div>
 
-          {isVerified && profile.verified_at && (
-            <p className="text-xs text-muted-foreground">
-              Verified {new Date(profile.verified_at).toLocaleDateString()}
+        {optedOut ? (
+          <Card className="p-6 mb-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              This creator has opted out of public verification. Their account is still active on Verifiedly.
             </p>
-          )}
+          </Card>
+        ) : showBreakdown ? (
+          <Card className="p-6 mb-6">
+            <h2 className="font-display font-semibold mb-3">What's verified</h2>
+            <ul className="divide-y divide-border">
+              {signals.map(s => (
+                <li key={s.label} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center ${s.done ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>
+                      {s.done ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                    </span>
+                    <span className="text-sm">{s.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{s.done ? "Verified" : "Not yet"}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
 
-          {isVerified && profile.show_legal_name && profile.verified_full_name && (
-            <p className="text-xs text-muted-foreground mt-1">Legal name: {profile.verified_full_name}</p>
-          )}
-
-          <Link
-            to={`/${profile.username}`}
-            className="inline-flex items-center gap-1 text-xs underline mt-4 text-muted-foreground hover:text-foreground"
-          >
-            View profile <ExternalLink className="w-3 h-3" />
-          </Link>
-        </Card>
-
-        {connectedSocials.length > 0 && (
-          <Card className="p-5 mt-4">
-            <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground mb-3">Connected accounts</p>
-            <ul className="space-y-1.5">
-              {connectedSocials.map((s: any) => {
+        {!optedOut && showSocials && verifiedSocials.length > 0 && (
+          <Card className="p-6 mb-6">
+            <h2 className="font-display font-semibold mb-3">Verified socials</h2>
+            <ul className="space-y-2">
+              {verifiedSocials.map(s => {
                 const urlFn = PLATFORM_URL[s.platform];
                 return (
-                  <li key={`${s.platform}-${s.handle}`} className="flex items-center justify-between text-sm">
-                    <span className="capitalize">{s.platform} · @{s.handle}</span>
+                  <li key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary">
+                    <div>
+                      <p className="text-sm font-medium capitalize">{s.platform}</p>
+                      <p className="text-xs text-muted-foreground">@{s.handle}</p>
+                    </div>
                     {urlFn && (
                       <a href={urlFn(s.handle)} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                         Visit <ExternalLink className="w-3 h-3" />
@@ -127,13 +156,17 @@ const PublicVerification = () => {
                 );
               })}
             </ul>
-            <p className="text-[11px] text-muted-foreground mt-3">Connected means the account was linked — not identity verified.</p>
           </Card>
         )}
 
-        <p className="text-[11px] text-muted-foreground text-center mt-6 leading-relaxed">
-          Identity check powered by Stripe Identity. This confirms identity, not endorsement.
-        </p>
+        <Card className="p-4 text-center bg-secondary">
+          <p className="text-xs text-muted-foreground">
+            Verifiedly verification is built on factual, opt-in signals — Stripe payout status,
+            social account ownership, email confirmation, and more. The creator can remove any
+            signal at any time.
+          </p>
+          <Link to="/" className="text-xs underline mt-2 inline-block">How verification works</Link>
+        </Card>
       </div>
     </div>
   );

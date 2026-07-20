@@ -46,7 +46,6 @@ const Developers = lazy(() => import("./pages/Developers"));
 const Monetization = lazy(() => import("./pages/dashboard/Monetization"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Purchases = lazy(() => import("./pages/dashboard/Purchases"));
-const Pricing = lazy(() => import("./pages/Pricing"));
 
 const queryClient = new QueryClient();
 
@@ -182,7 +181,6 @@ const App = () => (
             <Route path="/:username/membership" element={<Membership />} />
             <Route path="/:username/p/:productId" element={<Product />} />
             <Route path="/comparison/verifiedly-vs-linktree" element={<ComparisonLinktree />} />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

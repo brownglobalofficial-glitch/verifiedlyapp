@@ -1,1 +1,0 @@
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pro_identity_check_used boolean NOT NULL DEFAULT false;
