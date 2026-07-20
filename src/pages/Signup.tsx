@@ -185,10 +185,10 @@ const Signup = () => {
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={agreedTerms} onCheckedChange={(c) => setAgreedTerms(c === true)} className="mt-0.5" />
             <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
-              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>, and I certify that I will not upload prohibited identity or financial documents to my private vault.
+              I agree to the <Link to="/terms" className="underline text-foreground" target="_blank">Terms of Service</Link> and <Link to="/privacy" className="underline text-foreground" target="_blank">Privacy Policy</Link>
             </label>
           </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">You must be at least 13. If you are a minor where you live, a parent or legal guardian must permit your use. Identity verification is limited to adults 18+.</p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">You must be at least 13 years old. If you are a minor where you live, a parent or legal guardian must permit your use. Identity verification is limited to adults 18+.</p>
           <Button type="submit" className="w-full" disabled={loading || !agreedTerms || checkingUsername || usernameAvailable !== true}>
             {loading ? "Creating account..." : "Sign up"}
           </Button>
