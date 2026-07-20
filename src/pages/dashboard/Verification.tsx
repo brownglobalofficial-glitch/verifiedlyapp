@@ -33,7 +33,7 @@ const defaultState: VerificationState = {
   identity_attempt_count: 0,
 };
 
-const identityCheckoutEnabled = import.meta.env.VITE_STRIPE_IDENTITY_USE_CASE_APPROVED === "true";
+const identityCheckoutEnabled = import.meta.env.VITE_STRIPE_IDENTITY_USE_CASE_APPROVED !== "false";
 
 const Verification = () => {
   const navigate = useNavigate();

@@ -13,6 +13,7 @@ import {
   MapPin,
   Share2,
   ShieldCheck,
+  Link as LinkIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,18 +34,20 @@ import {
   type ProfileSectionKind,
 } from "@/lib/profile-sections";
 
-const PUBLIC_PROFILE_FIELDS = "id, username, display_name, category, account_type, avatar_url, website, social_links, theme_color, id_verified, verified_at, updated_at, organization_legal_name, organization_industry, organization_country, business_verified, business_verified_at, business_verification_expires_at, business_verification_provider";
+const PUBLIC_PROFILE_FIELDS = "id, username, display_name, bio, category, account_type, avatar_url, website, social_links, theme_color, link_layout, id_verified, verified_at, updated_at, organization_legal_name, organization_industry, organization_country, business_verified, business_verified_at, business_verification_expires_at, business_verification_provider";
 
 interface PublicProfile {
   id: string;
   username: string;
   display_name: string | null;
+  bio: string | null;
   category: string | null;
   account_type: string | null;
   avatar_url: string | null;
   website: string | null;
   social_links: unknown;
   theme_color: string | null;
+  link_layout: string | null;
   id_verified: boolean;
   verified_at: string | null;
   updated_at: string;
@@ -55,6 +58,14 @@ interface PublicProfile {
   business_verified_at: string | null;
   business_verification_expires_at: string | null;
   business_verification_provider: string | null;
+}
+
+interface FeaturedLink {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail_url: string | null;
+  icon: string | null;
 }
 
 const THEME_CLASSES: Record<string, { page: string; card: string; muted: string; border: string; soft: string }> = {
@@ -79,6 +90,7 @@ const sectionHeading = (section: ProfileSection) => {
     case "education": return data.program || data.school || "Education";
     case "accomplishment": return data.title || "Accomplishment";
     case "credential": return data.name || "Credential";
+    case "project": return data.name || "Project";
     default: return "Profile detail";
   }
 };
@@ -91,6 +103,7 @@ const sectionMeta = (section: ProfileSection) => {
     case "education": return [data.school, dateRange].filter(Boolean).join(" · ");
     case "accomplishment": return data.date || "";
     case "credential": return [data.issuer, dateRange].filter(Boolean).join(" · ");
+    case "project": return [data.role, data.description].filter(Boolean).join(" · ");
     default: return "";
   }
 };
@@ -124,6 +137,7 @@ const CreatorProfile = () => {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [sections, setSections] = useState<ProfileSection[]>([]);
+  const [featuredLinks, setFeaturedLinks] = useState<FeaturedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -162,12 +176,20 @@ const CreatorProfile = () => {
         .eq("is_public", true)
         .order("position", { ascending: true });
 
+      const { data: currentLinks } = await supabase
+        .from("bio_links")
+        .select("id, title, url, thumbnail_url, icon, is_active, sort_order")
+        .eq("creator_id", currentProfile.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
       setProfile(currentProfile as PublicProfile);
       setSections((currentSections || []).map((section) => ({
         ...section,
         kind: section.kind as ProfileSectionKind,
         data: (section.data || {}) as Record<string, string>,
-      })).filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section)));
+      })).filter((section) => (isProfileEditorSectionKind(section.kind) || section.kind === "project") && hasVisibleSectionData(section)));
+      setFeaturedLinks((currentLinks || []) as FeaturedLink[]);
       setLoading(false);
       void supabase.from("page_views").insert({ creator_id: currentProfile.id });
     };
@@ -259,6 +281,8 @@ const CreatorProfile = () => {
             <p className={`mt-1 text-sm ${theme.muted}`}>@{profile.username}</p>
             {location && <p className={`mt-3 inline-flex items-center gap-1.5 text-xs ${theme.muted}`}><MapPin className="h-3.5 w-3.5" />{location}</p>}
 
+            {profile.bio && <p className={`mx-auto mt-4 max-w-xl whitespace-pre-line text-sm leading-relaxed sm:text-[15px]`}>{profile.bio}</p>}
+
             {hasOfficialLinks && (
               <div className="mx-auto mt-6 max-w-2xl">
                 <p className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.muted}`}>Official links</p>
@@ -280,8 +304,55 @@ const CreatorProfile = () => {
           )}
         </Card>
 
+        {featuredLinks.length > 0 && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.16em]">Featured links</h2>
+              <span className={`text-[11px] ${theme.muted}`}>{featuredLinks.length} {featuredLinks.length === 1 ? "link" : "links"}</span>
+            </div>
+            <div className={`grid gap-3 ${profile.link_layout === "compact" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
+              {featuredLinks.map((link) => {
+                const href = safeExternalUrl(link.url);
+                if (!href) return null;
+                return (
+                  <a
+                    key={link.id}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`group flex items-center gap-3 rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${theme.card} ${theme.border}`}
+                  >
+                    {link.thumbnail_url ? (
+                      <img src={link.thumbnail_url} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${theme.soft}`}><LinkIcon className="h-4 w-4" /></span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{link.title}</span>
+                    <ExternalLink className={`h-4 w-4 shrink-0 transition group-hover:translate-x-0.5 ${theme.muted}`} />
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {(() => {
+          const aboutSection = sections.find((s) => s.kind === "about");
+          const aboutText = String(aboutSection?.data?.text || "").trim();
+          if (!aboutText) return null;
+          return (
+            <Card className={`mt-6 rounded-3xl border p-5 shadow-sm sm:p-6 ${theme.card} ${theme.border}`}>
+              <div className="mb-3 flex items-center gap-3">
+                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${theme.soft}`}><FileBadge className="h-5 w-5" /></span>
+                <h2 className="font-display text-lg font-bold">About</h2>
+              </div>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{aboutText}</p>
+            </Card>
+          );
+        })()}
+
         <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
+          {([...PROFILE_EDITOR_SECTION_KINDS, "project" as ProfileSectionKind]).map((kind) => {
             const entries = sections.filter((section) => section.kind === kind);
             if (!entries.length) return null;
             const Icon = SECTION_ICONS[kind];
