@@ -1,19 +1,52 @@
 import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
 
-const VerifiedBadge = forwardRef<SVGSVGElement, { className?: string; label?: string }>(
-  ({ className = "w-5 h-5", label = "Verifiedly identity verified" }, ref) => (
-    <svg ref={ref} viewBox="0 0 24 24" className={className} role="img" aria-label={label}>
-      <title>{label}</title>
-      <path
-        d="M12 1.75 14.18 3l2.48-.15 1.18 2.18 2.18 1.18-.15 2.48L21.25 12l-1.38 3.31.15 2.48-2.18 1.18-1.18 2.18-2.48-.15L12 22.25 9.82 21l-2.48.15-1.18-2.18-2.18-1.18.15-2.48L2.75 12l1.38-3.31-.15-2.48 2.18-1.18 1.18-2.18 2.48.15L12 1.75Z"
-        fill="hsl(217 91% 58%)"
-      />
-      <path
-        d="M7.45 7.25h2.18L12 13.69l2.37-6.44h2.18l-3.58 9.5h-1.94l-3.58-9.5Z"
-        fill="white"
-      />
-    </svg>
-  ),
+type VerifiedBadgeVariant = "blue" | "black" | "white" | "outline";
+
+interface VerifiedBadgeProps {
+  className?: string;
+  label?: string;
+  variant?: VerifiedBadgeVariant;
+}
+
+const variantClasses: Record<VerifiedBadgeVariant, string> = {
+  blue: "text-blue-500",
+  black: "text-black",
+  white: "text-white",
+  outline: "text-current",
+};
+
+const VerifiedBadge = forwardRef<SVGSVGElement, VerifiedBadgeProps>(
+  ({ className = "h-5 w-5", label = "Verified account", variant = "blue" }, ref) => {
+    const outlined = variant === "outline";
+
+    return (
+      <svg
+        ref={ref}
+        viewBox="0 0 24 24"
+        className={cn(variantClasses[variant], className)}
+        role="img"
+        aria-label={label}
+      >
+        <title>{label}</title>
+        <path
+          d="M12 1.8l2.1 1.28 2.45-.2 1.15 2.18 2.18 1.15-.2 2.45L21.2 12l-1.52 3.34.2 2.45-2.18 1.15-1.15 2.18-2.45-.2L12 22.2l-2.1-1.28-2.45.2-1.15-2.18-2.18-1.15.2-2.45L2.8 12l1.52-3.34-.2-2.45L6.3 5.06l1.15-2.18 2.45.2L12 1.8Z"
+          fill={outlined ? "none" : "currentColor"}
+          stroke="currentColor"
+          strokeWidth={outlined ? 1.7 : 0}
+          strokeLinejoin="round"
+        />
+        <path
+          d="m8.05 12.15 2.42 2.42 5.48-5.48"
+          fill="none"
+          stroke={outlined ? "currentColor" : "white"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  },
 );
 
 VerifiedBadge.displayName = "VerifiedBadge";
