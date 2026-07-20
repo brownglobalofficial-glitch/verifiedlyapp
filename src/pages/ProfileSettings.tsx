@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { Camera, Code2, ExternalLink, KeyRound, Search, ShieldCheck } from "lucide-react";
+import { Camera, Code2, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import SocialIcon from "@/components/SocialIcon";
@@ -11,7 +11,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,8 +38,6 @@ interface SettingsProfile {
   social_links: unknown;
   theme_color: string | null;
   id_verified: boolean;
-  search_visible: boolean;
-  accepts_verification_requests: boolean;
   business_verified: boolean;
 }
 
@@ -56,9 +53,6 @@ const ProfileSettings = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
-  const [searchVisible, setSearchVisible] = useState(false);
-  const [acceptsVerificationRequests, setAcceptsVerificationRequests] = useState(false);
-  const [savingDiscovery, setSavingDiscovery] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -70,7 +64,7 @@ const ProfileSettings = () => {
       setUser(session.user);
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, display_name, account_type, avatar_url, category, website, social_links, theme_color, id_verified, search_visible, accepts_verification_requests, business_verified")
+        .select("id, username, display_name, account_type, avatar_url, category, website, social_links, theme_color, id_verified, business_verified")
         .eq("id", session.user.id)
         .maybeSingle();
       if (error || !data) {
@@ -80,11 +74,9 @@ const ProfileSettings = () => {
       setProfile(data);
       setTheme(data.theme_color || "default");
       setAvatarUrl(data.avatar_url || "");
-      setSearchVisible(data.search_visible);
-      setAcceptsVerificationRequests(data.accepts_verification_requests);
       setLoading(false);
     };
-    load();
+    void load();
   }, [navigate, toast]);
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,24 +139,6 @@ const ProfileSettings = () => {
     toast({ title: "Password email sent", description: `Check ${user.email}.` });
   };
 
-  const saveDiscovery = async () => {
-    if (!profile) return;
-    setSavingDiscovery(true);
-    const nextAcceptsRequests = searchVisible && acceptsVerificationRequests;
-    const { error } = await supabase.from("profiles").update({
-      search_visible: searchVisible,
-      accepts_verification_requests: nextAcceptsRequests,
-    }).eq("id", profile.id);
-    setSavingDiscovery(false);
-    if (error) {
-      toast({ title: "Discovery settings not saved", description: error.message, variant: "destructive" });
-      return;
-    }
-    setAcceptsVerificationRequests(nextAcceptsRequests);
-    setProfile({ ...profile, search_visible: searchVisible, accepts_verification_requests: nextAcceptsRequests });
-    toast({ title: searchVisible ? "Profile added to opt-in search" : "Profile removed from search" });
-  };
-
   if (loading) {
     return <DashboardShell title="Settings"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
   }
@@ -193,7 +167,7 @@ const ProfileSettings = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-display font-bold">{displayName}</h1>
-                {profile?.id_verified && <VerifiedBadge className="h-5 w-5" label={profile.account_type === "business" ? "Account holder verified" : "Identity verified"} />}
+                {profile?.id_verified && <VerifiedBadge className="h-5 w-5" label="Verifiedly Verification Badge" />}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">@{profile?.username}</p>
               <p className="mt-2 text-xs text-muted-foreground">{uploading ? "Uploading photo…" : "JPG, PNG, or WebP · maximum 2 MB"}</p>
@@ -204,35 +178,10 @@ const ProfileSettings = () => {
           </div>
         </Card>
 
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <Search className="mt-0.5 h-5 w-5 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="font-display font-semibold">Profile discovery</h2>
-                  <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">Discovery is off by default. When enabled, signed-in organization accounts can find the same public information already shown on your profile. There are no job applications, rankings, connections, or background checks.</p>
-                </div>
-                <Switch checked={searchVisible} onCheckedChange={(value) => { setSearchVisible(value); if (!value) setAcceptsVerificationRequests(false); }} aria-label="Appear in Verifiedly search" />
-              </div>
-
-              <div className={`mt-4 flex items-start justify-between gap-4 rounded-2xl border p-4 ${searchVisible ? "" : "opacity-50"}`}>
-                <div><p className="text-sm font-medium">Accept verification requests</p><p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Signals that verified organizations may ask you to independently verify a degree or license. You always decide whether to proceed.</p></div>
-                <Switch disabled={!searchVisible} checked={acceptsVerificationRequests} onCheckedChange={setAcceptsVerificationRequests} aria-label="Accept verification requests" />
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[11px] text-muted-foreground">Only information you mark public can appear in discovery.</p>
-                <Button onClick={() => void saveDiscovery()} disabled={savingDiscovery} size="sm" className="rounded-full px-5">{savingDiscovery ? "Saving…" : "Save discovery"}</Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
         <Card className="p-5 sm:p-6 space-y-4">
           <div>
             <h2 className="font-display font-semibold">Profile appearance</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Choose a restrained background style. Your information keeps the same clear structure.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Choose the background style for your public profile.</p>
           </div>
           <div className={`overflow-hidden rounded-3xl border p-5 ${selectedTheme.page}`} aria-label="Live profile appearance preview">
             <div className="mx-auto max-w-md text-center">
@@ -242,7 +191,7 @@ const ProfileSettings = () => {
               </Avatar>
               <div className="mt-3 flex items-center justify-center gap-1.5">
                 <p className="font-display text-xl font-bold">{displayName}</p>
-                {profile?.id_verified && <VerifiedBadge className="h-4 w-4" label={profile.account_type === "business" ? "Account holder verified" : "Identity verified"} />}
+                {profile?.id_verified && <VerifiedBadge className="h-4 w-4" label="Verifiedly Verification Badge" />}
               </div>
               <p className={`mt-1 text-xs ${selectedTheme.muted}`}>@{profile?.username}{profile?.category ? ` · ${profile.category}` : ""}</p>
               {!!previewSocials.length && <div className="mt-3 flex justify-center gap-2">{previewSocials.map((platform) => <span key={platform} className={`inline-flex h-8 w-8 items-center justify-center rounded-full border ${selectedTheme.surface}`}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></span>)}</div>}
@@ -254,12 +203,7 @@ const ProfileSettings = () => {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {THEMES.map((option) => (
-              <button
-                type="button"
-                key={option.id}
-                onClick={() => setTheme(option.id)}
-                className={`rounded-lg border-2 p-2 text-left transition-all ${theme === option.id ? "border-foreground ring-2 ring-foreground/10" : "border-transparent"}`}
-              >
+              <button type="button" key={option.id} onClick={() => setTheme(option.id)} className={`rounded-lg border-2 p-2 text-left transition-all ${theme === option.id ? "border-foreground ring-2 ring-foreground/10" : "border-transparent"}`}>
                 <span className={`block h-14 rounded-md border ${option.colors}`} />
                 <span className="mt-2 block text-xs font-medium">{option.label}</span>
               </button>
@@ -287,8 +231,8 @@ const ProfileSettings = () => {
             <div className="flex gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
               <div>
-                <h2 className="font-display font-semibold">Identity verification</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Verification status and privacy controls are managed on one dedicated page.</p>
+                <h2 className="font-display font-semibold">Verifiedly Verification Badge</h2>
+                <p className="mt-1 text-xs text-muted-foreground">We use Stripe Identity to verify your identity.</p>
               </div>
             </div>
             <Button asChild variant="outline"><Link to="/dashboard/verification">Open verification</Link></Button>
@@ -300,28 +244,15 @@ const ProfileSettings = () => {
             <Code2 className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display font-semibold">Sign in with Verifiedly (OAuth 2.0 API)</h2>
+                <h2 className="font-display font-semibold">Sign in with Verifiedly</h2>
                 <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Developer beta</span>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Connect an approved app to consented Verifiedly profile and identity-status data. Credentials are issued after redirect-URI review; they are not generated or changed in the browser.</p>
-
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Connect an approved app to profile and identity-status data that a user agrees to share.</p>
               <div className="mt-5 grid gap-4">
-                <div>
-                  <Label htmlFor="oauth-client-id">Client ID</Label>
-                  <Input id="oauth-client-id" readOnly value="" placeholder="Issued after your app is approved" className="mt-1 rounded-xl font-mono text-xs" />
-                </div>
-                <div>
-                  <Label htmlFor="oauth-client-secret">Client Secret</Label>
-                  <Input id="oauth-client-secret" type="password" readOnly value="" placeholder="Shown once when issued or rotated" className="mt-1 rounded-xl font-mono text-xs" autoComplete="off" />
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">Verifiedly stores only a hash. A secret cannot be retrieved later; rotate it if it is lost. Never put it in browser code or a VITE_* variable.</p>
-                </div>
-                <div>
-                  <Label htmlFor="oauth-redirect-uris">Redirect URIs</Label>
-                  <Textarea id="oauth-redirect-uris" readOnly value="" placeholder={'https://yourapp.com/auth/callback\nhttp://localhost:3000/auth/callback'} className="mt-1 min-h-20 resize-none rounded-xl font-mono text-xs" />
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">HTTPS is required in production and every callback must exactly match a registered URI. Browser and mobile apps use Authorization Code + PKCE (S256).</p>
-                </div>
+                <div><Label htmlFor="oauth-client-id">Client ID</Label><Input id="oauth-client-id" readOnly value="" placeholder="Issued after your app is approved" className="mt-1 rounded-xl font-mono text-xs" /></div>
+                <div><Label htmlFor="oauth-client-secret">Client Secret</Label><Input id="oauth-client-secret" type="password" readOnly value="" placeholder="Shown once when issued or rotated" className="mt-1 rounded-xl font-mono text-xs" autoComplete="off" /></div>
+                <div><Label htmlFor="oauth-redirect-uris">Redirect URIs</Label><Textarea id="oauth-redirect-uris" readOnly value="" placeholder={'https://yourapp.com/auth/callback\nhttp://localhost:3000/auth/callback'} className="mt-1 min-h-20 resize-none rounded-xl font-mono text-xs" /></div>
               </div>
-
               <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
                 <Button asChild variant="outline" className="gap-2"><Link to="/developers">Open developer docs <ExternalLink className="h-4 w-4" /></Link></Button>
                 <Button asChild variant="ghost"><a href="mailto:support@verifiedly.app?subject=Verifiedly%20OAuth%20client%20request">Request a client</a></Button>
