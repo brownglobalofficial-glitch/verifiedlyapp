@@ -136,7 +136,7 @@ const Verification = () => {
   const checkoutId = state.verification_checkout_session_id;
   const canContinue = state.verification_payment_status === "paid" && !!checkoutId;
 
-  if (loading) return <DashboardShell title="Verify identity"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
+  if (loading) return <DashboardShell title="Verification"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
 
   return (
     <DashboardShell title="Verification">
