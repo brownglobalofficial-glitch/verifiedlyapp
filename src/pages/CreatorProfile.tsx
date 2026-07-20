@@ -96,10 +96,12 @@ const sectionMeta = (section: ProfileSection) => {
 };
 
 const SECTION_ICONS: Record<ProfileSectionKind, typeof BriefcaseBusiness> = {
+  about: FileBadge,
   work: BriefcaseBusiness,
   education: GraduationCap,
   accomplishment: Award,
   credential: FileBadge,
+  project: FileBadge,
 };
 
 const socialUrl = (platform: string, value: string) => {
@@ -229,7 +231,7 @@ const CreatorProfile = () => {
         <script type="application/ld+json">{JSON.stringify({ "@context": "https://schema.org", "@type": isOrganization ? "Organization" : "Person", name: displayName, url: profileUrl, image: profile.avatar_url || undefined, sameAs: [...socials.map((social) => social.url), website].filter(Boolean) })}</script>
       </Helmet>
 
-      <header className={`border-b ${theme.border} ${theme.card}/80 backdrop-blur`}>
+      <header className={`border-b ${theme.border} backdrop-blur`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logoMark} alt="" className="h-6 w-6" /> Verifiedly</Link>
           <div className="flex items-center gap-2">
