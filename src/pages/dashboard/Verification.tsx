@@ -136,10 +136,10 @@ const Verification = () => {
   const checkoutId = state.verification_checkout_session_id;
   const canContinue = state.verification_payment_status === "paid" && !!checkoutId;
 
-  if (loading) return <DashboardShell title="Verify identity"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
+  if (loading) return <DashboardShell title="Verification"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
 
   return (
-    <DashboardShell title="Verify identity">
+    <DashboardShell title="Verification">
       <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
         {verified ? (
           <Card className="rounded-3xl border-foreground/10 p-8 text-center shadow-sm sm:p-10">
@@ -163,8 +163,8 @@ const Verification = () => {
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><ShieldCheck className="h-5 w-5" /></div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Verifiedly Verification Badge</p>
-                  <h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">{"\n"}</p>
+                  <h1 className="mt-1 text-2xl font-display font-bold">Verification Badge</h1>
                   <p className="mt-1 text-xs opacity-70">We use Stripe Identity to verify your identity.</p>
                 </div>
               </div>
