@@ -139,7 +139,7 @@ const Verification = () => {
   if (loading) return <DashboardShell title="Verify identity"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
 
   return (
-    <DashboardShell title="Verify identity">
+    <DashboardShell title="Verification">
       <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8">
         {verified ? (
           <Card className="rounded-3xl border-foreground/10 p-8 text-center shadow-sm sm:p-10">
