@@ -18,7 +18,7 @@ import logoMark from "@/assets/verifiedly-mark.png";
 
 const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
-  { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
+  { title: "Verification", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 
