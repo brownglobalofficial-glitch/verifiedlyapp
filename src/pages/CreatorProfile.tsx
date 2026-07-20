@@ -350,7 +350,7 @@ const CreatorProfile = () => {
         })()}
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
+          {([...PROFILE_EDITOR_SECTION_KINDS, "project" as ProfileSectionKind]).map((kind) => {
             const entries = sections.filter((section) => section.kind === kind);
             if (!entries.length) return null;
             const Icon = SECTION_ICONS[kind];
