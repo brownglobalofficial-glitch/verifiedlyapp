@@ -41,11 +41,11 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
     ],
   },
   work: {
-    label: "Work",
-    description: "A current or previous professional role.",
+    label: "Work & experience",
+    description: "A job, team, club, internship, volunteer role, business, or other experience.",
     fields: [
-      { key: "role", label: "Role", placeholder: "Founder, player, designer…" },
-      { key: "organization", label: "Organization", placeholder: "Organization name" },
+      { key: "role", label: "Role", placeholder: "Student leader, footballer, founder…" },
+      { key: "organization", label: "Organization", placeholder: "School, team, club, or organization" },
       { key: "start", label: "Start", placeholder: "2024" },
       { key: "end", label: "End", placeholder: "Present" },
       { key: "url", label: "Official link", placeholder: "https://…", type: "url" },
@@ -97,11 +97,10 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
 export const PROFILE_SECTION_KINDS = Object.keys(PROFILE_SECTION_DEFINITIONS) as ProfileSectionKind[];
 
 // Legacy section types remain supported so previously entered data is never deleted.
-// Official profiles intentionally use only the essential structured categories below.
+// The active profile editor intentionally uses only the two universal sections below.
 export const PROFILE_EDITOR_SECTION_KINDS: ProfileSectionKind[] = [
   "work",
   "education",
-  "credential",
 ];
 
 export const isProfileEditorSectionKind = (kind: ProfileSectionKind) =>
