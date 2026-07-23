@@ -32,8 +32,6 @@ const Developers = lazy(() => import("./pages/Developers"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 const queryClient = new QueryClient();
-
-// Handles OAuth redirect + warms likely next routes so navigation feels instant.
 const AUTH_PAGES = new Set(["/login", "/signup"]);
 const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/products",
@@ -50,6 +48,9 @@ const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/documents",
 ];
 
+const safeInternalPath = (value: string | null) =>
+  value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+
 const LegacyProfileRedirect = () => {
   const { username } = useParams<{ username: string }>();
   return <Navigate to={username ? `/${username}` : "/"} replace />;
@@ -60,63 +61,46 @@ const RouteOptimizer = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Global hover/focus prefetch: warm any internal link's chunk before the click.
-    const handler = (e: Event) => {
-      const target = e.target as HTMLElement | null;
+    const handler = (event: Event) => {
+      const target = event.target as HTMLElement | null;
       const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
-      const path = href.split("?")[0].split("#")[0];
-      prefetchPath(path);
+      prefetchPath(href.split("?")[0].split("#")[0]);
     };
     document.addEventListener("mouseover", handler, { passive: true });
     document.addEventListener("focusin", handler, { passive: true });
     document.addEventListener("touchstart", handler, { passive: true });
 
     const redirectAuthedAway = async (userId: string) => {
-      // Only redirect if currently sitting on /login or /signup
       if (!AUTH_PAGES.has(window.location.pathname)) return;
-      // Universal account: everyone lands in /dashboard.
-      void userId;
-      navigate("/dashboard", { replace: true });
+      const params = new URLSearchParams(window.location.search);
+      const next = safeInternalPath(params.get("next"));
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!profile?.onboarding_completed) {
+        navigate(`/onboarding${next ? `?returnTo=${encodeURIComponent(next)}` : ""}`, { replace: true });
+        return;
+      }
+      navigate(next || "/dashboard", { replace: true });
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        prefetchIdle([
-          "/dashboard",
-          "/dashboard/settings",
-        ]);
-        const provider = session.user.app_metadata?.provider;
-        // Only force onboarding redirect on first sign-in (not every page load),
-        // and never if the user is already on /onboarding (would cause a loop).
-        if (
-          event === "SIGNED_IN" &&
-          provider && provider !== "email" &&
-          window.location.pathname !== "/onboarding"
-        ) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed, username")
-            .eq("id", session.user.id)
-            .maybeSingle();
-          // Only redirect when profile exists AND onboarding is explicitly false.
-          // If profile is missing, the trigger will create it; don't bounce the user.
-          if (profile && profile.onboarding_completed === false) {
-            navigate("/onboarding");
-            return;
-          }
-        }
-        // Auto-redirect away from /login or /signup
-        redirectAuthedAway(session.user.id);
+        prefetchIdle(["/dashboard", "/dashboard/settings"]);
+        void redirectAuthedAway(session.user.id);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         prefetchIdle(["/dashboard", "/dashboard/settings"]);
-        redirectAuthedAway(session.user.id);
+        void redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
       }
@@ -162,7 +146,8 @@ const App = () => (
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
-            <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+            <Route path="/oauth/consent" element={<OAuthAuthorize />} />
+            <Route path="/oauth/authorize" element={<Navigate to="/developers" replace />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
             <Route path="/pro" element={<Navigate to="/pricing" replace />} />

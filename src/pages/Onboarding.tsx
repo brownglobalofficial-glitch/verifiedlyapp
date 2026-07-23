@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Building2, Camera, Check, ShieldCheck, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import logo from "@/assets/verifiedly-logo.webp";
 
 const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
+const AUTH_NEXT_STORAGE_KEY = "verifiedly:auth-next";
 
 type AccountType = "creator" | "business";
 
@@ -21,16 +22,11 @@ type PendingLegalAcceptance = {
   vaultPolicyVersion: string;
 };
 
-const normalizeUrl = (value: string) => {
-  const candidate = value.trim();
-  if (!candidate) return null;
-  try {
-    const parsed = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
-  } catch {
-    return null;
-  }
-};
+const safeInternalPath = (value: string | null) =>
+  value && value.startsWith("/") && !value.startsWith("//") ? value : null;
+
+const handleFromName = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30);
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : "Please try again.";
 
@@ -50,10 +46,7 @@ const readPendingLegalAcceptance = (): PendingLegalAcceptance | null => {
   }
 };
 
-const syncLegalAcceptance = async (
-  userId: string,
-  metadata: Record<string, unknown>,
-) => {
+const syncLegalAcceptance = async (userId: string, metadata: Record<string, unknown>) => {
   const metadataAcceptedAt = typeof metadata.legal_terms_accepted_at === "string"
     ? metadata.legal_terms_accepted_at
     : null;
@@ -65,7 +58,7 @@ const syncLegalAcceptance = async (
   if (!acceptedAt) return;
 
   if (!metadataAcceptedAt && pendingIsCurrent) {
-    const { error: metadataError } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
       data: {
         legal_terms_accepted_at: acceptedAt,
         legal_terms_version: LEGAL_TERMS_VERSION,
@@ -73,7 +66,7 @@ const syncLegalAcceptance = async (
         vault_policy_version: VAULT_POLICY_VERSION,
       },
     });
-    if (metadataError) console.warn("Legal acceptance metadata was not synchronized", metadataError);
+    if (error) console.warn("Legal acceptance metadata was not synchronized", error);
   }
 
   const { data: existingAcceptance, error: lookupError } = await supabase
@@ -108,50 +101,54 @@ const syncLegalAcceptance = async (
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = safeInternalPath(searchParams.get("returnTo"))
+    || safeInternalPath(window.sessionStorage.getItem(AUTH_NEXT_STORAGE_KEY));
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [userId, setUserId] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
   const [accountType, setAccountType] = useState<AccountType>("creator");
   const [username, setUsername] = useState("");
+  const [handleEdited, setHandleEdited] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [category, setCategory] = useState("");
-  const [organizationLegalName, setOrganizationLegalName] = useState("");
-  const [organizationIndustry, setOrganizationIndustry] = useState("");
-  const [organizationCountry, setOrganizationCountry] = useState("");
-  const [location, setLocation] = useState("");
-  const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [existingSocialLinks, setExistingSocialLinks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/login");
+        const next = encodeURIComponent(window.location.pathname + window.location.search);
+        navigate(`/login?next=${next}`, { replace: true });
         return;
       }
 
       const metadata = (session.user.user_metadata || {}) as Record<string, unknown>;
-      setUserId(session.user.id);
-      setDisplayName(
+      const metadataName = (
         (typeof metadata.display_name === "string" && metadata.display_name) ||
         (typeof metadata.full_name === "string" && metadata.full_name) ||
         (typeof metadata.name === "string" && metadata.name) ||
-        "",
+        ""
       );
+      const metadataAvatar = (
+        (typeof metadata.avatar_url === "string" && metadata.avatar_url) ||
+        (typeof metadata.picture === "string" && metadata.picture) ||
+        ""
+      );
+
+      setUserId(session.user.id);
+      setDisplayName(metadataName);
+      setAvatarUrl(metadataAvatar);
       if (metadata.account_type === "business") setAccountType("business");
-      if (typeof metadata.username === "string" && !/^[a-f0-9]{32}$/.test(metadata.username)) {
-        setUsername(metadata.username);
-      }
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, display_name, category, account_type, avatar_url, website, social_links, organization_legal_name, organization_industry, organization_country")
+        .select("username, display_name, category, account_type, avatar_url, onboarding_completed")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -159,26 +156,27 @@ const Onboarding = () => {
         toast({ title: "Profile details could not be loaded", description: error.message, variant: "destructive" });
         return;
       }
-      if (!data) return;
 
-      const autoGenerated = /^[a-f0-9]{32}$/.test(data.username || "");
-      if (!autoGenerated && data.username) setUsername(data.username);
-      if (data.display_name) setDisplayName(data.display_name);
-      if (data.category) setCategory(data.category);
-      if (data.account_type === "business") setAccountType("business");
-      if (data.organization_legal_name) setOrganizationLegalName(data.organization_legal_name);
-      if (data.organization_industry) setOrganizationIndustry(data.organization_industry);
-      if (data.organization_country) setOrganizationCountry(data.organization_country);
-      if (data.avatar_url) setAvatarUrl(data.avatar_url);
-      if (data.website) setWebsite(data.website);
+      if (data?.onboarding_completed) {
+        navigate(returnTo || "/dashboard", { replace: true });
+        return;
+      }
 
-      const socials = (data.social_links || {}) as Record<string, string>;
-      setExistingSocialLinks(socials);
-      setLocation(socials.location || "");
+      const autoGenerated = /^[a-f0-9]{32}$/.test(data?.username || "");
+      if (data?.username && !autoGenerated) {
+        setUsername(data.username);
+        setHandleEdited(true);
+      } else if (metadataName) {
+        setUsername(handleFromName(metadataName));
+      }
+      if (data?.display_name) setDisplayName(data.display_name);
+      if (data?.category) setCategory(data.category);
+      if (data?.account_type === "business") setAccountType("business");
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
     };
 
     void load();
-  }, [navigate, toast]);
+  }, [navigate, returnTo, toast]);
 
   useEffect(() => {
     if (!userId || username.length < 3) {
@@ -201,6 +199,11 @@ const Onboarding = () => {
     return () => window.clearTimeout(timer);
   }, [username, userId]);
 
+  const changeDisplayName = (value: string) => {
+    setDisplayName(value);
+    if (!handleEdited) setUsername(handleFromName(value));
+  };
+
   const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !userId) return;
@@ -220,57 +223,57 @@ const Onboarding = () => {
     }
 
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const nextAvatarUrl = `${publicUrl}?t=${Date.now()}`;
-    setAvatarUrl(nextAvatarUrl);
+    setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
     setUploading(false);
   };
 
   const finish = async () => {
-    if (!userId || username.length < 3 || usernameAvailable !== true || !displayName.trim()) {
-      toast({ title: "Complete the required profile fields", variant: "destructive" });
-      return;
-    }
-
-    const normalizedWebsite = accountType === "business" && website.trim() ? normalizeUrl(website) : null;
-    if (accountType === "business" && website.trim() && !normalizedWebsite) {
-      toast({ title: "Enter a valid official website", variant: "destructive" });
+    if (!userId || !displayName.trim() || username.length < 3 || usernameAvailable !== true) {
+      toast({ title: "Add your name and an available handle", variant: "destructive" });
       return;
     }
 
     setSaving(true);
     try {
-      const nextSocialLinks = { ...existingSocialLinks };
-      if (location.trim()) nextSocialLinks.location = location.trim();
-      else delete nextSocialLinks.location;
+      const cleanName = displayName.trim();
+      const cleanUsername = username.toLowerCase();
+      const cleanCategory = category.trim() || null;
 
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: userId,
-        username: username.toLowerCase(),
-        display_name: displayName.trim(),
-        category: category.trim() || null,
+        username: cleanUsername,
+        display_name: cleanName,
+        category: cleanCategory,
         account_type: accountType,
-        organization_legal_name: accountType === "business" ? organizationLegalName.trim() || null : null,
-        organization_industry: accountType === "business" ? organizationIndustry.trim() || null : null,
-        organization_country: accountType === "business" ? organizationCountry.trim() || null : null,
         avatar_url: avatarUrl || null,
-        website: normalizedWebsite,
-        social_links: nextSocialLinks,
         onboarding_completed: true,
       }, { onConflict: "id" });
       if (profileError) throw profileError;
 
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: {
+          username: cleanUsername,
+          preferred_username: cleanUsername,
+          display_name: cleanName,
+          full_name: cleanName,
+          name: cleanName,
+          avatar_url: avatarUrl || null,
+          picture: avatarUrl || null,
+          account_type: accountType,
+        },
+      });
+      if (metadataError) throw metadataError;
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        await syncLegalAcceptance(
-          session.user.id,
-          (session.user.user_metadata || {}) as Record<string, unknown>,
-        );
+        await syncLegalAcceptance(session.user.id, (session.user.user_metadata || {}) as Record<string, unknown>);
       }
 
+      window.sessionStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
       toast({ title: "Your official profile is ready" });
-      navigate("/dashboard");
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error: unknown) {
-      toast({ title: "Setup not completed", description: errorMessage(error), variant: "destructive" });
+      toast({ title: "Profile not created", description: errorMessage(error), variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -285,141 +288,95 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border h-16 flex items-center px-4">
-        <div className="container mx-auto max-w-2xl">
+        <div className="container mx-auto max-w-xl">
           <img src={logo} alt="Verifiedly" className="h-7" />
         </div>
       </nav>
 
-      <main className="container mx-auto max-w-2xl flex-1 px-4 py-8">
-        <div className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Create. Verify. Share.</p>
-          <h1 className="mt-2 text-3xl font-display font-bold">Build your official profile</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Start with the essentials. Social links, work, education, and credentials can be added after your profile is created.</p>
+      <main className="container mx-auto max-w-xl flex-1 px-4 py-8 sm:py-12">
+        <div className="mb-7 text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">About one minute</p>
+          <h1 className="mt-2 text-3xl font-display font-bold">Create your official profile</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Start with the essentials. Work, education, credentials, links, and verification can be added later.</p>
         </div>
 
-        <div className="space-y-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setAccountType("creator")}
-              className={`rounded-xl border p-4 text-left transition ${accountType === "creator" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
-            >
-              <UserRound className="mb-3 h-5 w-5" />
-              <p className="font-semibold">Person</p>
-              <p className="mt-1 text-xs text-muted-foreground">An official profile for an individual.</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountType("business")}
-              className={`rounded-xl border p-4 text-left transition ${accountType === "business" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}
-            >
-              <Building2 className="mb-3 h-5 w-5" />
-              <p className="font-semibold">Organization</p>
-              <p className="mt-1 text-xs text-muted-foreground">A page for a business, club, team, nonprofit, or group.</p>
-            </button>
-          </div>
+        <Card className="rounded-3xl p-5 sm:p-7">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setAccountType("creator")} className={`rounded-2xl border p-4 text-left transition ${accountType === "creator" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}>
+                <UserRound className="mb-3 h-5 w-5" />
+                <p className="font-semibold">Person</p>
+                <p className="mt-1 text-xs text-muted-foreground">Your individual profile.</p>
+              </button>
+              <button type="button" onClick={() => setAccountType("business")} className={`rounded-2xl border p-4 text-left transition ${accountType === "business" ? "border-foreground bg-muted/60" : "border-border hover:border-muted-foreground"}`}>
+                <Building2 className="mb-3 h-5 w-5" />
+                <p className="font-semibold">Organization</p>
+                <p className="mt-1 text-xs text-muted-foreground">A business, club, team, or group.</p>
+              </button>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <button type="button" className="group relative rounded-full" onClick={() => fileInputRef.current?.click()} aria-label="Upload profile photo">
-              <Avatar className="h-20 w-20">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
-                <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-              </Avatar>
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                <Camera className="h-5 w-5 text-background" />
-              </span>
-            </button>
+            <div className="flex items-center gap-4">
+              <button type="button" className="group relative rounded-full" onClick={() => fileInputRef.current?.click()} aria-label="Upload profile photo">
+                <Avatar className="h-20 w-20">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+                  <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/55 opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Camera className="h-5 w-5 text-background" />
+                </span>
+              </button>
+              <div>
+                <p className="text-sm font-medium">{accountType === "business" ? "Logo" : "Profile photo"}</p>
+                <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "Optional · add or change later"}</p>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            </div>
+
             <div>
-              <p className="text-sm font-medium">Profile photo or logo</p>
-              <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "Optional · image up to 2 MB"}</p>
+              <Label htmlFor="display-name">{accountType === "business" ? "Organization name" : "Your name"} *</Label>
+              <Input id="display-name" value={displayName} onChange={(event) => changeDisplayName(event.target.value)} className="mt-1.5" maxLength={80} autoFocus />
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-          </div>
 
-          <div>
-            <Label htmlFor="username">Handle *</Label>
-            <div className="relative mt-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
-              <Input
-                id="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
-                className="pl-[110px]"
-                placeholder="yourname"
-                minLength={3}
-                maxLength={30}
-              />
-            </div>
-            {username.length >= 3 && (
-              <p className={`mt-1 text-xs ${checkingUsername || usernameAvailable === null ? "text-muted-foreground" : usernameAvailable ? "text-emerald-600" : "text-destructive"}`}>
-                {checkingUsername ? "Checking…" : usernameAvailable === null ? "Could not check this handle yet" : usernameAvailable ? "Available" : "That handle is already taken"}
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="display-name">{accountType === "business" ? "Organization name" : "Display name"} *</Label>
-              <Input id="display-name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1" maxLength={80} />
+              <Label htmlFor="username">Handle *</Label>
+              <div className="relative mt-1.5">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(event) => {
+                    setHandleEdited(true);
+                    setUsername(event.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase());
+                  }}
+                  className="pl-[110px]"
+                  placeholder="yourname"
+                  minLength={3}
+                  maxLength={30}
+                />
+              </div>
+              {username.length >= 3 && (
+                <p className={`mt-1 text-xs ${checkingUsername || usernameAvailable === null ? "text-muted-foreground" : usernameAvailable ? "text-emerald-600" : "text-destructive"}`}>
+                  {checkingUsername ? "Checking…" : usernameAvailable === null ? "Could not check this handle yet" : usernameAvailable ? "Available" : "That handle is taken"}
+                </p>
+              )}
             </div>
+
             <div>
               <Label htmlFor="category">{accountType === "business" ? "Organization type" : "Professional label"}</Label>
-              <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder={accountType === "business" ? "Football club, academy, business, nonprofit…" : "Footballer, student, founder, photographer…"} maxLength={60} />
+              <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1.5" placeholder={accountType === "business" ? "Football club, business, nonprofit…" : "Footballer, student, founder…"} maxLength={60} />
             </div>
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Input id="location" value={location} onChange={(event) => setLocation(event.target.value)} className="mt-1" placeholder="City, country" maxLength={120} />
-            </div>
-            {accountType === "business" && (
-              <div>
-                <Label htmlFor="website">Official website</Label>
-                <Input id="website" value={website} onChange={(event) => setWebsite(event.target.value)} className="mt-1" placeholder="https://organization.org" inputMode="url" maxLength={500} />
-              </div>
-            )}
-          </div>
 
-          {accountType === "business" && (
-            <Card className="p-4">
-              <div className="flex items-start gap-3">
-                <Building2 className="mt-0.5 h-4 w-4 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">Organization record</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">These optional details prepare the profile for a separate business-registration check. Registration numbers and supporting documents will be collected by an approved verification provider, not in onboarding.</p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Label htmlFor="organization-legal-name">Legal organization name</Label>
-                  <Input id="organization-legal-name" value={organizationLegalName} onChange={(event) => setOrganizationLegalName(event.target.value)} className="mt-1" placeholder="Registered legal name" maxLength={160} />
-                </div>
-                <div>
-                  <Label htmlFor="organization-industry">Industry</Label>
-                  <Input id="organization-industry" value={organizationIndustry} onChange={(event) => setOrganizationIndustry(event.target.value)} className="mt-1" placeholder="Sports, media, technology…" maxLength={100} />
-                </div>
-                <div>
-                  <Label htmlFor="organization-country">Registered country</Label>
-                  <Input id="organization-country" value={organizationCountry} onChange={(event) => setOrganizationCountry(event.target.value)} className="mt-1" placeholder="Country" maxLength={100} />
-                </div>
-              </div>
-            </Card>
-          )}
-
-          <Card className="border-dashed p-4">
-            <div className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
+            <div className="flex gap-3 rounded-2xl border border-dashed border-border p-4 text-xs leading-relaxed text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-              <p>Your profile starts unverified. Identity verification is a separate optional $9.99 service for adults 18+, and an organization account-holder check does not verify the organization itself.</p>
+              <p>Your profile starts unverified. Eligible adults can complete optional identity verification later. Other apps receive only the account details you approve.</p>
             </div>
-          </Card>
-        </div>
-      </main>
 
-      <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex max-w-2xl justify-end px-4 py-4">
-          <Button type="button" onClick={finish} disabled={!canCreate} className="gap-2">
-            {saving ? "Creating…" : accountType === "business" ? "Create organization profile" : "Create profile"} <Check className="h-4 w-4" />
-          </Button>
-        </div>
-      </footer>
+            <Button type="button" onClick={() => void finish()} disabled={!canCreate} className="w-full gap-2 rounded-full">
+              {saving ? "Creating profile…" : "Create official profile"} <Check className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      </main>
     </div>
   );
 };
