@@ -169,11 +169,18 @@ serve(async (req) => {
           ?? collected.shipping_details
           ?? null;
 
+        const approvedAt = metadata.preview_approved_at
+          ? new Date(metadata.preview_approved_at).toISOString()
+          : null;
+        if (!approvedAt || !metadata.printed_name || !metadata.printed_title || !metadata.printed_handle) {
+          throw new Error("Tap Card checkout is missing the approved print snapshot.");
+        }
+
         const { data: orderResult, error: orderError } = await supabase.rpc(
           "record_verifiedly_tap_card_order",
           {
             p_user_id: metadata.user_id,
-            p_material: metadata.material === "metal" ? "metal" : "pvc",
+            p_material: "pvc",
             p_order_source: metadata.order_source || "standard_purchase",
             p_amount_cents: session.amount_total || 0,
             p_currency: session.currency || "usd",
@@ -181,10 +188,15 @@ serve(async (req) => {
             p_payment_intent_id: stripeId(session.payment_intent),
             p_shipping_name: shipping?.name || "",
             p_shipping_address: shipping?.address || {},
+            p_printed_name: metadata.printed_name,
+            p_printed_title: metadata.printed_title,
+            p_printed_handle: metadata.printed_handle,
+            p_template_version: metadata.template_version || "verifiedly-pvc-v1",
+            p_preview_approved_at: approvedAt,
           },
         );
         if (orderError) throw orderError;
-        log("Tap Card order recorded", orderResult);
+        log("Tap Card order recorded for manual fulfillment", orderResult);
       }
 
       if (type === "subscription" && metadata.user_id && ["pro", "elite"].includes(metadata.tier || "")) {
