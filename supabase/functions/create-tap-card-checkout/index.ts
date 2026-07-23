@@ -36,7 +36,15 @@ const safeOrigin = (value: string | null) => {
   }
 };
 
-type Material = "pvc" | "metal";
+const cleanPrintLine = (value: unknown, maximum: number) => {
+  if (typeof value !== "string") return "";
+  return value
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maximum);
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -45,7 +53,7 @@ serve(async (req) => {
   try {
     if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true") {
       return json({
-        error: "Tap Card ordering is not open yet. Verifiedly is testing card samples and fulfillment before accepting paid orders.",
+        error: "Tap Card ordering is not open yet. Verifiedly is testing the PVC card and manual fulfillment before accepting paid orders.",
         code: "orders_not_open",
       }, 503);
     }
@@ -71,10 +79,17 @@ serve(async (req) => {
     const user = userData.user;
 
     const body = await req.json().catch(() => ({}));
-    const material: Material = body?.material === "metal" ? "metal" : "pvc";
-    if (body?.material && !["pvc", "metal"].includes(body.material)) {
-      return json({ error: "Unsupported card material." }, 400);
+    if (body?.material && body.material !== "pvc") {
+      return json({ error: "Only the PVC Verifiedly Tap Card is available right now." }, 400);
     }
+
+    const printedName = cleanPrintLine(body?.printed_name, 40);
+    const printedTitle = cleanPrintLine(body?.printed_title, 60);
+    const previewApproved = body?.preview_approved === true;
+
+    if (printedName.length < 2) return json({ error: "Enter the name that should be printed on the card." }, 400);
+    if (printedTitle.length < 2) return json({ error: "Enter a professional title or role for the card." }, 400);
+    if (!previewApproved) return json({ error: "Approve the card preview before checkout." }, 400);
 
     const [{ data: profile }, { data: billing }] = await Promise.all([
       admin.from("profiles")
@@ -87,7 +102,7 @@ serve(async (req) => {
         .maybeSingle(),
     ]);
 
-    if (!profile) return json({ error: "Complete your Verifiedly profile first." }, 409);
+    if (!profile?.username) return json({ error: "Complete your Verifiedly profile first." }, 409);
 
     const activePro = ["active", "trialing"].includes(billing?.pro_status ?? "") || !!profile.is_pro;
     const annualCredit = activePro
@@ -95,24 +110,17 @@ serve(async (req) => {
       && billing?.annual_card_credit_available === true;
 
     let orderSource = "standard_purchase";
-    let amountCents = material === "metal" ? 8999 : 2499;
-    let description = material === "metal"
-      ? "Premium metal NFC profile card with a QR-code fallback and standard U.S. shipping."
-      : "PVC NFC profile card with a QR-code fallback and standard U.S. shipping.";
+    let amountCents = 2499;
+    let description = "One personalized PVC NFC profile card with a unique QR-code fallback and standard U.S. shipping.";
 
     if (activePro) {
       orderSource = "pro_discount";
-      amountCents = material === "metal" ? 6999 : 1499;
+      amountCents = 1499;
     }
-
-    if (annualCredit && material === "pvc") {
+    if (annualCredit) {
       orderSource = "annual_included";
       amountCents = 599;
       description = "Included annual Pro PVC Tap Card; this charge covers standard U.S. shipping and handling.";
-    } else if (annualCredit && material === "metal") {
-      orderSource = "annual_metal_upgrade";
-      amountCents = 5598;
-      description = "Annual Pro metal-card upgrade plus standard U.S. shipping and handling.";
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -124,7 +132,7 @@ serve(async (req) => {
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
-        name: profile.display_name || undefined,
+        name: profile.display_name || printedName,
         metadata: { verifiedly_user_id: user.id },
       });
       customerId = customer.id;
@@ -136,6 +144,9 @@ serve(async (req) => {
     }, { onConflict: "user_id" });
 
     const origin = safeOrigin(req.headers.get("origin"));
+    const approvedAt = new Date().toISOString();
+    const templateVersion = "verifiedly-pvc-v1";
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "payment",
@@ -148,7 +159,7 @@ serve(async (req) => {
           currency: "usd",
           unit_amount: amountCents,
           product_data: {
-            name: material === "metal" ? "Verifiedly Metal Tap Card" : "Verifiedly PVC Tap Card",
+            name: "Verifiedly PVC Tap Card",
             description,
           },
         },
@@ -158,26 +169,43 @@ serve(async (req) => {
       metadata: {
         type: "verifiedly_tap_card",
         user_id: user.id,
-        material,
+        material: "pvc",
         order_source: orderSource,
-        uses_annual_credit: String(orderSource.startsWith("annual_")),
+        uses_annual_credit: String(orderSource === "annual_included"),
+        printed_name: printedName,
+        printed_title: printedTitle,
+        printed_handle: profile.username,
+        template_version: templateVersion,
+        preview_approved_at: approvedAt,
       },
       payment_intent_data: {
         metadata: {
           type: "verifiedly_tap_card",
           user_id: user.id,
-          material,
+          material: "pvc",
           order_source: orderSource,
+          printed_handle: profile.username,
         },
       },
       custom_text: {
         submit: {
-          message: "This is a personalized NFC profile-sharing card. It is not a payment card or government-issued ID.",
+          message: "You approved the personalized card preview. This is an NFC profile-sharing card, not a payment card or government-issued ID.",
         },
       },
     });
 
-    return json({ url: session.url, material, order_source: orderSource, amount_cents: amountCents });
+    return json({
+      url: session.url,
+      material: "pvc",
+      order_source: orderSource,
+      amount_cents: amountCents,
+      preview: {
+        printed_name: printedName,
+        printed_title: printedTitle,
+        printed_handle: profile.username,
+        template_version: templateVersion,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to open card checkout.";
     return json({ error: message }, 500);
