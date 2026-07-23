@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { CreditCard, ExternalLink, Headphones, LogOut, PackageCheck, Settings, ShieldCheck, Sparkles, User } from "lucide-react";
+import { User, ShieldCheck, Settings, LogOut, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -19,10 +18,7 @@ import logoMark from "@/assets/verifiedly-mark.png";
 
 const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
-  { title: "Verifiedly Pro", url: "/dashboard/pro", icon: Sparkles },
-  { title: "Verification", url: "/dashboard/verification", icon: ShieldCheck },
-  { title: "Tap Cards", url: "/dashboard/cards", icon: CreditCard },
-  { title: "Support", url: "/dashboard/support", icon: Headphones },
+  { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 
@@ -30,18 +26,6 @@ export default function DashboardSidebar({ username }: { username?: string }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    void supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-      const { data } = await supabase.from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin");
-      setIsAdmin(!!data?.length);
-    });
-  }, []);
 
   return (
     <Sidebar collapsible="icon">
@@ -53,7 +37,7 @@ export default function DashboardSidebar({ username }: { username?: string }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Your Verifiedly account</SidebarGroupLabel>
+          <SidebarGroupLabel>Your official profile</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -75,24 +59,6 @@ export default function DashboardSidebar({ username }: { username?: string }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/dashboard/admin/cards" className={({ isActive }) => `flex items-center gap-2 ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"}`}>
-                      <PackageCheck className="h-4 w-4" />
-                      {!collapsed && <span>Card orders</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
 
         {username && !collapsed && (
           <SidebarGroup>

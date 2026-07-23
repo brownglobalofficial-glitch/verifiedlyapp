@@ -43,10 +43,9 @@ serve(async (req) => {
   try {
     if (Deno.env.get("STRIPE_IDENTITY_USE_CASE_APPROVED") !== "true") {
       return json({
-        error: "Identity verification is temporarily unavailable while Verifiedly completes provider configuration.",
+        error: "Identity verification is not available yet. Verifiedly is completing provider approval for this use case.",
       }, 503);
     }
-
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     const flowId = Deno.env.get("STRIPE_IDENTITY_FLOW_ID");
     if (!stripeKey || !flowId) throw new Error("Stripe Identity is not configured yet.");
@@ -63,45 +62,41 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } },
     );
-
-    const { data: userData, error: userError } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (userError || !userData.user) return json({ error: "Please sign in again." }, 401);
+    const { data: userData } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = userData.user;
+    if (!user) return json({ error: "Please sign in again." }, 401);
 
-    const [{ data: profile }, { data: billing }] = await Promise.all([
-      admin.from("profiles")
-        .select("id_verified, is_pro, date_of_birth")
-        .eq("id", user.id)
-        .maybeSingle(),
-      admin.from("verifiedly_billing")
-        .select("pro_status, identity_attempt_count, identity_last_session_id")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-    ]);
-
-    if (profile?.id_verified) return json({ status: "verified" });
-
-    const activePro = ["active", "trialing"].includes(billing?.pro_status ?? "") || !!profile?.is_pro;
-    if (!activePro) {
-      return json({ error: "An active Verifiedly Pro plan is required before identity verification.", code: "pro_required" }, 402);
-    }
-
-    if (profile?.date_of_birth) {
-      const birthDate = new Date(`${profile.date_of_birth}T00:00:00Z`);
-      const today = new Date();
-      let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
-      const beforeBirthday = today.getUTCMonth() < birthDate.getUTCMonth()
-        || (today.getUTCMonth() === birthDate.getUTCMonth() && today.getUTCDate() < birthDate.getUTCDate());
-      if (beforeBirthday) age -= 1;
-      if (age < 18) {
-        return json({ error: "Stripe Identity verification is limited to eligible adults on Verifiedly.", code: "adult_required" }, 403);
-      }
-    }
+    const body = await req.json().catch(() => ({}));
+    const checkoutSessionId = typeof body?.checkout_session_id === "string"
+      ? body.checkout_session_id
+      : null;
+    if (!checkoutSessionId) return json({ error: "Missing checkout confirmation." }, 400);
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const checkout = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+    if (
+      checkout.payment_status !== "paid"
+      || checkout.metadata?.type !== "verifiedly_identity_payment"
+      || checkout.metadata?.user_id !== user.id
+    ) {
+      return json({ error: "The verification payment could not be confirmed." }, 403);
+    }
+
+    const { data: profile } = await admin.from("profiles")
+      .select("id_verified")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profile?.id_verified) return json({ status: "verified" });
+
+    const { data: billing } = await admin.from("verifiedly_billing")
+      .select("identity_attempt_count, identity_last_session_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     if (billing?.identity_last_session_id) {
-      const existing = await stripe.identity.verificationSessions.retrieve(billing.identity_last_session_id);
+      const existing = await stripe.identity.verificationSessions.retrieve(
+        billing.identity_last_session_id,
+      );
       if (existing.status === "verified") return json({ status: "verified" });
       if (existing.status === "processing") return json({ status: "processing" });
       if (existing.status === "requires_input" && existing.url) {
@@ -112,7 +107,7 @@ serve(async (req) => {
     const attempts = billing?.identity_attempt_count ?? 0;
     if (attempts >= 2) {
       return json({
-        error: "The included verification attempts have been used. Contact Verifiedly support for review.",
+        error: "The included verification attempts have been used. Contact support for review.",
         code: "attempt_limit",
       }, 409);
     }
@@ -124,14 +119,17 @@ serve(async (req) => {
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
-        verifiedly_plan: "pro",
+        checkout_session_id: checkoutSessionId,
       },
     }, {
-      idempotencyKey: `verifiedly-pro-identity-${user.id}-${attempts + 1}`,
+      idempotencyKey: `verifiedly-identity-${user.id}-${checkoutSessionId}-${attempts + 1}`,
     });
 
     await admin.from("verifiedly_billing").upsert({
       user_id: user.id,
+      stripe_customer_id: typeof checkout.customer === "string" ? checkout.customer : checkout.customer?.id,
+      verification_payment_status: "paid",
+      verification_checkout_session_id: checkoutSessionId,
       identity_status: verification.status === "requires_input" ? "requires_input" : "processing",
       identity_attempt_count: attempts + 1,
       identity_last_session_id: verification.id,

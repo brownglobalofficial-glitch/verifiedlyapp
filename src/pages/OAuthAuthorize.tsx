@@ -1,199 +1,165 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import logoMark from "@/assets/verifiedly-mark.png";
+import { ShieldCheck, ArrowRight } from "lucide-react";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const SCOPE_LABELS: Record<string, string> = {
-  openid: "Your stable Verifiedly account ID",
-  profile: "Your name, handle, and profile photo",
+  openid: "A stable user ID",
+  profile: "Your username, display name, and avatar",
+  identity: "Whether your identity check passed, and when",
+  credentials: "Your public, independently verified credential claims",
   email: "Your email address",
-  phone: "Your phone number, when one is attached to your account",
 };
 
-type OAuthClientDetails = {
-  name?: string;
-  logo_uri?: string | null;
-  logo_url?: string | null;
-  uri?: string | null;
-};
-
-type AuthorizationDetails = {
-  authorization_id?: string;
-  redirect_url?: string;
-  redirect_uri?: string;
-  scope?: string;
-  client?: OAuthClientDetails;
-};
-
-type OAuthMethodResult = {
-  data: AuthorizationDetails | null;
-  error: { message?: string } | null;
-};
-
-type NativeOAuthApi = {
-  getAuthorizationDetails: (authorizationId: string) => Promise<OAuthMethodResult>;
-  approveAuthorization: (authorizationId: string) => Promise<OAuthMethodResult>;
-  denyAuthorization: (authorizationId: string) => Promise<OAuthMethodResult>;
-};
-
-const getOAuthApi = () => {
-  const oauth = (supabase.auth as unknown as { oauth?: NativeOAuthApi }).oauth;
-  if (!oauth) throw new Error("Verifiedly sign-in is not enabled yet.");
-  return oauth;
-};
+interface OAuthClient {
+  name: string;
+  logo_url: string | null;
+  homepage_url: string | null;
+  redirect_uris: string[];
+  scopes: string[];
+  is_first_party: boolean;
+}
 
 const OAuthAuthorize = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const authorizationId = params.get("authorization_id") || "";
-  const [details, setDetails] = useState<AuthorizationDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"approve" | "deny" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [client, setClient] = useState<OAuthClient | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const clientId = params.get("client_id") || "";
+  const redirectUri = params.get("redirect_uri") || "";
+  const responseType = params.get("response_type") || "";
+  const scope = params.get("scope") || "openid profile";
+  const state = params.get("state") || "";
+  const codeChallenge = params.get("code_challenge") || "";
+  const codeChallengeMethod = params.get("code_challenge_method") || "";
+
   useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      if (!authorizationId) {
-        if (active) {
-          setError("This sign-in request is missing its authorization ID.");
-          setLoading(false);
-        }
-        return;
-      }
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         const next = encodeURIComponent(window.location.pathname + window.location.search);
         navigate(`/login?next=${next}`, { replace: true });
         return;
       }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!profile?.onboarding_completed) {
-        const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-        navigate(`/onboarding?returnTo=${returnTo}`, { replace: true });
+      if (!clientId || !redirectUri || responseType !== "code" || state.length < 16) {
+        setError("A valid client_id, redirect_uri, response_type=code, and secure state value are required.");
+        setLoading(false);
         return;
       }
-
-      try {
-        const result = await getOAuthApi().getAuthorizationDetails(authorizationId);
-        if (!active) return;
-        if (result.error || !result.data) {
-          setError(result.error?.message || "This authorization request is invalid or expired.");
-          setLoading(false);
-          return;
-        }
-
-        if (!result.data.authorization_id && result.data.redirect_url) {
-          window.location.assign(result.data.redirect_url);
-          return;
-        }
-
-        setDetails(result.data);
+      const { data, error } = await supabase
+        .from("oauth_clients")
+        .select("name, logo_url, homepage_url, redirect_uris, scopes, is_first_party")
+        .eq("client_id", clientId).eq("active", true).maybeSingle();
+      if (error || !data) { setError("Unknown application"); setLoading(false); return; }
+      if (!data.redirect_uris.includes(redirectUri)) { setError("This redirect URI isn't registered for this app."); setLoading(false); return; }
+      const requestedScopes = scope.split(/\s+/).filter(Boolean);
+      if (requestedScopes.some((requestedScope) => !data.scopes.includes(requestedScope))) {
+        setError("This application requested a scope that is not approved.");
         setLoading(false);
-      } catch (caught: unknown) {
-        if (!active) return;
-        setError(caught instanceof Error ? caught.message : "Verifiedly sign-in is not available.");
+        return;
+      }
+      if (codeChallenge && (codeChallengeMethod !== "S256" || !/^[A-Za-z0-9_-]{43,128}$/.test(codeChallenge))) {
+        setError("This application sent an invalid PKCE challenge.");
         setLoading(false);
+        return;
       }
-    };
-
-    void load();
-    return () => { active = false; };
-  }, [authorizationId, navigate]);
-
-  const decide = async (decision: "approve" | "deny") => {
-    setBusy(decision);
-    setError(null);
-    try {
-      const api = getOAuthApi();
-      const result = decision === "approve"
-        ? await api.approveAuthorization(authorizationId)
-        : await api.denyAuthorization(authorizationId);
-
-      if (result.error || !result.data?.redirect_url) {
-        throw new Error(result.error?.message || "The authorization request could not be completed.");
+      if (!codeChallenge && codeChallengeMethod) {
+        setError("This application sent a PKCE method without a challenge.");
+        setLoading(false);
+        return;
       }
-      window.location.assign(result.data.redirect_url);
-    } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "The authorization request could not be completed.");
-      setBusy(null);
+      setClient(data);
+      setLoading(false);
+    })();
+  }, [clientId, codeChallenge, codeChallengeMethod, navigate, redirectUri, responseType, scope, state]);
+
+  const allow = async () => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("oauth-authorize", {
+      body: {
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: responseType,
+        scope,
+        state,
+        code_challenge: codeChallenge || undefined,
+        code_challenge_method: codeChallenge ? codeChallengeMethod : undefined,
+      },
+    });
+    if (error || !data?.redirect_to) {
+      setError(error?.message || "Could not authorize");
+      setBusy(false); return;
     }
+    window.location.href = data.redirect_to;
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Preparing secure sign-in…</div>;
-  }
+  const deny = () => {
+    const sep = redirectUri.includes("?") ? "&" : "?";
+    window.location.href = `${redirectUri}${sep}error=access_denied&state=${encodeURIComponent(state)}`;
+  };
 
-  if (error && !details) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <Card className="w-full max-w-md space-y-4 rounded-3xl p-7 text-center">
-          <img src={logoMark} alt="Verifiedly" className="mx-auto h-10 w-10" />
-          <h1 className="font-display text-xl font-bold">Sign-in request unavailable</h1>
-          <p className="text-sm text-muted-foreground">{error}</p>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Verifiedly</Button>
-        </Card>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Loading…</div>;
+  if (error || !client) return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="p-6 max-w-md w-full text-center space-y-3">
+        <p className="font-semibold">Authorization failed</p>
+        <p className="text-sm text-muted-foreground">{error || "Unknown application"}</p>
+        <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to dashboard</Button>
+      </Card>
+    </div>
+  );
 
-  const clientName = details?.client?.name || "This application";
-  const clientLogo = details?.client?.logo_uri || details?.client?.logo_url || null;
-  const scopes = (details?.scope || "openid profile").split(/\s+/).filter(Boolean);
+  const scopes = scope.split(/\s+/).filter(Boolean);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md rounded-3xl p-6 sm:p-8">
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-secondary">
-            <img src={logoMark} alt="Verifiedly" className="h-7 w-7" />
+      <Card className="p-6 sm:p-8 max-w-md w-full">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-secondary">
-            {clientLogo
-              ? <img src={clientLogo} alt={`${clientName} logo`} className="h-full w-full object-cover" />
-              : <span className="font-display text-lg font-bold">{clientName[0]?.toUpperCase() || "A"}</span>}
+          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center overflow-hidden">
+            {client.logo_url
+              ? <img src={client.logo_url} alt={`${client.name} logo`} className="w-full h-full object-cover" />
+              : <span className="text-lg font-display font-bold">{client.name[0]}</span>}
           </div>
         </div>
 
-        <h1 className="text-center font-display text-2xl font-bold">Continue to {clientName}</h1>
-        <p className="mt-2 text-center text-sm text-muted-foreground">Use your Verifiedly account to sign in. You control what is shared.</p>
+        <h1 className="text-2xl font-display font-bold text-center flex items-center justify-center gap-1.5">
+          {client.name}
+          {client.is_first_party && <VerifiedBadge className="w-5 h-5" />}
+        </h1>
+        <p className="text-sm text-muted-foreground text-center mt-1">
+          wants to sign you in with Verifiedly
+        </p>
 
-        <div className="mt-6 rounded-2xl border border-border p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">This app will receive</p>
-          <ul className="mt-3 space-y-2.5">
-            {scopes.map((scope) => (
-              <li key={scope} className="flex items-start gap-2 text-sm">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{SCOPE_LABELS[scope] || scope}</span>
+        <div className="mt-6 space-y-2">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">This app will see</p>
+          <ul className="space-y-1.5">
+            {scopes.map(s => (
+              <li key={s} className="text-sm flex items-start gap-2">
+                <span className="text-foreground mt-0.5">✓</span>
+                <span>{SCOPE_LABELS[s] || s}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        {error && <p className="mt-4 rounded-xl bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">{error}</p>}
-
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button type="button" variant="outline" onClick={() => void decide("deny")} disabled={busy !== null}>
-            {busy === "deny" ? "Declining…" : "Not now"}
-          </Button>
-          <Button type="button" onClick={() => void decide("approve")} disabled={busy !== null}>
-            {busy === "approve" ? "Continuing…" : "Continue"}
-          </Button>
+          <Button variant="outline" onClick={deny} disabled={busy}>Deny</Button>
+          <Button onClick={allow} disabled={busy}>{busy ? "Authorizing…" : "Allow"}</Button>
         </div>
 
-        <p className="mt-4 text-center text-[10px] leading-relaxed text-muted-foreground">Verifiedly does not share private documents, payment details, messages, or identity-document images through sign-in.</p>
+        <p className="text-[10px] text-muted-foreground text-center mt-4">
+          Approve only applications you recognize. Verifiedly shares only the fields listed above.
+        </p>
       </Card>
     </div>
   );

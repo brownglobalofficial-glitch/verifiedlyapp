@@ -23,13 +23,8 @@ const Terms = lazy(routeLoaders["/terms"]);
 const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
-const AdminTapCardOrders = lazy(() => import("./pages/dashboard/AdminTapCardOrders"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
-const Pro = lazy(() => import("./pages/dashboard/Pro"));
-const TapCards = lazy(() => import("./pages/dashboard/TapCards"));
-const Support = lazy(() => import("./pages/dashboard/Support"));
-const TapRedirect = lazy(() => import("./pages/TapRedirect"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
@@ -37,6 +32,8 @@ const Developers = lazy(() => import("./pages/Developers"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 const queryClient = new QueryClient();
+
+// Handles OAuth redirect + warms likely next routes so navigation feels instant.
 const AUTH_PAGES = new Set(["/login", "/signup"]);
 const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/products",
@@ -53,9 +50,6 @@ const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/documents",
 ];
 
-const safeInternalPath = (value: string | null) =>
-  value && value.startsWith("/") && !value.startsWith("//") ? value : null;
-
 const LegacyProfileRedirect = () => {
   const { username } = useParams<{ username: string }>();
   return <Navigate to={username ? `/${username}` : "/"} replace />;
@@ -66,46 +60,63 @@ const RouteOptimizer = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handler = (event: Event) => {
-      const target = event.target as HTMLElement | null;
+    // Global hover/focus prefetch: warm any internal link's chunk before the click.
+    const handler = (e: Event) => {
+      const target = e.target as HTMLElement | null;
       const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href || !href.startsWith("/") || href.startsWith("//")) return;
-      prefetchPath(href.split("?")[0].split("#")[0]);
+      const path = href.split("?")[0].split("#")[0];
+      prefetchPath(path);
     };
     document.addEventListener("mouseover", handler, { passive: true });
     document.addEventListener("focusin", handler, { passive: true });
     document.addEventListener("touchstart", handler, { passive: true });
 
     const redirectAuthedAway = async (userId: string) => {
+      // Only redirect if currently sitting on /login or /signup
       if (!AUTH_PAGES.has(window.location.pathname)) return;
-      const params = new URLSearchParams(window.location.search);
-      const next = safeInternalPath(params.get("next"));
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (!profile?.onboarding_completed) {
-        navigate(`/onboarding${next ? `?returnTo=${encodeURIComponent(next)}` : ""}`, { replace: true });
-        return;
-      }
-      navigate(next || "/dashboard", { replace: true });
+      // Universal account: everyone lands in /dashboard.
+      void userId;
+      navigate("/dashboard", { replace: true });
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings"]);
-        void redirectAuthedAway(session.user.id);
+        prefetchIdle([
+          "/dashboard",
+          "/dashboard/settings",
+        ]);
+        const provider = session.user.app_metadata?.provider;
+        // Only force onboarding redirect on first sign-in (not every page load),
+        // and never if the user is already on /onboarding (would cause a loop).
+        if (
+          event === "SIGNED_IN" &&
+          provider && provider !== "email" &&
+          window.location.pathname !== "/onboarding"
+        ) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed, username")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          // Only redirect when profile exists AND onboarding is explicitly false.
+          // If profile is missing, the trigger will create it; don't bounce the user.
+          if (profile && profile.onboarding_completed === false) {
+            navigate("/onboarding");
+            return;
+          }
+        }
+        // Auto-redirect away from /login or /signup
+        redirectAuthedAway(session.user.id);
       }
     });
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         prefetchIdle(["/dashboard", "/dashboard/settings"]);
-        void redirectAuthedAway(session.user.id);
+        redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
       }
@@ -142,26 +153,20 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
             <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
-            <Route path="/dashboard/pro" element={<AuthGuard><Pro /></AuthGuard>} />
-            <Route path="/dashboard/cards" element={<AuthGuard><TapCards /></AuthGuard>} />
-            <Route path="/dashboard/support" element={<AuthGuard><Support /></AuthGuard>} />
             <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-            <Route path="/dashboard/admin/cards" element={<AuthGuard><AdminTapCardOrders /></AuthGuard>} />
-            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/pro" replace />} />
-            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/pro" replace />} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
-            <Route path="/oauth/consent" element={<OAuthAuthorize />} />
-            <Route path="/oauth/authorize" element={<Navigate to="/developers" replace />} />
+            <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/t/:token" element={<TapRedirect />} />
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
             <Route path="/pro" element={<Navigate to="/pricing" replace />} />
-            <Route path="/subscription/success" element={<Navigate to="/dashboard/pro" replace />} />
+            <Route path="/subscription/success" element={<Navigate to="/dashboard" replace />} />
             {RETIRED_DASHBOARD_PATHS.map((path) => (
               <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
             ))}
