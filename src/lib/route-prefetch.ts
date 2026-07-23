@@ -15,7 +15,9 @@ export const routeLoaders = {
   "/dashboard": () => import("@/pages/Dashboard"),
   "/dashboard/settings": () => import("@/pages/ProfileSettings"),
   "/dashboard/admin": () => import("@/pages/Admin"),
+  "/dashboard/pro": () => import("@/pages/dashboard/Pro"),
   "/dashboard/verification": () => import("@/pages/dashboard/Verification"),
+  "/dashboard/tap-card": () => import("@/pages/dashboard/TapCard"),
   "/dashboard/documents": () => import("@/pages/dashboard/Documents"),
   "/dashboard/credentials": () => import("@/pages/dashboard/Credentials"),
   "/dashboard/organization-verification": () => import("@/pages/dashboard/OrganizationVerification"),
@@ -27,7 +29,6 @@ export const routeLoaders = {
 export type PrefetchKey = keyof typeof routeLoaders;
 
 const started = new Set<string>();
-
 export const prefetchRoute = (key: PrefetchKey) => {
   if (started.has(key)) return;
   started.add(key);
