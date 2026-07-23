@@ -25,6 +25,10 @@ const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
+const Pro = lazy(() => import("./pages/dashboard/Pro"));
+const TapCards = lazy(() => import("./pages/dashboard/TapCards"));
+const Support = lazy(() => import("./pages/dashboard/Support"));
+const TapRedirect = lazy(() => import("./pages/TapRedirect"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
@@ -137,10 +141,13 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
             <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
+            <Route path="/dashboard/pro" element={<AuthGuard><Pro /></AuthGuard>} />
+            <Route path="/dashboard/cards" element={<AuthGuard><TapCards /></AuthGuard>} />
+            <Route path="/dashboard/support" element={<AuthGuard><Support /></AuthGuard>} />
             <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-            <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
-            <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/pro" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/pro" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
@@ -149,9 +156,10 @@ const App = () => (
             <Route path="/oauth/consent" element={<OAuthAuthorize />} />
             <Route path="/oauth/authorize" element={<Navigate to="/developers" replace />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/t/:token" element={<TapRedirect />} />
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
             <Route path="/pro" element={<Navigate to="/pricing" replace />} />
-            <Route path="/subscription/success" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/subscription/success" element={<Navigate to="/dashboard/pro" replace />} />
             {RETIRED_DASHBOARD_PATHS.map((path) => (
               <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
             ))}
