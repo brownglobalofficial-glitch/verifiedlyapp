@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Check, CreditCard, ExternalLink, Nfc, QrCode, ShieldAlert, Sparkles } from "lucide-react";
+import { CreditCard, ExternalLink, Nfc, ShieldAlert, Sparkles } from "lucide-react";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+const TAP_CARD_ORDERS_ENABLED = import.meta.env.VITE_TAP_CARD_ORDERS_ENABLED === "true";
 
 interface ProfileSummary {
   username: string;
@@ -113,6 +115,10 @@ const TapCards = () => {
   const digitalQrUrl = `https://quickchart.io/qr?size=240&margin=1&text=${encodeURIComponent(profileUrl)}`;
 
   const orderCard = async (material: "pvc" | "metal") => {
+    if (!TAP_CARD_ORDERS_ENABLED) {
+      toast({ title: "Card ordering is not open yet", description: "Verifiedly is testing supplier samples and fulfillment before accepting paid card orders." });
+      return;
+    }
     if (!agreed) {
       toast({ title: "Confirm the card terms first", variant: "destructive" });
       return;
@@ -196,14 +202,21 @@ const TapCards = () => {
                 {activePro && <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">Pro pricing</span>}
               </div>
 
+              {!TAP_CARD_ORDERS_ENABLED && (
+                <div className="mt-5 rounded-2xl border border-dashed bg-muted/30 p-4">
+                  <p className="text-sm font-semibold">Sample testing underway</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Ordering will open after BrownGlobal approves the supplier, sample quality, NFC performance, packaging, shipping, privacy terms, and replacement process. No card payment can be taken while this safeguard is off.</p>
+                </div>
+              )}
+
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border p-4">
                   <CreditCard className="h-5 w-5" />
                   <h3 className="mt-3 font-semibold">PVC NFC card</h3>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Standard wallet-size plastic card with NFC and a unique QR redirect.</p>
                   <p className="mt-4 text-xl font-display font-bold">{includedCard ? "$5.99 shipping" : activePro ? "$14.99" : "$24.99"}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{includedCard ? "Annual Pro card credit applied." : "Standard U.S. shipping included in checkout price."}</p>
-                  <Button className="mt-4 w-full" onClick={() => void orderCard("pvc")} disabled={!agreed || ordering !== null}>{ordering === "pvc" ? "Opening checkout…" : includedCard ? "Claim included card" : "Order PVC card"}</Button>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{includedCard ? "Annual Pro card credit applied." : "Planned price with standard U.S. shipping."}</p>
+                  <Button className="mt-4 w-full" onClick={() => void orderCard("pvc")} disabled={!TAP_CARD_ORDERS_ENABLED || !agreed || ordering !== null}>{ordering === "pvc" ? "Opening checkout…" : TAP_CARD_ORDERS_ENABLED ? includedCard ? "Claim included card" : "Order PVC card" : "Coming after samples"}</Button>
                 </div>
 
                 <div className="rounded-2xl border-2 border-foreground p-4">
@@ -211,13 +224,13 @@ const TapCards = () => {
                   <h3 className="mt-3 font-semibold">Metal NFC card</h3>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Premium metal version, subject to supplier sample and NFC reliability approval.</p>
                   <p className="mt-4 text-xl font-display font-bold">{includedCard ? "$55.98" : activePro ? "$69.99" : "$89.99"}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{includedCard ? "Annual PVC credit applied toward the metal upgrade." : "Includes standard U.S. shipping."}</p>
-                  <Button variant="outline" className="mt-4 w-full" onClick={() => void orderCard("metal")} disabled={!agreed || ordering !== null}>{ordering === "metal" ? "Opening checkout…" : "Order metal card"}</Button>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{includedCard ? "Annual PVC credit applied toward the planned metal upgrade." : "Planned price with standard U.S. shipping."}</p>
+                  <Button variant="outline" className="mt-4 w-full" onClick={() => void orderCard("metal")} disabled={!TAP_CARD_ORDERS_ENABLED || !agreed || ordering !== null}>{ordering === "metal" ? "Opening checkout…" : TAP_CARD_ORDERS_ENABLED ? "Order metal card" : "Coming after samples"}</Button>
                 </div>
               </div>
 
               <div className="mt-5 flex items-start gap-3 rounded-2xl bg-muted/50 p-4">
-                <Checkbox id="tap-card-terms" checked={agreed} onCheckedChange={(value) => setAgreed(value === true)} className="mt-0.5" />
+                <Checkbox id="tap-card-terms" checked={agreed} onCheckedChange={(value) => setAgreed(value === true)} className="mt-0.5" disabled={!TAP_CARD_ORDERS_ENABLED} />
                 <Label htmlFor="tap-card-terms" className="cursor-pointer text-xs font-normal leading-relaxed text-muted-foreground">I understand this is a personalized, non-payment profile card. I am an adult purchaser or a parent/legal guardian authorizing the purchase and shipping for a minor's account. Personalized cards may be replaced only for defects or fulfillment errors, subject to the posted policy.</Label>
               </div>
 
