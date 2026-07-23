@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Check,
   ChevronRight,
@@ -35,7 +35,7 @@ type Order = {
   printed_handle: string | null;
 };
 
-type Tier = "annual_free" | "pro" | "retail";
+type Tier = "pro" | "retail";
 
 type CardForm = {
   printed_name: string;
@@ -50,7 +50,7 @@ type CardForm = {
   country: "US";
 };
 
-const priceLabel = (tier: Tier) => tier === "annual_free" ? "Included" : tier === "pro" ? "$12" : "$19";
+const priceLabel = (tier: Tier) => tier === "pro" ? "$19.99" : "$29.99";
 const statusLabel = (status: string) =>
   status === "paid" ? "Order confirmed"
     : status === "submitted" ? "Submitted to production"
@@ -66,6 +66,31 @@ const cleanPrintLine = (value: string, maximum: number) => value
   .replace(/\s+/g, " ")
   .slice(0, maximum);
 
+const functionErrorMessage = async (error: unknown, data: unknown, fallback: string) => {
+  if (data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string") {
+    return (data as { error: string }).error;
+  }
+
+  const context = error && typeof error === "object" && "context" in error
+    ? (error as { context?: unknown }).context
+    : null;
+  if (context instanceof Response) {
+    try {
+      const payload = await context.clone().json();
+      if (payload?.error && typeof payload.error === "string") return payload.error;
+    } catch {
+      try {
+        const text = await context.clone().text();
+        if (text) return text;
+      } catch {
+        // Fall through to the normal error message.
+      }
+    }
+  }
+
+  return error instanceof Error ? error.message : fallback;
+};
+
 const TapCard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,7 +98,12 @@ const TapCard = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [tier, setTier] = useState<Tier>("retail");
-  const [profile, setProfile] = useState<{ username: string; display_name: string | null; category: string | null } | null>(null);
+  const [profile, setProfile] = useState<{
+    username: string;
+    display_name: string | null;
+    category: string | null;
+    is_pro: boolean | null;
+  } | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [previewApproved, setPreviewApproved] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
@@ -97,13 +127,17 @@ const TapCard = () => {
       return;
     }
 
+    // Refresh Stripe subscription state when possible. The page still loads if
+    // Stripe is temporarily unavailable because the webhook remains authoritative.
+    await supabase.functions.invoke("check-subscription").catch(() => undefined);
+
     const [{ data: profileData }, { data: billingData }, { data: orderData }] = await Promise.all([
       supabase.from("profiles")
-        .select("username, display_name, category")
+        .select("username, display_name, category, is_pro")
         .eq("id", session.user.id)
         .maybeSingle(),
       supabase.from("verifiedly_billing")
-        .select("pro_status, pro_interval, annual_card_credit_available")
+        .select("pro_status")
         .eq("user_id", session.user.id)
         .maybeSingle(),
       supabase.from("verifiedly_tap_card_orders")
@@ -113,7 +147,12 @@ const TapCard = () => {
     ]);
 
     if (profileData) {
-      const nextProfile = profileData as { username: string; display_name: string | null; category: string | null };
+      const nextProfile = profileData as {
+        username: string;
+        display_name: string | null;
+        category: string | null;
+        is_pro: boolean | null;
+      };
       setProfile(nextProfile);
       setForm((current) => ({
         ...current,
@@ -122,12 +161,11 @@ const TapCard = () => {
         printed_handle: nextProfile.username,
         shipping_name: current.shipping_name || nextProfile.display_name || nextProfile.username,
       }));
+
+      const activeBilling = billingData?.pro_status === "active" || billingData?.pro_status === "trialing";
+      setTier(nextProfile.is_pro || activeBilling ? "pro" : "retail");
     }
 
-    const isPro = billingData?.pro_status === "active" || billingData?.pro_status === "trialing";
-    setTier(isPro && billingData?.pro_interval === "year" && billingData?.annual_card_credit_available
-      ? "annual_free"
-      : isPro ? "pro" : "retail");
     setOrders((orderData as Order[] | null) ?? []);
     setLoading(false);
   }, [navigate]);
@@ -138,8 +176,7 @@ const TapCard = () => {
       const { data, error } = await supabase.functions.invoke("confirm-tap-checkout", {
         body: { session_id: sessionId },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error || data?.error) throw new Error(await functionErrorMessage(error, data, "The order is still syncing."));
       toast({
         title: "Tap Card order confirmed",
         description: "Your approved card details are now in the BrownGlobal fulfillment queue.",
@@ -216,18 +253,11 @@ const TapCard = () => {
           preview_approved: true,
         },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error || data?.error) {
+        throw new Error(await functionErrorMessage(error, data, "Stripe Checkout could not open."));
+      }
 
-      if (data?.free) {
-        toast({
-          title: "Included Tap Card claimed",
-          description: "Your annual card credit was used and the order is ready for manual fulfillment.",
-        });
-        setPreviewApproved(false);
-        setTermsApproved(false);
-        await load();
-      } else if (data?.url) {
+      if (data?.url) {
         window.location.assign(data.url);
       } else {
         throw new Error("Stripe Checkout did not return a secure checkout link.");
@@ -242,11 +272,9 @@ const TapCard = () => {
     }
   };
 
-  const pricingMessage = tier === "annual_free"
-    ? "One standard PVC card is included with your eligible annual Pro plan."
-    : tier === "pro"
-      ? "Your active Pro membership price is applied automatically."
-      : "One-time purchase. Upgrade to Pro for member pricing.";
+  const pricingMessage = tier === "pro"
+    ? "Your active Verifiedly Pro member price is applied automatically."
+    : "One-time purchase. Verifiedly Pro members pay $19.99.";
 
   if (loading) {
     return <DashboardShell title="Verifiedly Tap"><div className="p-8 text-sm text-muted-foreground">Loading your Tap Card…</div></DashboardShell>;
@@ -257,10 +285,10 @@ const TapCard = () => {
       <div className="mx-auto max-w-6xl space-y-7 px-4 py-6 sm:py-9">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Tap · scan · connect</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Tap · scan · share</p>
             <h1 className="mt-2 text-3xl font-display font-bold tracking-tight sm:text-4xl">Create your Verifiedly Tap Card</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              One professional, Verifiedly-branded PVC card with your name, role and a unique NFC link to your live profile.
+              A personalized, Verifiedly-branded PVC card that opens your official profile with NFC or QR.
             </p>
           </div>
           <div className="inline-flex w-fit items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs font-medium shadow-sm">
@@ -272,7 +300,7 @@ const TapCard = () => {
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Live preview</p>
-              <p className="mt-1 text-sm text-muted-foreground">Your card updates as you edit the fields below.</p>
+              <p className="mt-1 text-sm text-muted-foreground">This is the approved layout used for every Verifiedly Tap Card.</p>
             </div>
             <span className="rounded-full bg-foreground px-3 py-1 text-[11px] font-semibold text-background">PVC · NFC · QR</span>
           </div>
@@ -280,28 +308,28 @@ const TapCard = () => {
           <div className="grid gap-5 lg:grid-cols-2">
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Front</p>
-              <div className="relative mx-auto aspect-[1.586/1] w-full max-w-[560px] overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#090909] p-6 text-white shadow-[0_24px_70px_-34px_rgba(0,0,0,0.9)] sm:p-8">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(255,255,255,0.12),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_50%)]" />
+              <div className="relative mx-auto aspect-[1.586/1] w-full max-w-[560px] overflow-hidden rounded-[1.6rem] border border-black/10 bg-white p-6 text-black shadow-[0_24px_70px_-34px_rgba(0,0,0,0.35)] sm:p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(0,0,0,0.035),transparent_34%),linear-gradient(145deg,rgba(0,0,0,0.018),transparent_58%)]" />
                 <div className="relative flex items-start justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/60">Verifiedly Tap</p>
-                    <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">Official profile card</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-black/60">Verifiedly Tap</p>
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-black/35">Official profile card</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5">
-                    <Nfc className="h-5 w-5 text-white/85" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-black/[0.025]">
+                    <Nfc className="h-5 w-5 text-black/75" />
                   </div>
                 </div>
 
                 <div className="absolute bottom-7 left-6 right-6 sm:bottom-8 sm:left-8 sm:right-8">
                   <div className="max-w-[76%]">
                     <p className="truncate font-display text-2xl font-bold tracking-tight sm:text-3xl">{previewName}</p>
-                    <p className="mt-1 truncate text-xs text-white/65 sm:text-sm">{previewTitle}</p>
-                    <p className="mt-4 truncate text-[10px] font-medium tracking-[0.12em] text-white/45">@{previewHandle}</p>
+                    <p className="mt-1 truncate text-xs text-black/60 sm:text-sm">{previewTitle}</p>
+                    <p className="mt-4 truncate text-[10px] font-medium tracking-[0.12em] text-black/45">@{previewHandle}</p>
                   </div>
                   <img
                     src={verifiedlyMark}
                     alt="Verifiedly V mark"
-                    className="absolute bottom-0 right-0 h-11 w-11 object-contain brightness-0 invert sm:h-14 sm:w-14"
+                    className="absolute bottom-0 right-0 h-11 w-11 object-contain sm:h-14 sm:w-14"
                   />
                 </div>
               </div>
@@ -309,9 +337,9 @@ const TapCard = () => {
 
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Back</p>
-              <div className="relative mx-auto flex aspect-[1.586/1] w-full max-w-[560px] items-center overflow-hidden rounded-[1.6rem] border border-foreground/10 bg-white p-6 text-black shadow-[0_24px_70px_-34px_rgba(0,0,0,0.35)] sm:p-8">
-                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-5 sm:gap-7">
-                  <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl border border-black/10 bg-white p-2 shadow-sm sm:h-36 sm:w-36">
+              <div className="relative mx-auto flex aspect-[1.586/1] w-full max-w-[560px] items-center overflow-hidden rounded-[1.6rem] border border-black/10 bg-white p-6 text-black shadow-[0_24px_70px_-34px_rgba(0,0,0,0.35)] sm:p-8">
+                <div className="grid w-full grid-cols-[auto_1fr] items-center gap-5 sm:gap-8">
+                  <div className="flex h-28 w-28 shrink-0 items-center justify-center bg-white p-1 sm:h-36 sm:w-36">
                     <img src={previewQrUrl} alt="Preview QR code for the Verifiedly profile" className="h-full w-full" referrerPolicy="no-referrer" />
                   </div>
                   <div className="min-w-0">
@@ -320,13 +348,10 @@ const TapCard = () => {
                       <p className="text-xs font-bold uppercase tracking-[0.14em]">Tap or scan</p>
                     </div>
                     <p className="mt-3 truncate text-sm font-semibold">verifiedly.app/{previewHandle}</p>
-                    <p className="mt-2 text-[10px] leading-relaxed text-black/55">
-                      Your manufactured card receives a unique, disableable tap link after the order is confirmed.
-                    </p>
-                    <p className="mt-4 text-[9px] leading-relaxed text-black/45">Not a payment card or government-issued ID.</p>
+                    <p className="mt-5 text-[9px] leading-relaxed text-black/45">Not a payment card or government-issued ID.</p>
                   </div>
                 </div>
-                <img src={verifiedlyMark} alt="" aria-hidden="true" className="absolute bottom-5 right-5 h-8 w-8 object-contain opacity-90" />
+                <img src={verifiedlyMark} alt="" aria-hidden="true" className="absolute bottom-5 right-5 h-8 w-8 object-contain" />
               </div>
             </div>
           </div>
@@ -339,7 +364,7 @@ const TapCard = () => {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">1</span>
                 <div>
                   <h2 className="font-display text-xl font-bold">Personalize the print</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">These are the exact details BrownGlobal will submit to the card supplier.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Only the approved name, title, handle, QR and NFC link vary between cards.</p>
                 </div>
               </div>
 
@@ -441,7 +466,7 @@ const TapCard = () => {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">3</span>
                 <div>
                   <h2 className="font-display text-xl font-bold">Review and checkout</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">Your eligible price is calculated from your Verifiedly account.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Your price is calculated from your Verifiedly account.</p>
                 </div>
               </div>
 
@@ -455,14 +480,14 @@ const TapCard = () => {
                 </div>
                 <div className="mt-6 flex items-baseline gap-2">
                   <span className="text-3xl font-display font-bold">{priceLabel(tier)}</span>
-                  <span className="text-xs text-muted-foreground">{tier === "annual_free" ? "with eligible annual Pro" : "one time"}</span>
+                  <span className="text-xs text-muted-foreground">one time</span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{pricingMessage}</p>
               </div>
 
               <div className="mt-5 space-y-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2"><Check className="h-4 w-4 text-foreground" /> Unique NFC and QR profile link</div>
-                <div className="flex items-center gap-2"><Check className="h-4 w-4 text-foreground" /> Verifiedly-branded front and back</div>
+                <div className="flex items-center gap-2"><Check className="h-4 w-4 text-foreground" /> Locked Verifiedly front-and-back design</div>
                 <div className="flex items-center gap-2"><Check className="h-4 w-4 text-foreground" /> Manual quality review before fulfillment</div>
               </div>
 
@@ -475,12 +500,24 @@ const TapCard = () => {
 
               <Button className="mt-5 h-12 w-full rounded-xl" onClick={() => void submit()} disabled={!canSubmit}>
                 {submitting
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{tier === "annual_free" ? "Claiming card…" : "Opening Stripe Checkout…"}</>
-                  : <>{tier === "annual_free" ? "Claim included Tap Card" : `Continue to Stripe · ${priceLabel(tier)}`}<ChevronRight className="ml-2 h-4 w-4" /></>}
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Opening Stripe Checkout…</>
+                  : <>Continue with Stripe · {priceLabel(tier)}<ChevronRight className="ml-2 h-4 w-4" /></>}
               </Button>
 
+              {tier === "retail" && (
+                <Button asChild variant="outline" className="mt-3 h-11 w-full rounded-xl">
+                  <Link to="/dashboard/pro">Get Pro · Tap Card $19.99</Link>
+                </Button>
+              )}
+
+              {tier === "retail" && (
+                <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
+                  Verifiedly Pro is $4.99 monthly or $49.99 yearly and includes identity-verification eligibility for supported adults.
+                </p>
+              )}
+
               <p className="mt-3 text-center text-[10px] leading-relaxed text-muted-foreground">
-                Paid orders open a secure Stripe-hosted checkout. Your card data is recorded only after payment is confirmed.
+                Paid orders open a secure Stripe-hosted checkout. Order data is recorded only after Stripe confirms payment.
               </p>
             </Card>
           </div>
@@ -507,7 +544,7 @@ const TapCard = () => {
                   </div>
                   <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                     <span>{new Date(order.created_at).toLocaleDateString()}</span>
-                    <span>{order.amount_cents === 0 ? "Included" : `$${(order.amount_cents / 100).toFixed(2)}`}</span>
+                    <span>${(order.amount_cents / 100).toFixed(2)}</span>
                   </div>
                   {order.tracking_url && (
                     <a href={order.tracking_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-medium underline underline-offset-4">
