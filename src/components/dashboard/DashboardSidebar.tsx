@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { CreditCard, ExternalLink, Headphones, LogOut, Settings, ShieldCheck, Sparkles, User } from "lucide-react";
+import { CreditCard, ExternalLink, Headphones, LogOut, PackageCheck, Settings, ShieldCheck, Sparkles, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -29,6 +30,18 @@ export default function DashboardSidebar({ username }: { username?: string }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data } = await supabase.from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin");
+      setIsAdmin(!!data?.length);
+    });
+  }, []);
 
   return (
     <Sidebar collapsible="icon">
@@ -62,6 +75,24 @@ export default function DashboardSidebar({ username }: { username?: string }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/dashboard/admin/cards" className={({ isActive }) => `flex items-center gap-2 ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:bg-sidebar-accent/50"}`}>
+                      <PackageCheck className="h-4 w-4" />
+                      {!collapsed && <span>Card orders</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {username && !collapsed && (
           <SidebarGroup>
