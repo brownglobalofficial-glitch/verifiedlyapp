@@ -11,3 +11,5 @@ project_id = "pwahrywcgtgfaaghkpoo"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.tap-card-webhook]
+    verify_jwt = false
