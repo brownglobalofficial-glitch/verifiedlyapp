@@ -25,6 +25,7 @@ const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
+const TapCard = lazy(() => import("./pages/dashboard/TapCard"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
@@ -159,6 +160,7 @@ const App = () => (
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
+            <Route path="/dashboard/tap-card" element={<AuthGuard><TapCard /></AuthGuard>} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
