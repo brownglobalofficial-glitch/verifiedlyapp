@@ -13,12 +13,10 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
 });
 
-const DEFAULT_TAP_RETAIL_PRICE = "price_1TwRxJ1hrOAc8qE8TBbgyAaJ";
-const DEFAULT_TAP_PRO_PRICE = "price_1TwRxL1hrOAc8qE89YDsC42O";
-
 const allowedOrigins = () => new Set([
   "https://verifiedly.app",
   "https://www.verifiedly.app",
+  "https://verifiedlyapp.lovable.app",
   "https://id-preview--173dd0e3-02ca-4666-9958-5d8eb32162c8.lovable.app",
   ...(Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
     .split(",")
@@ -56,15 +54,18 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true") {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
+
+    // Test keys may exercise the complete checkout flow before launch. A live
+    // key still requires the explicit production launch flag.
+    const isStripeTestMode = /^(sk|rk)_test_/.test(stripeKey);
+    if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true" && !isStripeTestMode) {
       return json({
-        error: "Tap Card ordering is not open yet. Verifiedly is testing its PVC sample and manual fulfillment before accepting orders.",
+        error: "Live Tap Card ordering is not open yet. Complete the PVC sample and fulfillment test, then enable TAP_CARD_ORDERS_ENABLED.",
         code: "tap_orders_not_open",
       }, 503);
     }
-
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Please sign in again." }, 401);
@@ -103,60 +104,23 @@ serve(async (req) => {
 
     const [{ data: profile }, { data: billing }] = await Promise.all([
       admin.from("profiles")
-        .select("username, display_name")
+        .select("username, display_name, is_pro")
         .eq("id", user.id)
         .maybeSingle(),
       admin.from("verifiedly_billing")
-        .select("pro_status, pro_interval, annual_card_credit_available, stripe_customer_id")
+        .select("pro_status, stripe_customer_id")
         .eq("user_id", user.id)
         .maybeSingle(),
     ]);
 
     if (!profile?.username) return json({ error: "Complete your Verifiedly profile before ordering a card." }, 409);
 
-    // The handle is always taken from the authenticated profile. A browser cannot
-    // order a card that points to another user's profile by changing request data.
     const printedHandle = String(profile.username).trim().toLowerCase();
-    const isPro = billing?.pro_status === "active" || billing?.pro_status === "trialing";
-    const isAnnualIncluded = isPro
-      && billing?.pro_interval === "year"
-      && billing?.annual_card_credit_available === true;
+    const isPro = profile.is_pro === true
+      || billing?.pro_status === "active"
+      || billing?.pro_status === "trialing";
+    const amountCents = isPro ? 1999 : 2999;
     const previewApprovedAt = new Date().toISOString();
-    const shippingAddress = {
-      line1,
-      line2,
-      city,
-      state,
-      postal_code: postalCode,
-      country: "US",
-    };
-
-    // Eligible annual plans can claim the included card without opening a paid
-    // Checkout Session. The database function consumes the credit atomically.
-    if (isAnnualIncluded) {
-      const syntheticSession = `annual_included_${user.id}_${crypto.randomUUID()}`;
-      const { data: recordResult, error: recordError } = await admin.rpc("record_verifiedly_tap_card_order", {
-        p_user_id: user.id,
-        p_material: "pvc",
-        p_order_source: "annual_included",
-        p_amount_cents: 0,
-        p_currency: "usd",
-        p_checkout_session_id: syntheticSession,
-        p_payment_intent_id: null,
-        p_shipping_name: shippingName,
-        p_shipping_address: shippingAddress,
-        p_printed_name: printedName,
-        p_printed_title: printedTitle,
-        p_printed_handle: printedHandle,
-        p_template_version: "verifiedly-pvc-v2",
-        p_preview_approved_at: previewApprovedAt,
-      });
-      if (recordError) throw recordError;
-      return json({ free: true, order: recordResult });
-    }
-
-    const retailPrice = Deno.env.get("STRIPE_TAP_RETAIL_PRICE_ID") || DEFAULT_TAP_RETAIL_PRICE;
-    const proPrice = Deno.env.get("STRIPE_TAP_PRO_PRICE_ID") || DEFAULT_TAP_PRO_PRICE;
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const origin = safeOrigin(req.headers.get("origin"));
 
@@ -170,7 +134,17 @@ serve(async (req) => {
       mode: "payment",
       locale: "auto",
       billing_address_collection: "auto",
-      line_items: [{ price: isPro ? proPrice : retailPrice, quantity: 1 }],
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: amountCents,
+          product_data: {
+            name: "Verifiedly Tap Card",
+            description: "Personalized non-payment PVC NFC card linked to a Verifiedly profile",
+          },
+        },
+      }],
       success_url: `${origin}/dashboard/tap-card?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard/tap-card?checkout=cancelled`,
       metadata: {
@@ -180,7 +154,7 @@ serve(async (req) => {
         printed_name: printedName,
         printed_title: printedTitle,
         printed_handle: printedHandle,
-        template_version: "verifiedly-pvc-v2",
+        template_version: "verifiedly-pvc-white-v1",
         preview_approved_at: previewApprovedAt,
         shipping_name: shippingName,
         shipping_line1: line1,
@@ -196,18 +170,20 @@ serve(async (req) => {
           type: "verifiedly_tap_card",
           user_id: user.id,
           printed_handle: printedHandle,
+          order_source: isPro ? "pro_member" : "retail",
         },
       },
       custom_text: {
         submit: {
-          message: "Personalized non-payment NFC profile card. Please review the final total before paying.",
+          message: "Personalized non-payment NFC profile card. Review the final total and shipping details before paying.",
         },
       },
     });
 
-    return json({ url: session.url });
+    return json({ url: session.url, amount_cents: amountCents, pro_price: isPro });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not start Tap Card checkout.";
+    console.error("[CREATE-TAP-CHECKOUT]", message);
     return json({ error: message }, 500);
   }
 });
