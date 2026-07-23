@@ -1710,6 +1710,8 @@ export type Database = {
       }
       verifiedly_billing: {
         Row: {
+          annual_card_credit_available: boolean
+          annual_card_credit_granted_at: string | null
           created_at: string
           documents_cancel_at_period_end: boolean
           documents_current_period_end: string | null
@@ -1718,6 +1720,12 @@ export type Database = {
           identity_attempt_count: number
           identity_last_session_id: string | null
           identity_status: string
+          pro_cancel_at_period_end: boolean
+          pro_current_period_end: string | null
+          pro_interval: string | null
+          pro_started_at: string | null
+          pro_status: string
+          pro_subscription_id: string | null
           stripe_customer_id: string | null
           updated_at: string
           user_id: string
@@ -1725,6 +1733,8 @@ export type Database = {
           verification_payment_status: string
         }
         Insert: {
+          annual_card_credit_available?: boolean
+          annual_card_credit_granted_at?: string | null
           created_at?: string
           documents_cancel_at_period_end?: boolean
           documents_current_period_end?: string | null
@@ -1733,6 +1743,12 @@ export type Database = {
           identity_attempt_count?: number
           identity_last_session_id?: string | null
           identity_status?: string
+          pro_cancel_at_period_end?: boolean
+          pro_current_period_end?: string | null
+          pro_interval?: string | null
+          pro_started_at?: string | null
+          pro_status?: string
+          pro_subscription_id?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
@@ -1740,6 +1756,8 @@ export type Database = {
           verification_payment_status?: string
         }
         Update: {
+          annual_card_credit_available?: boolean
+          annual_card_credit_granted_at?: string | null
           created_at?: string
           documents_cancel_at_period_end?: boolean
           documents_current_period_end?: string | null
@@ -1748,11 +1766,217 @@ export type Database = {
           identity_attempt_count?: number
           identity_last_session_id?: string | null
           identity_status?: string
+          pro_cancel_at_period_end?: boolean
+          pro_current_period_end?: string | null
+          pro_interval?: string | null
+          pro_started_at?: string | null
+          pro_status?: string
+          pro_subscription_id?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
           verification_checkout_session_id?: string | null
           verification_payment_status?: string
+        }
+        Relationships: []
+      }
+      verifiedly_support_tickets: {
+        Row: {
+          admin_response: string | null
+          category: string
+          created_at: string
+          id: string
+          message: string
+          priority: string
+          responded_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          message: string
+          priority?: string
+          responded_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          priority?: string
+          responded_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      verifiedly_tap_card_orders: {
+        Row: {
+          admin_notes: string | null
+          amount_cents: number
+          card_id: string
+          created_at: string
+          currency: string
+          delivered_at: string | null
+          fulfillment_order_id: string | null
+          fulfillment_provider: string | null
+          id: string
+          material: string
+          order_source: string
+          preview_approved_at: string | null
+          printed_handle: string | null
+          printed_name: string | null
+          printed_title: string | null
+          production_started_at: string | null
+          shipped_at: string | null
+          shipping_address: Json | null
+          shipping_name: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          submitted_at: string | null
+          template_version: string
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_cents?: number
+          card_id: string
+          created_at?: string
+          currency?: string
+          delivered_at?: string | null
+          fulfillment_order_id?: string | null
+          fulfillment_provider?: string | null
+          id?: string
+          material: string
+          order_source: string
+          preview_approved_at?: string | null
+          printed_handle?: string | null
+          printed_name?: string | null
+          printed_title?: string | null
+          production_started_at?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_name?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          submitted_at?: string | null
+          template_version?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_cents?: number
+          card_id?: string
+          created_at?: string
+          currency?: string
+          delivered_at?: string | null
+          fulfillment_order_id?: string | null
+          fulfillment_provider?: string | null
+          id?: string
+          material?: string
+          order_source?: string
+          preview_approved_at?: string | null
+          printed_handle?: string | null
+          printed_name?: string | null
+          printed_title?: string | null
+          production_started_at?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          shipping_name?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          submitted_at?: string | null
+          template_version?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verifiedly_tap_card_orders_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "verifiedly_tap_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verifiedly_tap_cards: {
+        Row: {
+          activated_at: string | null
+          card_serial: string
+          created_at: string
+          disabled_at: string | null
+          id: string
+          last_tapped_at: string | null
+          manufacturer: string | null
+          manufacturer_order_id: string | null
+          material: string
+          public_token: string
+          status: string
+          tap_count: number
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          card_serial?: string
+          created_at?: string
+          disabled_at?: string | null
+          id?: string
+          last_tapped_at?: string | null
+          manufacturer?: string | null
+          manufacturer_order_id?: string | null
+          material?: string
+          public_token?: string
+          status?: string
+          tap_count?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          card_serial?: string
+          created_at?: string
+          disabled_at?: string | null
+          id?: string
+          last_tapped_at?: string | null
+          manufacturer?: string | null
+          manufacturer_order_id?: string | null
+          material?: string
+          public_token?: string
+          status?: string
+          tap_count?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1788,6 +2012,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_verifiedly_tap_card_order: {
+        Args: {
+          p_admin_notes?: string
+          p_fulfillment_order_id?: string
+          p_fulfillment_provider?: string
+          p_order_id: string
+          p_status: string
+          p_tracking_number?: string
+          p_tracking_url?: string
+        }
+        Returns: string
+      }
       consume_oauth_code: {
         Args: { _client_id: string; _code: string; _redirect_uri: string }
         Returns: {
@@ -1837,6 +2073,10 @@ export type Database = {
         Args: { _user_id: string; _years: number }
         Returns: boolean
       }
+      manage_verifiedly_tap_card: {
+        Args: { p_action: string; p_card_id: string }
+        Returns: string
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1860,11 +2100,39 @@ export type Database = {
         Args: { _context: string; _ip: string; _user_agent: string }
         Returns: string
       }
+      record_verifiedly_tap_card_order: {
+        Args: {
+          p_amount_cents: number
+          p_checkout_session_id: string
+          p_currency: string
+          p_material: string
+          p_order_source: string
+          p_payment_intent_id: string
+          p_preview_approved_at: string
+          p_printed_handle: string
+          p_printed_name: string
+          p_printed_title: string
+          p_shipping_address: Json
+          p_shipping_name: string
+          p_template_version: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       request_business_verification: { Args: never; Returns: string }
       request_credential_verification: {
         Args: { _credential_type: string; _section_id: string }
         Returns: string
       }
+      resolve_verifiedly_tap_card: {
+        Args: { p_source?: string; p_token: string }
+        Returns: {
+          card_status: string
+          profile_display_name: string
+          profile_username: string
+        }[]
+      }
+      verifiedly_is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
