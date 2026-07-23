@@ -43,6 +43,13 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true") {
+      return json({
+        error: "Tap Card ordering is not open yet. Verifiedly is testing card samples and fulfillment before accepting paid orders.",
+        code: "orders_not_open",
+      }, 503);
+    }
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe is not configured yet.");
 
@@ -168,8 +175,6 @@ serve(async (req) => {
           message: "This is a personalized NFC profile-sharing card. It is not a payment card or government-issued ID.",
         },
       },
-    }, {
-      idempotencyKey: `verifiedly-tap-card-${user.id}-${material}-${orderSource}-${new Date().toISOString().slice(0, 10)}`,
     });
 
     return json({ url: session.url, material, order_source: orderSource, amount_cents: amountCents });
