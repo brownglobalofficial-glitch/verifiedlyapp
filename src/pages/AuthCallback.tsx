@@ -1,131 +1,92 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import logoMark from "@/assets/verifiedly-mark.png";
 
-// Reference implementation of the Sign-in-with-Verifiedly callback for partner
-// apps (GSN, Globalis, etc). Exchanges ?code= for an access_token and verifies
-// the returned profile + identity scopes. In production, do the token exchange
-// SERVER-SIDE — client_secret must never ship in a VITE_* variable or the
-// browser bundle. Also validate the OAuth `state` parameter before exchange.
-const SUPABASE_FN_BASE = "https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1";
+const AUTH_NEXT_STORAGE_KEY = "verifiedly:auth-next";
 
-type Userinfo = {
-  sub: string;
-  username?: string;
-  display_name?: string;
-  avatar_url?: string;
-  verified?: boolean;
-  id_verified?: boolean;
-  verified_at?: string | null;
-  verification_kind?: string;
-  scopes?: string[];
-};
-
-const REQUIRED_SCOPES = ["profile", "identity"];
+const safeInternalPath = (value: string | null) =>
+  value && value.startsWith("/") && !value.startsWith("//") ? value : null;
 
 const AuthCallback = () => {
-  const [state, setState] = useState<"loading" | "ok" | "error">("loading");
-  const [user, setUser] = useState<Userinfo | null>(null);
+  const navigate = useNavigate();
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    (async () => {
+    let active = true;
+
+    const complete = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        const returnedState = params.get("state");
-        const oauthError = params.get("error");
+        const oauthError = params.get("error_description") || params.get("error");
         if (oauthError) throw new Error(oauthError);
-        if (!code) throw new Error("Missing authorization code");
 
-        // CSRF: verify state matches what we stored before the redirect.
-        const expectedState = sessionStorage.getItem("verifiedly_oauth_state");
-        if (!expectedState || !returnedState || expectedState !== returnedState) {
-          throw new Error("Invalid OAuth state — possible CSRF");
-        }
-        sessionStorage.removeItem("verifiedly_oauth_state");
-
-        // In production these come from env: import.meta.env.VITE_GSN_CLIENT_ID, etc.
-        const clientId = (import.meta.env.VITE_GSN_CLIENT_ID as string) || "gsn_app";
-        // NOTE: client_secret MUST NOT ship in a VITE_* variable. In real integrations,
-        // POST to your own server which forwards to /oauth-token with the secret.
-        const clientSecret = undefined as string | undefined;
-        const redirectUri = `${window.location.origin}/auth/callback`;
-
-        if (!clientSecret) {
-          throw new Error(
-            "Token exchange must happen server-side. Point this callback at your own server endpoint that holds the client_secret."
-          );
+        const code = params.get("code");
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            const { data: existing } = await supabase.auth.getSession();
+            if (!existing.session) throw exchangeError;
+          }
         }
 
-        const tokenRes = await fetch(`${SUPABASE_FN_BASE}/oauth-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            grant_type: "authorization_code",
-            code,
-            client_id: clientId,
-            client_secret: clientSecret,
-            redirect_uri: redirectUri,
-          }),
-        });
-        const tokenJson = await tokenRes.json();
-        if (!tokenRes.ok) throw new Error(tokenJson.error || "Token exchange failed");
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session?.user) {
+          throw new Error(sessionError?.message || "The sign-in session could not be completed.");
+        }
 
-        const userRes = await fetch(`${SUPABASE_FN_BASE}/oauth-userinfo`, {
-          headers: { Authorization: `Bearer ${tokenJson.access_token}` },
-        });
-        const u: Userinfo = await userRes.json();
-        if (!userRes.ok) throw new Error("Userinfo failed");
+        const storedNext = safeInternalPath(window.sessionStorage.getItem(AUTH_NEXT_STORAGE_KEY));
+        window.sessionStorage.removeItem(AUTH_NEXT_STORAGE_KEY);
+        const target = storedNext || "/dashboard";
 
-        // Verify granted scopes include the ones we require.
-        const granted = u.scopes || (tokenJson.scope || "").split(" ").filter(Boolean);
-        const missing = REQUIRED_SCOPES.filter((s) => !granted.includes(s));
-        if (missing.length) throw new Error(`Missing required scopes: ${missing.join(", ")}`);
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (profileError) throw profileError;
 
-        // Identity payload sanity check.
-        if (typeof u.id_verified !== "boolean") throw new Error("Identity scope returned no id_verified");
+        if (!active) return;
+        if (!profile?.onboarding_completed) {
+          navigate(`/onboarding?returnTo=${encodeURIComponent(target)}`, { replace: true });
+          return;
+        }
 
-        setUser(u);
-        setState("ok");
-      } catch (e: any) {
-        setError(e?.message || "Authentication failed");
-        setState("error");
+        navigate(target, { replace: true });
+      } catch (caught: unknown) {
+        if (!active) return;
+        setError(caught instanceof Error ? caught.message : "Sign-in could not be completed.");
       }
-    })();
-  }, []);
+    };
+
+    void complete();
+    return () => { active = false; };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Helmet>
-        <title>Signing you in… — Verifiedly</title>
+        <title>Completing sign-in — Verifiedly</title>
         <meta name="robots" content="noindex" />
       </Helmet>
-      <Card className="p-8 w-full max-w-md text-center">
-        {state === "loading" && (
+      <Card className="w-full max-w-sm rounded-3xl p-8 text-center">
+        {!error ? (
           <>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <h1 className="font-display font-semibold text-lg">Signing you in…</h1>
-            <p className="text-sm text-muted-foreground mt-1">Verifying profile and identity scopes.</p>
+            <img src={logoMark} alt="Verifiedly" className="mx-auto mb-5 h-10 w-10" />
+            <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+            <h1 className="mt-4 font-display text-lg font-semibold">Completing sign-in…</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Securely returning you to your account.</p>
           </>
-        )}
-        {state === "ok" && user && (
+        ) : (
           <>
-            <ShieldCheck className="w-8 h-8 mx-auto mb-4" />
-            <h1 className="font-display font-semibold text-lg">Welcome, {user.display_name || user.username}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {user.id_verified ? "Identity verified" : "Not identity verified"}
-              {user.verified_at ? ` · ${new Date(user.verified_at).toLocaleDateString()}` : ""}
-            </p>
-            <pre className="text-[10px] text-left bg-muted p-3 rounded mt-4 overflow-x-auto">{JSON.stringify(user, null, 2)}</pre>
-          </>
-        )}
-        {state === "error" && (
-          <>
-            <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-destructive" />
-            <h1 className="font-display font-semibold text-lg">Sign-in failed</h1>
-            <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            <AlertTriangle className="mx-auto h-8 w-8 text-destructive" />
+            <h1 className="mt-4 font-display text-lg font-semibold">Sign-in failed</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+            <Button className="mt-5" onClick={() => navigate("/login", { replace: true })}>Try again</Button>
           </>
         )}
       </Card>
