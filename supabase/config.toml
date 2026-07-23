@@ -11,3 +11,11 @@ project_id = "pwahrywcgtgfaaghkpoo"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.create-pro-checkout]
+    verify_jwt = true
+  [functions.create-tap-card-checkout]
+    verify_jwt = true
+  [functions.customer-portal]
+    verify_jwt = true
+  [functions.create-identity-session]
+    verify_jwt = true

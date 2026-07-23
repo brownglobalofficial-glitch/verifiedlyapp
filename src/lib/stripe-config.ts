@@ -1,19 +1,19 @@
-// Stripe tier configuration
+// Verifiedly platform billing configuration.
+// Server-side checkout uses environment-configured Stripe Price IDs when
+// available and otherwise creates inline prices at the same published amounts.
 export const STRIPE_TIERS = {
   pro: {
-    price_id: "price_1TuNUT1hrOAc8qE8Zg1OnTwd",
-    product_id: "prod_UuBsV3AvLLkgR1",
-    name: "Pro",
-    price: 4.99,
-    // Pro is now identity-first: custom domain, document vault, priority
-    // support. It does NOT include the identity check (that's a separate
-    // one-time purchase) and no longer sets a platform fee — commerce is
-    // being retired from the product.
+    monthly_price_id: null,
+    annual_price_id: null,
+    product_id: null,
+    name: "Verifiedly Pro",
+    monthly_price: 5.99,
+    annual_price: 49.99,
     fee_percent: 0,
-    includes_id_verification: false,
+    includes_identity_verification_eligibility: true,
+    includes_annual_pvc_card_credit: true,
   },
-  // Legacy tier — grandfathered for pre-existing subscribers only. Not
-  // advertised in the UI. Fee tables read `is_elite` at runtime to honor it.
+  // Legacy tier retained only so old data and unreachable screens compile.
   elite: {
     price_id: "price_1TSoiF1hrOAc8qE8R2dGTqHQ",
     product_id: "prod_URi8z4FUV491Gb",
@@ -30,11 +30,22 @@ export const STRIPE_TIERS = {
   },
 } as const;
 
-// Legacy configuration retained only so old, unreachable screens compile.
-// New verification enrollment and pricing are paused.
+// Identity verification is a trust-and-safety feature within an active Pro
+// plan. It is not sold as a standalone guaranteed badge.
 export const IDENTITY_VERIFICATION = {
-  price_id: null,
-  amount_usd: null,
+  standalone_price_id: null,
+  standalone_amount_usd: null,
+  requires_active_pro: true,
+  adult_only: true,
+} as const;
+
+export const TAP_CARD_PRICING = {
+  pvc_free_user: 24.99,
+  pvc_pro_user: 14.99,
+  annual_pvc_shipping: 5.99,
+  metal_free_user: 89.99,
+  metal_pro_user: 69.99,
+  annual_metal_upgrade_and_shipping: 55.98,
 } as const;
 
 export type SubscriptionTier = keyof typeof STRIPE_TIERS;

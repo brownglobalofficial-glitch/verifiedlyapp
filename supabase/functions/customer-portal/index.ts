@@ -7,14 +7,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const logStep = (step: string, details?: any) => {
-  console.log(`[CUSTOMER-PORTAL] ${step}${details ? ` - ${JSON.stringify(details)}` : ''}`);
+const allowedReturnPaths = new Set([
+  "/dashboard",
+  "/dashboard/pro",
+  "/dashboard/cards",
+]);
+
+const logStep = (step: string, details?: unknown) => {
+  console.log(`[CUSTOMER-PORTAL] ${step}${details ? ` - ${JSON.stringify(details)}` : ""}`);
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     logStep("Function started");
@@ -25,7 +29,7 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
 
     const authHeader = req.headers.get("Authorization");
@@ -36,7 +40,6 @@ serve(async (req) => {
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const { data: billing } = await supabaseClient.from("verifiedly_billing")
@@ -49,16 +52,18 @@ serve(async (req) => {
       customerId = customers.data[0]?.id ?? null;
     }
     if (!customerId) throw new Error("No Stripe customer found for this user");
+
     const body = await req.json().catch(() => ({}));
-    const requestedPath = typeof body?.return_path === "string" ? body.return_path : "/dashboard";
-    const returnPath = requestedPath === "/dashboard/documents" ? requestedPath : "/dashboard";
+    const requestedPath = typeof body?.return_path === "string" ? body.return_path : "/dashboard/pro";
+    const returnPath = allowedReturnPaths.has(requestedPath) ? requestedPath : "/dashboard/pro";
+
     const requestOrigin = req.headers.get("origin") || "https://verifiedly.app";
     let origin = "https://verifiedly.app";
     try {
       const parsed = new URL(requestOrigin);
       const configuredOrigins = (Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
         .split(",")
-        .map((origin) => origin.trim())
+        .map((configuredOrigin) => configuredOrigin.trim())
         .filter(Boolean);
       const allowed = new Set([
         "https://verifiedly.app",
@@ -69,21 +74,24 @@ serve(async (req) => {
         || parsed.hostname === "localhost"
         || parsed.hostname === "127.0.0.1";
       if (allowed) origin = parsed.origin;
-    } catch { /* use production origin */ }
+    } catch {
+      // Use production origin.
+    }
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}${returnPath}`,
     });
-    logStep("Portal session created", { url: portalSession.url });
+    logStep("Portal session created");
 
     return new Response(JSON.stringify({ url: portalSession.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: msg });
-    return new Response(JSON.stringify({ error: msg }), {
+    const message = error instanceof Error ? error.message : String(error);
+    logStep("ERROR", { message });
+    return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
