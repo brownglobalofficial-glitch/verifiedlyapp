@@ -7,18 +7,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), {
-  status: s, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
 });
 
-const TAP_RETAIL = "price_1TwRxJ1hrOAc8qE8TBbgyAaJ";
-const TAP_PRO = "price_1TwRxL1hrOAc8qE89YDsC42O";
+const DEFAULT_TAP_RETAIL_PRICE = "price_1TwRxJ1hrOAc8qE8TBbgyAaJ";
+const DEFAULT_TAP_PRO_PRICE = "price_1TwRxL1hrOAc8qE89YDsC42O";
 
-const trimField = (v: unknown, min: number, max: number, label: string) => {
-  if (typeof v !== "string") throw new Error(`${label} is required`);
-  const t = v.trim();
-  if (t.length < min || t.length > max) throw new Error(`${label} must be ${min}-${max} characters`);
-  return t;
+const allowedOrigins = () => new Set([
+  "https://verifiedly.app",
+  "https://www.verifiedly.app",
+  "https://id-preview--173dd0e3-02ca-4666-9958-5d8eb32162c8.lovable.app",
+  ...(Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+]);
+
+const safeOrigin = (value: string | null) => {
+  if (!value) return "https://verifiedly.app";
+  try {
+    const url = new URL(value);
+    const allowed = allowedOrigins().has(url.origin)
+      || url.hostname === "localhost"
+      || url.hostname === "127.0.0.1";
+    return allowed ? url.origin : "https://verifiedly.app";
+  } catch {
+    return "https://verifiedly.app";
+  }
+};
+
+const trimField = (value: unknown, minimum: number, maximum: number, label: string) => {
+  if (typeof value !== "string") throw new Error(`${label} is required`);
+  const cleaned = value
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length < minimum || cleaned.length > maximum) {
+    throw new Error(`${label} must be ${minimum}-${maximum} characters`);
+  }
+  return cleaned;
 };
 
 serve(async (req) => {
@@ -26,43 +56,86 @@ serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true") {
+      return json({
+        error: "Tap Card ordering is not open yet. Verifiedly is testing its PVC sample and manual fulfillment before accepting orders.",
+        code: "tap_orders_not_open",
+      }, 503);
+    }
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("Stripe is not configured");
+    if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Please sign in again." }, 401);
 
-    const anon = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
-    const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
-    const { data: userData } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
+    const anon = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    );
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } },
+    );
+
+    const { data: userData, error: userError } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = userData.user;
-    if (!user?.email) return json({ error: "Please sign in again." }, 401);
+    if (userError || !user?.email) return json({ error: "Please sign in again." }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const printed_name = trimField(body.printed_name, 2, 40, "Printed name");
-    const printed_title = trimField(body.printed_title, 2, 60, "Printed title");
-    const printed_handle = trimField(body.printed_handle, 2, 40, "Printed handle").toLowerCase();
-    const shipping_name = trimField(body.shipping_name, 2, 100, "Shipping name");
+    if (body?.preview_approved !== true) {
+      return json({ error: "Please approve the Tap Card preview before ordering." }, 400);
+    }
+
+    const printedName = trimField(body.printed_name, 2, 40, "Printed name");
+    const printedTitle = trimField(body.printed_title, 2, 60, "Printed title");
+    const shippingName = trimField(body.shipping_name, 2, 100, "Shipping name");
     const line1 = trimField(body.line1, 2, 200, "Street address");
     const line2 = typeof body.line2 === "string" ? body.line2.trim().slice(0, 200) : "";
     const city = trimField(body.city, 1, 100, "City");
-    const state = typeof body.state === "string" ? body.state.trim().slice(0, 100) : "";
-    const postal_code = trimField(body.postal_code, 2, 20, "Postal code");
+    const state = trimField(body.state, 2, 100, "State");
+    const postalCode = trimField(body.postal_code, 2, 20, "ZIP code");
     const country = trimField(body.country, 2, 2, "Country code").toUpperCase();
+    if (country !== "US") {
+      return json({ error: "Initial Verifiedly Tap Card fulfillment is available to U.S. addresses only." }, 400);
+    }
 
-    // Determine pricing tier
-    const { data: billing } = await admin.from("verifiedly_billing")
-      .select("pro_status, pro_interval, annual_card_credit_available, stripe_customer_id")
-      .eq("user_id", user.id).maybeSingle();
+    const [{ data: profile }, { data: billing }] = await Promise.all([
+      admin.from("profiles")
+        .select("username, display_name")
+        .eq("id", user.id)
+        .maybeSingle(),
+      admin.from("verifiedly_billing")
+        .select("pro_status, pro_interval, annual_card_credit_available, stripe_customer_id")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+    if (!profile?.username) return json({ error: "Complete your Verifiedly profile before ordering a card." }, 409);
+
+    // The handle is always taken from the authenticated profile. A browser cannot
+    // order a card that points to another user's profile by changing request data.
+    const printedHandle = String(profile.username).trim().toLowerCase();
     const isPro = billing?.pro_status === "active" || billing?.pro_status === "trialing";
-    const isAnnualFree = isPro && billing?.pro_interval === "year" && billing?.annual_card_credit_available === true;
+    const isAnnualIncluded = isPro
+      && billing?.pro_interval === "year"
+      && billing?.annual_card_credit_available === true;
+    const previewApprovedAt = new Date().toISOString();
+    const shippingAddress = {
+      line1,
+      line2,
+      city,
+      state,
+      postal_code: postalCode,
+      country: "US",
+    };
 
-    const shipping_address = { line1, line2, city, state, postal_code, country };
-
-    // Free with annual: skip Stripe, record order directly.
-    if (isAnnualFree) {
-      const syntheticSession = `annual_free_${user.id}_${Date.now()}`;
-      const { data: recordResult, error } = await admin.rpc("record_verifiedly_tap_card_order", {
+    // Eligible annual plans can claim the included card without opening a paid
+    // Checkout Session. The database function consumes the credit atomically.
+    if (isAnnualIncluded) {
+      const syntheticSession = `annual_included_${user.id}_${crypto.randomUUID()}`;
+      const { data: recordResult, error: recordError } = await admin.rpc("record_verifiedly_tap_card_order", {
         p_user_id: user.id,
         p_material: "pvc",
         p_order_source: "annual_included",
@@ -70,49 +143,71 @@ serve(async (req) => {
         p_currency: "usd",
         p_checkout_session_id: syntheticSession,
         p_payment_intent_id: null,
-        p_shipping_name: shipping_name,
-        p_shipping_address: shipping_address,
-        p_printed_name: printed_name,
-        p_printed_title: printed_title,
-        p_printed_handle: printed_handle,
-        p_template_version: "verifiedly-pvc-v1",
-        p_preview_approved_at: new Date().toISOString(),
+        p_shipping_name: shippingName,
+        p_shipping_address: shippingAddress,
+        p_printed_name: printedName,
+        p_printed_title: printedTitle,
+        p_printed_handle: printedHandle,
+        p_template_version: "verifiedly-pvc-v2",
+        p_preview_approved_at: previewApprovedAt,
       });
-      if (error) throw error;
+      if (recordError) throw recordError;
       return json({ free: true, order: recordResult });
     }
 
-    // Paid: Stripe Checkout
+    const retailPrice = Deno.env.get("STRIPE_TAP_RETAIL_PRICE_ID") || DEFAULT_TAP_RETAIL_PRICE;
+    const proPrice = Deno.env.get("STRIPE_TAP_PRO_PRICE_ID") || DEFAULT_TAP_PRO_PRICE;
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    let customerId = billing?.stripe_customer_id ?? null;
-    if (!customerId) {
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-      customerId = customers.data[0]?.id ?? (await stripe.customers.create({
-        email: user.email, metadata: { verifiedly_user_id: user.id },
-      })).id;
-      await admin.from("verifiedly_billing").upsert({ user_id: user.id, stripe_customer_id: customerId }, { onConflict: "user_id" });
-    }
+    const origin = safeOrigin(req.headers.get("origin"));
 
-    const origin = req.headers.get("origin") ?? "https://verifiedly.app";
+    const customerFields = billing?.stripe_customer_id
+      ? { customer: billing.stripe_customer_id }
+      : { customer_email: user.email, customer_creation: "always" as const };
+
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+      ...customerFields,
+      client_reference_id: user.id,
       mode: "payment",
-      line_items: [{ price: isPro ? TAP_PRO : TAP_RETAIL, quantity: 1 }],
+      locale: "auto",
+      billing_address_collection: "auto",
+      line_items: [{ price: isPro ? proPrice : retailPrice, quantity: 1 }],
       success_url: `${origin}/dashboard/tap-card?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard/tap-card?checkout=cancelled`,
       metadata: {
         type: "verifiedly_tap_card",
         user_id: user.id,
         order_source: isPro ? "pro_member" : "retail",
-        printed_name, printed_title, printed_handle,
-        shipping_name,
-        shipping_line1: line1, shipping_line2: line2,
-        shipping_city: city, shipping_state: state,
-        shipping_postal_code: postal_code, shipping_country: country,
+        printed_name: printedName,
+        printed_title: printedTitle,
+        printed_handle: printedHandle,
+        template_version: "verifiedly-pvc-v2",
+        preview_approved_at: previewApprovedAt,
+        shipping_name: shippingName,
+        shipping_line1: line1,
+        shipping_line2: line2,
+        shipping_city: city,
+        shipping_state: state,
+        shipping_postal_code: postalCode,
+        shipping_country: "US",
+      },
+      payment_intent_data: {
+        description: `Verifiedly Tap Card for @${printedHandle}`,
+        metadata: {
+          type: "verifiedly_tap_card",
+          user_id: user.id,
+          printed_handle: printedHandle,
+        },
+      },
+      custom_text: {
+        submit: {
+          message: "Personalized non-payment NFC profile card. Please review the final total before paying.",
+        },
       },
     });
+
     return json({ url: session.url });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Could not start checkout." }, 500);
+    const message = error instanceof Error ? error.message : "Could not start Tap Card checkout.";
+    return json({ error: message }, 500);
   }
 });

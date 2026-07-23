@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Building2, Code2, Copy, Eye, KeyRound, Search, Shield, ShieldCheck, Users } from "lucide-react";
+import { Building2, Code2, Copy, Eye, KeyRound, PackageCheck, Search, Shield, ShieldCheck, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,10 @@ const Admin = () => {
             <Link to="/dashboard"><img src={logo} alt="Verifiedly" className="h-7" /></Link>
             <Badge variant="outline" className="gap-1"><Shield className="h-3 w-3" /> Admin</Badge>
           </div>
-          <Button asChild variant="ghost" size="sm"><Link to="/dashboard">Dashboard</Link></Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm"><Link to="/dashboard/admin/tap-orders"><PackageCheck className="mr-2 h-4 w-4" />Tap Card orders</Link></Button>
+            <Button asChild variant="ghost" size="sm"><Link to="/dashboard">Dashboard</Link></Button>
+          </div>
         </div>
       </nav>
 
