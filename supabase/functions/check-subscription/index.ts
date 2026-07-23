@@ -7,151 +7,140 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const logStep = (step: string, details?: any) => {
-  console.log(`[CHECK-SUBSCRIPTION] ${step}${details ? ` - ${JSON.stringify(details)}` : ''}`);
-};
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+});
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const supabaseClient = createClient(
+  const admin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false } },
   );
 
   try {
-    logStep("Function started");
-
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) return json({ error: "Please sign in again." }, 401);
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    if (userError || !user?.email) return json({ error: "Please sign in again." }, 401);
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-
-    // Read comp_tier so admin/promo gifts are never downgraded by Stripe state
-    const { data: profileRow } = await supabaseClient
-      .from("profiles")
-      .select("comp_tier")
-      .eq("id", user.id)
-      .maybeSingle();
+    const [{ data: profileRow }, { data: billingRow }] = await Promise.all([
+      admin.from("profiles").select("comp_tier").eq("id", user.id).maybeSingle(),
+      admin.from("verifiedly_billing").select("stripe_customer_id").eq("user_id", user.id).maybeSingle(),
+    ]);
     const compTier = (profileRow?.comp_tier as string | null) || null;
     const compRank = compTier === "elite" ? 2 : compTier === "pro" ? 1 : 0;
 
-    if (customers.data.length === 0) {
-      logStep("No customer found");
-      // Preserve comp_tier gifts; only force-free if not gifted
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    let customerId = billingRow?.stripe_customer_id ?? null;
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      customerId = customers.data[0]?.id ?? null;
+    }
+
+    if (!customerId) {
       const tier = compTier || "free";
-      await supabaseClient.from("profiles").update({
+      await admin.from("profiles").update({
         is_pro: tier === "pro" || tier === "elite",
         is_elite: tier === "elite",
       }).eq("id", user.id);
-      return new Response(JSON.stringify({ subscribed: tier !== "free", tier, comp: !!compTier }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      await admin.from("verifiedly_billing").upsert({
+        user_id: user.id,
+        pro_status: tier === "pro" || tier === "elite" ? "active" : "inactive",
+      }, { onConflict: "user_id" });
+      return json({ subscribed: tier !== "free", tier, comp: !!compTier });
     }
-
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
 
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 10,
+      status: "all",
+      limit: 25,
+      expand: ["data.items.data.price.product"],
     });
 
-    const PRO_PRODUCT = "prod_URi89hw7irIarX";
-    const ELITE_PRODUCT = "prod_URi8z4FUV491Gb";
+    const legacyProProducts = new Set(["prod_URi89hw7irIarX", "prod_UwKd3MLosO6bDT", "prod_UwKcOur9VtceeW"]);
+    const legacyEliteProducts = new Set(["prod_URi8z4FUV491Gb"]);
+    const rankedStatuses = ["active", "trialing", "past_due", "unpaid", "incomplete"];
 
     let tier = "free";
-    let subscriptionEnd = null;
-    let productId = null;
-    let status: string | null = null;
-    let cancelAtPeriodEnd = false;
-    let subscriptionId: string | null = null;
+    let selected: Stripe.Subscription | null = null;
 
-    if (subscriptions.data.length > 0) {
-      for (const sub of subscriptions.data) {
-        const subProductId = sub.items.data[0].price.product as string;
-        if (subProductId === ELITE_PRODUCT) {
+    for (const status of rankedStatuses) {
+      for (const subscription of subscriptions.data.filter((item) => item.status === status)) {
+        const product = subscription.items.data[0]?.price?.product;
+        const productId = typeof product === "string" ? product : product?.id;
+        const metadataTier = subscription.metadata?.tier;
+        const metadataType = subscription.metadata?.type;
+
+        if (metadataTier === "elite" || (productId && legacyEliteProducts.has(productId))) {
           tier = "elite";
-          productId = subProductId;
-          subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-          status = sub.status;
-          cancelAtPeriodEnd = !!sub.cancel_at_period_end;
-          subscriptionId = sub.id;
+          selected = subscription;
           break;
-        } else if (subProductId === PRO_PRODUCT) {
+        }
+        if (
+          metadataTier === "pro"
+          || metadataType === "verifiedly_pro"
+          || (metadataType === "subscription" && metadataTier === "pro")
+          || (productId && legacyProProducts.has(productId))
+        ) {
           tier = "pro";
-          productId = subProductId;
-          subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-          status = sub.status;
-          cancelAtPeriodEnd = !!sub.cancel_at_period_end;
-          subscriptionId = sub.id;
+          selected = subscription;
         }
       }
-    } else {
-      // Also check past_due / unpaid so users see why payouts are at risk
-      const allSubs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 5 });
-      const live = allSubs.data.find(s => ["past_due","unpaid","incomplete"].includes(s.status));
-      if (live) {
-        const pid = live.items.data[0].price.product as string;
-        if (pid === ELITE_PRODUCT) tier = "elite";
-        else if (pid === PRO_PRODUCT) tier = "pro";
-        productId = pid;
-        status = live.status;
-        subscriptionEnd = new Date(live.current_period_end * 1000).toISOString();
-        subscriptionId = live.id;
-      }
+      if (tier === "elite" || selected) break;
     }
 
-    logStep("Subscription tier determined", { tier, productId });
-
-    // If admin/promo gifted a higher tier, keep the gifted tier
     const stripeRank = tier === "elite" ? 2 : tier === "pro" ? 1 : 0;
-    if (compRank > stripeRank) {
-      tier = compTier as string;
-      logStep("comp_tier overrides Stripe", { compTier });
-    }
+    if (compRank > stripeRank) tier = compTier as string;
 
-    // Update profile
-    await supabaseClient.from("profiles").update({
-      is_pro: tier === "pro" || tier === "elite",
-      is_elite: tier === "elite",
-    }).eq("id", user.id);
-    logStep("Profile updated");
+    const selectedStatus = selected?.status ?? (tier !== "free" && compTier ? "active" : "inactive");
+    const interval = selected?.items.data[0]?.price?.recurring?.interval === "year" ? "year" : selected ? "month" : null;
+    const periodEnd = selected?.current_period_end
+      ? new Date(selected.current_period_end * 1000).toISOString()
+      : null;
 
-    return new Response(JSON.stringify({
+    await Promise.all([
+      admin.from("profiles").update({
+        is_pro: tier === "pro" || tier === "elite",
+        is_elite: tier === "elite",
+      }).eq("id", user.id),
+      admin.from("verifiedly_billing").upsert({
+        user_id: user.id,
+        stripe_customer_id: customerId,
+        pro_subscription_id: selected?.id ?? null,
+        pro_status: tier === "pro" || tier === "elite" ? selectedStatus : "inactive",
+        pro_interval: interval,
+        pro_current_period_end: periodEnd,
+        pro_cancel_at_period_end: !!selected?.cancel_at_period_end,
+        pro_started_at: selected?.created ? new Date(selected.created * 1000).toISOString() : null,
+      }, { onConflict: "user_id" }),
+    ]);
+
+    const product = selected?.items.data[0]?.price?.product;
+    const productId = typeof product === "string" ? product : product?.id ?? null;
+    return json({
       subscribed: tier !== "free",
       tier,
       product_id: productId,
-      subscription_end: subscriptionEnd,
-      status,
-      cancel_at_period_end: cancelAtPeriodEnd,
-      subscription_id: subscriptionId,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      subscription_end: periodEnd,
+      status: selectedStatus,
+      cancel_at_period_end: !!selected?.cancel_at_period_end,
+      subscription_id: selected?.id ?? null,
+      interval,
+      comp: compRank > stripeRank,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: msg });
-    return new Response(JSON.stringify({ error: msg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[CHECK-SUBSCRIPTION]", message);
+    return json({ error: message }, 500);
   }
 });

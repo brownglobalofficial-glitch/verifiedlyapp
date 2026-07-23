@@ -1,36 +1,36 @@
 import { motion } from "framer-motion";
-import { BadgeCheck, BriefcaseBusiness, FileLock2, KeyRound, Share2, UserRound } from "lucide-react";
+import { BadgeCheck, BriefcaseBusiness, CreditCard, KeyRound, QrCode, UserRound } from "lucide-react";
 
 const features = [
   {
     icon: UserRound,
     title: "Official Profile",
-    description: "A focused public identity page for an individual or organization—without posts or clutter.",
+    description: "A focused public profile for an individual or organization—without a feed, posts or clutter.",
   },
   {
     icon: BriefcaseBusiness,
-    title: "Structured Experience",
-    description: "Present work, education, credentials, licenses, awards, and accomplishments in a consistent format.",
+    title: "Structured Credentials",
+    description: "Present work, education, credentials, licenses, awards and accomplishments in a consistent format.",
   },
   {
     icon: BadgeCheck,
     title: "Identity Verification",
-    description: "Eligible adults can complete a separate Stripe-hosted ID and selfie check for a clearly labeled badge.",
-  },
-  {
-    icon: FileLock2,
-    title: "Private Documents",
-    description: "Keep permitted professional credentials separate from the public profile in private storage.",
-  },
-  {
-    icon: Share2,
-    title: "Controlled Sharing",
-    description: "Create expiring, revocable links for an individual professional credential when needed.",
+    description: "Eligible adults with active Pro can complete Stripe Identity. The check appears only after a successful result.",
   },
   {
     icon: KeyRound,
-    title: "Sign in with Verifiedly",
-    description: "Approved apps can request consented profile and identity-status data through OAuth 2.0.",
+    title: "Continue with Verifiedly",
+    description: "Approved apps can use Verifiedly for secure sign-in and request only consented profile information.",
+  },
+  {
+    icon: QrCode,
+    title: "Simple Sharing",
+    description: "Share your official profile through a clean link and QR code from any device.",
+  },
+  {
+    icon: CreditCard,
+    title: "Verifiedly Tap",
+    description: "Order a personalized, non-payment PVC NFC card that opens your live Verifiedly profile.",
   },
 ];
 
@@ -58,10 +58,10 @@ const Features = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-            A clearer way to establish who you are
+            One clear place for your professional identity
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Built for individuals, athletes, businesses, clubs, and teams that need a professional profile they can share.
+            Built for individuals, athletes, professionals, businesses, clubs and organizations that need an official profile they can share.
           </p>
         </motion.div>
         <motion.div

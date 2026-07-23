@@ -27,6 +27,7 @@ const TapCardOrders = lazy(() => import("./pages/admin/TapCardOrders"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
 const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
 const TapCard = lazy(() => import("./pages/dashboard/TapCard"));
+const Pro = lazy(() => import("./pages/dashboard/Pro"));
 const TapRedirect = lazy(() => import("./pages/TapRedirect"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -82,7 +83,7 @@ const RouteOptimizer = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/pro"]);
         const provider = session.user.app_metadata?.provider;
         if (
           event === "SIGNED_IN"
@@ -106,7 +107,7 @@ const RouteOptimizer = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/pro"]);
         redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
@@ -147,8 +148,9 @@ const App = () => (
             <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
             <Route path="/dashboard/admin/tap-orders" element={<AuthGuard><TapCardOrders /></AuthGuard>} />
-            <Route path="/dashboard/upgrade" element={<Navigate to="/pricing" replace />} />
-            <Route path="/dashboard/billing" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/pro" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/pro" replace />} />
+            <Route path="/dashboard/pro" element={<AuthGuard><Pro /></AuthGuard>} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
             <Route path="/dashboard/tap-card" element={<AuthGuard><TapCard /></AuthGuard>} />

@@ -1,13 +1,12 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import VerifiedBadge from "@/components/VerifiedBadge";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const Hero = () => {
   return (
     <section className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 overflow-hidden">
-      <div className="container mx-auto text-center max-w-4xl">
+      <div className="container mx-auto text-center max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -19,11 +18,11 @@ const Hero = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-secondary mb-8"
           >
-            <VerifiedBadge className="w-4 h-4" />
-            <span className="text-sm font-medium text-muted-foreground">Real ID verified · powered by Stripe Identity</span>
+            <ShieldCheck className="w-4 h-4" />
+            <span className="text-sm font-medium text-muted-foreground">Official profiles · optional identity verification for eligible adults</span>
           </motion.div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.15] mb-6">
-            Prove you're real.
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.08] mb-6">
+            Your identity. Your credentials.
             <br />
             <motion.span
               className="text-gradient inline-block pb-2"
@@ -31,7 +30,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Once. Everywhere.
+              Your official profile.
             </motion.span>
           </h1>
           <motion.p
@@ -40,8 +39,7 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            Build an official profile for who you are and what you do. Eligible adults can add
-            a Stripe Identity checkmark and use supported Sign in with Verifiedly integrations.
+            Create one clear profile for who you are, what you do and what you have accomplished. Share it by link, QR or a Verifiedly Tap Card, and use Verifiedly to sign in to supported websites.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -51,14 +49,14 @@ const Hero = () => {
           >
             <Link to="/signup">
               <Button size="lg" className="text-base px-8 h-12 gap-2">
-                Get verified <ArrowRight className="w-4 h-4" />
+                Create free profile <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <a href="#pricing">
+            <Link to="/pricing">
               <Button variant="outline" size="lg" className="text-base px-8 h-12">
-                See pricing
+                View Pro and Tap
               </Button>
-            </a>
+            </Link>
           </motion.div>
           <motion.p
             initial={{ opacity: 0 }}
@@ -66,7 +64,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Free profile · $9.99 one-time identity check · Documents optional
+            Free profile · Pro $4.99/month or $49.99/year · Tap Card $19.99 with Pro
           </motion.p>
         </motion.div>
 
@@ -80,9 +78,9 @@ const Hero = () => {
           <div className="bg-secondary rounded-2xl border border-border p-6 sm:p-8 md:p-12">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 text-center">
               {[
-                { value: "$9.99", label: "One-time to verify" },
-                { value: "Gov ID", label: "Real identity check" },
-                { value: "ID + selfie", label: "Separate secure check" },
+                { value: "$0", label: "Official profile" },
+                { value: "$4.99", label: "Pro monthly" },
+                { value: "$19.99", label: "Pro Tap price" },
                 { value: "Stripe", label: "Identity provider" },
               ].map((stat, i) => (
                 <motion.div
