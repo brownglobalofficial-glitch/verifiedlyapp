@@ -36,6 +36,21 @@ const safeOrigin = (value: string | null) => {
   }
 };
 
+const inlinePrice = (interval: "month" | "year"): Stripe.Checkout.SessionCreateParams.LineItem => ({
+  quantity: 1,
+  price_data: {
+    currency: "usd",
+    unit_amount: interval === "year" ? 4999 : 599,
+    recurring: { interval },
+    product_data: {
+      name: interval === "year" ? "Verifiedly Pro Annual" : "Verifiedly Pro Monthly",
+      description: interval === "year"
+        ? "Official-profile tools, identity-verification eligibility, priority support, analytics, and one included PVC Tap Card credit."
+        : "Official-profile tools, identity-verification eligibility, priority support, analytics, and Tap Card discounts.",
+    },
+  },
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -62,7 +77,7 @@ serve(async (req) => {
     const user = userData.user;
 
     const body = await req.json().catch(() => ({}));
-    const interval = body?.interval === "year" ? "year" : "month";
+    const interval: "month" | "year" = body?.interval === "year" ? "year" : "month";
 
     const { data: currentBilling } = await admin
       .from("verifiedly_billing")
@@ -97,26 +112,12 @@ serve(async (req) => {
       stripe_customer_id: customerId,
     }, { onConflict: "user_id" });
 
-    const monthlyPriceId = Deno.env.get("STRIPE_PRO_MONTHLY_PRICE_ID")
-      || "price_1TuNUT1hrOAc8qE8Zg1OnTwd";
-    const annualPriceId = Deno.env.get("STRIPE_PRO_ANNUAL_PRICE_ID") || "";
-
-    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = interval === "month"
-      ? { price: monthlyPriceId, quantity: 1 }
-      : annualPriceId
-        ? { price: annualPriceId, quantity: 1 }
-        : {
-            quantity: 1,
-            price_data: {
-              currency: "usd",
-              unit_amount: 4999,
-              recurring: { interval: "year" },
-              product_data: {
-                name: "Verifiedly Pro Annual",
-                description: "Official-profile tools, identity-verification eligibility, priority support, analytics, and one included PVC Tap Card credit.",
-              },
-            },
-          };
+    const configuredPriceId = interval === "year"
+      ? Deno.env.get("STRIPE_PRO_ANNUAL_PRICE_ID")
+      : Deno.env.get("STRIPE_PRO_MONTHLY_PRICE_ID");
+    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = configuredPriceId
+      ? { price: configuredPriceId, quantity: 1 }
+      : inlinePrice(interval);
 
     const origin = safeOrigin(req.headers.get("origin"));
     const session = await stripe.checkout.sessions.create({
