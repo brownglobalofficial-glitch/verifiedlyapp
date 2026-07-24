@@ -1,19 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
-import { BriefcaseBusiness, Check, ExternalLink, FileBadge, Globe, GraduationCap, Mail, MapPin, Share2 } from "lucide-react";
+import {
+  Award,
+  BriefcaseBusiness,
+  Check,
+  ExternalLink,
+  FileBadge2,
+  Globe,
+  GraduationCap,
+  Link2,
+  Mail,
+  MapPin,
+  Share2,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logoMark from "@/assets/verifiedly-v-mark.png";
 import {
   hasVisibleSectionData,
-  isProfileEditorSectionKind,
-  PROFILE_EDITOR_SECTION_KINDS,
+  profileSectionKindsForAccountType,
   PROFILE_SECTION_DEFINITIONS,
   safeExternalUrl,
   type ProfileSection,
@@ -42,23 +54,36 @@ const PUBLIC_SOCIAL_KEYS = new Set(["instagram", "youtube", "tiktok", "facebook"
 const SECTION_ICONS: Partial<Record<ProfileSectionKind, typeof BriefcaseBusiness>> = {
   work: BriefcaseBusiness,
   education: GraduationCap,
-  credential: FileBadge,
+  credential: FileBadge2,
+  accomplishment: Award,
+  project: Link2,
 };
 
 const sectionHeading = (section: ProfileSection) => {
   const data = section.data || {};
-  if (section.kind === "work") return data.role || data.organization || "Work";
+  if (section.kind === "work") return data.role || data.organization || "Experience";
   if (section.kind === "education") return data.program || data.school || "Education";
-  if (section.kind === "credential") return data.name || "License or certification";
+  if (section.kind === "credential") return data.name || "Certification or license";
+  if (section.kind === "accomplishment") return data.title || "Award or achievement";
+  if (section.kind === "project") return data.name || "Official link";
   return "Profile detail";
 };
 
 const sectionMeta = (section: ProfileSection) => {
   const data = section.data || {};
-  const dateRange = [data.start || data.issued, data.end || data.expires].filter(Boolean).join(" – ");
-  if (section.kind === "work") return [data.organization, dateRange].filter(Boolean).join(" · ");
-  if (section.kind === "education") return [data.school, dateRange].filter(Boolean).join(" · ");
-  if (section.kind === "credential") return [data.issuer, dateRange].filter(Boolean).join(" · ");
+  if (section.kind === "work") {
+    const range = [data.start, data.end].filter(Boolean).join(" – ");
+    return [data.organization, range].filter(Boolean).join(" · ");
+  }
+  if (section.kind === "education") {
+    const range = [data.start, data.end].filter(Boolean).join(" – ");
+    return [data.school, range].filter(Boolean).join(" · ");
+  }
+  if (section.kind === "credential") {
+    const range = [data.issued && `Issued ${data.issued}`, data.expires && `Expires ${data.expires}`].filter(Boolean).join(" · ");
+    return [data.issuer, range, data.credential_id && `ID ${data.credential_id}`].filter(Boolean).join(" · ");
+  }
+  if (section.kind === "accomplishment") return [data.issuer, data.date].filter(Boolean).join(" · ");
   return "";
 };
 
@@ -123,6 +148,7 @@ const CreatorProfile = () => {
         .eq("is_public", true)
         .order("position", { ascending: true });
 
+      const allowedKinds = profileSectionKindsForAccountType(currentProfile.account_type);
       setProfile(currentProfile as PublicProfile);
       setSections(
         (currentSections || [])
@@ -131,7 +157,7 @@ const CreatorProfile = () => {
             kind: section.kind as ProfileSectionKind,
             data: (section.data || {}) as Record<string, string>,
           }))
-          .filter((section) => isProfileEditorSectionKind(section.kind) && hasVisibleSectionData(section)),
+          .filter((section) => allowedKinds.includes(section.kind) && hasVisibleSectionData(section)),
       );
       setNotFound(false);
       setLoading(false);
@@ -158,10 +184,7 @@ const CreatorProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 px-4 py-12">
-        <div className="mx-auto max-w-4xl space-y-4">
-          <Skeleton className="h-56 rounded-3xl" />
-          <Skeleton className="h-72 rounded-3xl" />
-        </div>
+        <div className="mx-auto max-w-4xl space-y-4"><Skeleton className="h-56 rounded-3xl" /><Skeleton className="h-72 rounded-3xl" /></div>
       </div>
     );
   }
@@ -185,12 +208,12 @@ const CreatorProfile = () => {
   const shareImage = profile.avatar_url || new URL(logoMark, window.location.origin).href;
   const isOwner = viewerUserId === profile.id;
   const hasContact = Boolean(location || publicEmail || website || (isOrganization && (profile.organization_industry || profile.organization_country)));
+  const activeKinds = profileSectionKindsForAccountType(profile.account_type);
 
   const shareProfile = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({ title: `${displayName} on Verifiedly`, text: description, url: profileUrl });
-      } else {
+      if (navigator.share) await navigator.share({ title: `${displayName} on Verifiedly`, text: description, url: profileUrl });
+      else {
         await navigator.clipboard.writeText(profileUrl);
         setLinkCopied(true);
         window.setTimeout(() => setLinkCopied(false), 1800);
@@ -216,18 +239,12 @@ const CreatorProfile = () => {
 
       <header className="border-b border-neutral-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-3 py-2.5 sm:px-4">
-          <Link to="/" className="flex items-center gap-2 text-sm font-semibold">
-            <img src={logoMark} alt="" className="h-6 w-6 object-contain" />
-            Verifiedly
-          </Link>
+          <Link to="/" className="flex items-center gap-2 text-sm font-semibold"><img src={logoMark} alt="" className="h-6 w-6 object-contain" />Verifiedly</Link>
           <div className="flex items-center gap-1.5">
             <Button type="button" onClick={() => void shareProfile()} size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full px-3 text-xs">
-              {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
-              {linkCopied ? "Copied" : "Share"}
+              {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}{linkCopied ? "Copied" : "Share"}
             </Button>
-            <Button asChild size="sm" variant="outline" className="h-8 rounded-full border-neutral-200 bg-white px-3 text-xs">
-              <Link to={isOwner ? "/dashboard" : "/signup"}>{isOwner ? "Edit profile" : "Create yours"}</Link>
-            </Button>
+            <Button asChild size="sm" variant="outline" className="h-8 rounded-full border-neutral-200 bg-white px-3 text-xs"><Link to={isOwner ? "/dashboard" : "/signup"}>{isOwner ? "Edit profile" : "Create yours"}</Link></Button>
           </div>
         </div>
       </header>
@@ -241,20 +258,24 @@ const CreatorProfile = () => {
             </Avatar>
             <div className="mt-3 flex items-center justify-center gap-1.5">
               <h1 className="break-words text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
-              {profile.id_verified && <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label="Identity verified" />}
+              {profile.id_verified && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="inline-flex rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950" aria-label="Learn what Identity Verified means">
+                      <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label="Identity verified" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="center" className="w-[min(340px,calc(100vw-24px))] p-4 text-left">
+                    <p className="text-sm font-semibold">Identity Verified</p>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Stripe Identity successfully verified the identity of the adult account holder. This does not independently verify employment, education, certifications, licenses, awards, organization authority or other profile claims.</p>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
             {profile.category && <p className="mt-1 text-sm font-medium">{profile.category}</p>}
             <p className="mt-0.5 text-xs text-neutral-500">@{profile.username}</p>
             {location && <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-neutral-500"><MapPin className="h-3.5 w-3.5" />{location}</p>}
-            {!!socials.length && (
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-                {socials.map(({ platform, url }) => (
-                  <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white transition hover:-translate-y-0.5" aria-label={platform}>
-                    <SocialIcon platform={platform} className="h-3.5 w-3.5" />
-                  </a>
-                ))}
-              </div>
-            )}
+            {!!socials.length && <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white transition hover:-translate-y-0.5" aria-label={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
           </section>
 
           <div className="grid md:grid-cols-[minmax(190px,0.75fr)_minmax(0,2fr)]">
@@ -271,17 +292,14 @@ const CreatorProfile = () => {
             </aside>
 
             <section className="min-w-0 p-4 sm:p-5">
-              <div className="space-y-4">
-                {PROFILE_EDITOR_SECTION_KINDS.map((kind) => {
+              <div className="space-y-5">
+                {activeKinds.map((kind) => {
                   const entries = sections.filter((section) => section.kind === kind);
                   if (!entries.length) return null;
-                  const Icon = SECTION_ICONS[kind] || FileBadge;
+                  const Icon = SECTION_ICONS[kind] || FileBadge2;
                   return (
                     <section key={kind}>
-                      <div className="mb-2 flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.12em]">{PROFILE_SECTION_DEFINITIONS[kind].label}</h2>
-                      </div>
+                      <div className="mb-2 flex items-center gap-2"><Icon className="h-4 w-4" /><h2 className="text-xs font-semibold uppercase tracking-[0.12em]">{PROFILE_SECTION_DEFINITIONS[kind].label}</h2></div>
                       <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 px-3">
                         {entries.map((section) => {
                           const heading = sectionHeading(section);
@@ -289,11 +307,8 @@ const CreatorProfile = () => {
                           const url = safeExternalUrl(section.data?.url);
                           return (
                             <article key={section.id} className="flex items-start gap-2 py-3">
-                              <div className="min-w-0 flex-1">
-                                <h3 className="text-sm font-semibold leading-snug">{heading}</h3>
-                                {meta && <p className="mt-0.5 text-[11px] text-neutral-500">{meta}</p>}
-                              </div>
-                              {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-neutral-500" aria-label={`Open official link for ${heading}`}><ExternalLink className="h-3.5 w-3.5" /></a>}
+                              <div className="min-w-0 flex-1"><h3 className="text-sm font-semibold leading-snug">{heading}</h3>{meta && <p className="mt-0.5 text-[11px] text-neutral-500">{meta}</p>}</div>
+                              {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-950" aria-label={`Open official link for ${heading}`}><ExternalLink className="h-3.5 w-3.5" /></a>}
                             </article>
                           );
                         })}
@@ -301,17 +316,13 @@ const CreatorProfile = () => {
                     </section>
                   );
                 })}
-                {!sections.length && <p className="py-8 text-center text-xs text-neutral-500">Work, education, credentials and accomplishments can be added to this profile.</p>}
+                {!sections.length && <p className="py-8 text-center text-xs text-neutral-500">This profile has not added structured details yet.</p>}
               </div>
             </section>
           </div>
         </Card>
 
-        <footer className="mt-4 flex items-center justify-center gap-4 text-[11px] text-neutral-500">
-          <Link to="/terms">Terms</Link>
-          <Link to="/privacy">Privacy</Link>
-          <Link to="/login">Sign in</Link>
-        </footer>
+        <footer className="mt-4 flex items-center justify-center gap-4 text-[11px] text-neutral-500"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link><Link to="/login">Sign in</Link></footer>
       </main>
     </div>
   );
