@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { BadgeCheck, Camera, Code2, CreditCard, ExternalLink, KeyRound, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  BadgeCheck,
+  Building2,
+  Camera,
+  Code2,
+  CreditCard,
+  ExternalLink,
+  KeyRound,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,6 +44,8 @@ interface BillingState {
   stripe_customer_id: string | null;
 }
 
+type AccountType = "creator" | "business";
+
 const ProfileSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,10 +54,12 @@ const ProfileSettings = () => {
   const [profile, setProfile] = useState<SettingsProfile | null>(null);
   const [billing, setBilling] = useState<BillingState | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("creator");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [savingAccountType, setSavingAccountType] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -77,6 +93,7 @@ const ProfileSettings = () => {
       setProfile(profileData as SettingsProfile);
       setBilling((billingData as BillingState | null) ?? null);
       setAvatarUrl(profileData.avatar_url || "");
+      setAccountType(profileData.account_type === "business" ? "business" : "creator");
       setLoading(false);
     };
 
@@ -119,6 +136,29 @@ const ProfileSettings = () => {
     toast({ title: "Profile photo updated" });
   };
 
+  const saveAccountType = async () => {
+    if (!profile) return;
+    const currentType: AccountType = profile.account_type === "business" ? "business" : "creator";
+    if (accountType === currentType) {
+      toast({ title: "Profile type is already up to date" });
+      return;
+    }
+
+    setSavingAccountType(true);
+    const { error } = await supabase.from("profiles").update({ account_type: accountType }).eq("id", profile.id);
+    setSavingAccountType(false);
+    if (error) {
+      toast({ title: "Profile type not changed", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setProfile({ ...profile, account_type: accountType });
+    toast({
+      title: accountType === "business" ? "Organization profile enabled" : "Individual profile enabled",
+      description: "Existing profile entries are retained. The editor now shows the sections designed for this profile type.",
+    });
+  };
+
   const sendPasswordReset = async () => {
     if (!user?.email) return;
     setSendingReset(true);
@@ -156,6 +196,7 @@ const ProfileSettings = () => {
   const isPro = profile?.is_pro === true || billing?.pro_status === "active" || billing?.pro_status === "trialing";
   const renewalDate = billing?.pro_current_period_end ? new Date(billing.pro_current_period_end).toLocaleDateString() : null;
   const planLabel = billing?.pro_interval === "year" ? "Yearly" : "Monthly";
+  const savedAccountType: AccountType = profile?.account_type === "business" ? "business" : "creator";
 
   return (
     <DashboardShell title="Settings">
@@ -167,12 +208,7 @@ const ProfileSettings = () => {
                 {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
                 <AvatarFallback className="text-2xl font-display font-bold">{displayName[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow"
-                aria-label="Change profile photo"
-              >
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow" aria-label="Change profile photo">
                 <Camera className="h-4 w-4" />
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
@@ -187,6 +223,27 @@ const ProfileSettings = () => {
             </div>
             <Button asChild variant="outline" size="sm" className="gap-2">
               <a href={`/${profile?.username}`} target="_blank" rel="noreferrer">View profile <ExternalLink className="h-4 w-4" /></a>
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="p-5 sm:p-6">
+          <div>
+            <h2 className="font-display font-semibold">Profile type</h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Choose the structure that matches the profile. Changing type does not delete existing entries, but the editor will show only the sections designed for the selected type.</p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => setAccountType("creator")} className={`rounded-2xl border p-4 text-left transition ${accountType === "creator" ? "border-foreground bg-foreground/[0.03] ring-1 ring-foreground" : "border-border hover:border-foreground/30"}`}>
+              <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted"><UserRound className="h-5 w-5" /></div><div><p className="text-sm font-semibold">Individual</p><p className="text-[11px] text-muted-foreground">Experience, education, certifications, achievements and official links</p></div></div>
+            </button>
+            <button type="button" onClick={() => setAccountType("business")} className={`rounded-2xl border p-4 text-left transition ${accountType === "business" ? "border-foreground bg-foreground/[0.03] ring-1 ring-foreground" : "border-border hover:border-foreground/30"}`}>
+              <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted"><Building2 className="h-5 w-5" /></div><div><p className="text-sm font-semibold">Organization</p><p className="text-[11px] text-muted-foreground">Official organization details, certifications, achievements and links</p></div></div>
+            </button>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+            <p className="text-[11px] text-muted-foreground">Current: {savedAccountType === "business" ? "Organization" : "Individual"}</p>
+            <Button onClick={() => void saveAccountType()} disabled={savingAccountType || accountType === savedAccountType} className="rounded-full px-5">
+              {savingAccountType ? "Saving…" : "Save profile type"}
             </Button>
           </div>
         </Card>
@@ -210,14 +267,10 @@ const ProfileSettings = () => {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-display font-semibold">Verifiedly Pro</h2>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${isPro ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>
-                    {isPro ? "Active" : "Free"}
-                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${isPro ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}>{isPro ? "Active" : "Free"}</span>
                 </div>
                 {isPro ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {planLabel} plan{renewalDate ? ` · ${billing?.pro_cancel_at_period_end ? "Ends" : "Renews"} ${renewalDate}` : ""}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{planLabel} plan{renewalDate ? ` · ${billing?.pro_cancel_at_period_end ? "Ends" : "Renews"} ${renewalDate}` : ""}</p>
                 ) : (
                   <p className="mt-1 text-xs text-muted-foreground">$4.99 monthly or $49.99 yearly, with adult identity-verification eligibility and Tap Card member pricing.</p>
                 )}
@@ -227,8 +280,7 @@ const ProfileSettings = () => {
               <Button asChild variant={isPro ? "outline" : "default"}><Link to="/dashboard/pro">{isPro ? "View Pro" : "Upgrade to Pro"}</Link></Button>
               {billing?.stripe_customer_id && (
                 <Button variant="outline" onClick={() => void openBillingPortal()} disabled={openingPortal} className="gap-2">
-                  {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                  Manage billing
+                  {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Manage billing
                 </Button>
               )}
             </div>
@@ -241,11 +293,7 @@ const ProfileSettings = () => {
               {profile?.id_verified ? <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0" /> : <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />}
               <div>
                 <h2 className="font-display font-semibold">Identity verification</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {profile?.id_verified
-                    ? "Stripe Identity successfully verified the account holder."
-                    : "Eligible adults with active Pro can complete Stripe Identity. Pro does not automatically grant the verification check."}
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{profile?.id_verified ? "Stripe Identity successfully verified the account holder." : "Eligible adults with active Pro can complete Stripe Identity. Pro does not automatically grant the verification check."}</p>
               </div>
             </div>
             <Button asChild variant="outline"><Link to="/dashboard/verification">Open verification</Link></Button>
