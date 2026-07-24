@@ -25,7 +25,6 @@ const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const TapCardOrders = lazy(() => import("./pages/admin/TapCardOrders"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
-const OrganizationVerification = lazy(() => import("./pages/dashboard/OrganizationVerification"));
 const TapCard = lazy(() => import("./pages/dashboard/TapCard"));
 const Pro = lazy(() => import("./pages/dashboard/Pro"));
 const TapRedirect = lazy(() => import("./pages/TapRedirect"));
@@ -51,6 +50,7 @@ const RETIRED_DASHBOARD_PATHS = [
   "/dashboard/purchases",
   "/dashboard/credentials",
   "/dashboard/documents",
+  "/dashboard/organization-verification",
 ];
 
 const LegacyProfileRedirect = () => {
@@ -152,7 +152,6 @@ const App = () => (
             <Route path="/dashboard/billing" element={<Navigate to="/dashboard/pro" replace />} />
             <Route path="/dashboard/pro" element={<AuthGuard><Pro /></AuthGuard>} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
-            <Route path="/dashboard/organization-verification" element={<AuthGuard><OrganizationVerification /></AuthGuard>} />
             <Route path="/dashboard/tap-card" element={<AuthGuard><TapCard /></AuthGuard>} />
             <Route path="/dashboard/cards" element={<Navigate to="/dashboard/tap-card" replace />} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
