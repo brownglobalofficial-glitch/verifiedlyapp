@@ -22,7 +22,7 @@ const Hero = () => {
             <span className="text-sm font-medium text-muted-foreground">Official profiles · optional identity verification for eligible adults</span>
           </motion.div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-display font-bold tracking-tight leading-[1.08] mb-6">
-            Your identity. Your credentials.
+            Your official profile,
             <br />
             <motion.span
               className="text-gradient inline-block pb-2"
@@ -30,7 +30,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Your official profile.
+              everywhere.
             </motion.span>
           </h1>
           <motion.p
@@ -39,7 +39,7 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 font-body"
           >
-            Create one clear profile for who you are, what you do and what you have accomplished. Share it by link, QR or a Verifiedly Tap Card, and use Verifiedly to sign in to supported websites.
+            Create one clear profile for who you are, what you do and what you have accomplished. Share it by link, QR or Verifiedly Tap, and use Verifiedly to sign in to supported websites.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -64,7 +64,7 @@ const Hero = () => {
             transition={{ delay: 0.8 }}
             className="mt-6 text-sm text-muted-foreground"
           >
-            Free profile · Pro $4.99/month or $49.99/year · Tap Card $19.99 with Pro
+            Create · Verify · Share
           </motion.p>
         </motion.div>
 

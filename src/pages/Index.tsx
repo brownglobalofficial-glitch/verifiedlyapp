@@ -19,10 +19,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
-        <title>Verifiedly — Your Official Profile</title>
-        <meta name="description" content="Create your official profile for your identity, credentials, experience and accomplishments." />
-        <meta property="og:title" content="Verifiedly — Your Official Profile" />
-        <meta property="og:description" content="Your identity. Your credentials. Your official profile." />
+        <title>Verifiedly — Your Official Profile, Everywhere</title>
+        <meta name="description" content="Create one official profile and share it by link, QR, Verifiedly Tap, or supported Verifiedly sign-in." />
+        <meta property="og:title" content="Verifiedly — Your Official Profile, Everywhere" />
+        <meta property="og:description" content="Create. Verify. Share your official profile everywhere." />
         <meta property="og:url" content="https://verifiedly.app/" />
         <link rel="canonical" href="https://verifiedly.app/" />
       </Helmet>
@@ -31,17 +31,17 @@ const Index = () => {
         <div className="text-center mb-14 sm:mb-18">
           <img src={logoMark} alt="Verifiedly" className="h-12 w-12 object-contain mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
-            Verifiedly<span className="sr-only"> — Your Official Profile</span>
+            Verifiedly<span className="sr-only"> — Your Official Profile, Everywhere</span>
           </h1>
           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-            Your identity · Your credentials · Your official profile
+            Your official profile, everywhere.
           </p>
         </div>
 
         <div className="text-center mb-10 max-w-[320px]">
-          <p className="text-lg font-display font-semibold text-foreground">One profile. One link. One official place.</p>
+          <p className="text-lg font-display font-semibold text-foreground">Create · Verify · Share</p>
           <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Show who you are, what you do and what you have accomplished. Share it by link, QR or Verifiedly Tap.
+            Show who you are and what you have accomplished. Share one official profile by link, QR or Verifiedly Tap.
           </p>
         </div>
 
@@ -62,7 +62,7 @@ const Index = () => {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[310px]">
-          Free profile · Pro $4.99/month or $49.99/year · Identity verification for eligible Pro adults
+          Free official profile · Pro $4.99/month or $49.99/year · Adult identity verification included with eligible Pro accounts
         </p>
 
         <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">

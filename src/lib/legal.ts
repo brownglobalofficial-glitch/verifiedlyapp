@@ -1,8 +1,11 @@
-export const LEGAL_TERMS_VERSION = "2026-07-18";
-export const VAULT_POLICY_VERSION = "professional-credentials-v1";
+export const LEGAL_TERMS_VERSION = "2026-07-24";
+
+// Retained only for compatibility with the existing legal_acceptances table.
+// Verifiedly does not advertise or onboard users into a document-vault product.
+export const VAULT_POLICY_VERSION = "retired-documents-v1";
 
 export const LEGAL_AGREEMENT_TEXT =
-  "I agree to the Terms of Service and Privacy Policy, and I certify that I will not upload prohibited identity or financial documents to my private vault.";
+  "I agree to the Terms of Service and Privacy Policy.";
 
 export const DOCUMENTS_COMPLIANCE_TEXT =
-  "Documents is for professional credentials only. Do not upload financial payment cards, bank records, Social Security cards/numbers, tax documents (W-2s/1099s), health records, passports, or government-issued photo IDs. Stripe handles identity verification evidence directly during the separate Identity check flow.";
+  "Verifiedly Documents is not offered to new users. Do not upload government IDs, payment-card details, bank records, Social Security numbers, tax documents, health records, passwords, or authentication codes to any profile field or support request.";
