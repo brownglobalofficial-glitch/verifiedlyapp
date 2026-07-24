@@ -10,7 +10,7 @@ const plans = [
     cadence: "forever",
     icon: UserRound,
     description: "Create your official profile and use Verifiedly to sign in to connected websites.",
-    features: ["Individual or organization profile", "Work, education, credentials and accomplishments", "Unique verifiedly.app handle", "Continue with Verifiedly sign-in"],
+    features: ["Individual or organization profile", "Experience, education and optional achievements", "Certifications, licenses and official links", "Unique verifiedly.app handle"],
     cta: "Create free profile",
     note: "No card required",
     href: "/signup",
