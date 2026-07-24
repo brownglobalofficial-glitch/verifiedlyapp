@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
-import logo from "@/assets/verifiedly-logo.webp";
+import logoMark from "@/assets/verifiedly-v-mark.png";
 
 const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
 
@@ -40,9 +40,9 @@ const readPendingLegalAcceptance = (): PendingLegalAcceptance | null => {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<PendingLegalAcceptance>;
     if (
-      typeof parsed.acceptedAt !== "string" ||
-      typeof parsed.termsVersion !== "string" ||
-      typeof parsed.vaultPolicyVersion !== "string"
+      typeof parsed.acceptedAt !== "string"
+      || typeof parsed.termsVersion !== "string"
+      || typeof parsed.vaultPolicyVersion !== "string"
     ) return null;
     return parsed as PendingLegalAcceptance;
   } catch {
@@ -50,10 +50,7 @@ const readPendingLegalAcceptance = (): PendingLegalAcceptance | null => {
   }
 };
 
-const syncLegalAcceptance = async (
-  userId: string,
-  metadata: Record<string, unknown>,
-) => {
+const syncLegalAcceptance = async (userId: string, metadata: Record<string, unknown>) => {
   const metadataAcceptedAt = typeof metadata.legal_terms_accepted_at === "string"
     ? metadata.legal_terms_accepted_at
     : null;
@@ -113,16 +110,12 @@ const Onboarding = () => {
   const [userId, setUserId] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
   const [accountType, setAccountType] = useState<AccountType>("creator");
   const [username, setUsername] = useState("");
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [category, setCategory] = useState("");
-  const [organizationLegalName, setOrganizationLegalName] = useState("");
-  const [organizationIndustry, setOrganizationIndustry] = useState("");
-  const [organizationCountry, setOrganizationCountry] = useState("");
   const [location, setLocation] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -139,10 +132,10 @@ const Onboarding = () => {
       const metadata = (session.user.user_metadata || {}) as Record<string, unknown>;
       setUserId(session.user.id);
       setDisplayName(
-        (typeof metadata.display_name === "string" && metadata.display_name) ||
-        (typeof metadata.full_name === "string" && metadata.full_name) ||
-        (typeof metadata.name === "string" && metadata.name) ||
-        "",
+        (typeof metadata.display_name === "string" && metadata.display_name)
+        || (typeof metadata.full_name === "string" && metadata.full_name)
+        || (typeof metadata.name === "string" && metadata.name)
+        || "",
       );
       if (metadata.account_type === "business") setAccountType("business");
       if (typeof metadata.username === "string" && !/^[a-f0-9]{32}$/.test(metadata.username)) {
@@ -151,7 +144,7 @@ const Onboarding = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, display_name, category, account_type, avatar_url, website, social_links, organization_legal_name, organization_industry, organization_country")
+        .select("username, display_name, category, account_type, avatar_url, website, social_links")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -166,9 +159,6 @@ const Onboarding = () => {
       if (data.display_name) setDisplayName(data.display_name);
       if (data.category) setCategory(data.category);
       if (data.account_type === "business") setAccountType("business");
-      if (data.organization_legal_name) setOrganizationLegalName(data.organization_legal_name);
-      if (data.organization_industry) setOrganizationIndustry(data.organization_industry);
-      if (data.organization_country) setOrganizationCountry(data.organization_country);
       if (data.avatar_url) setAvatarUrl(data.avatar_url);
       if (data.website) setWebsite(data.website);
 
@@ -220,8 +210,7 @@ const Onboarding = () => {
     }
 
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const nextAvatarUrl = `${publicUrl}?t=${Date.now()}`;
-    setAvatarUrl(nextAvatarUrl);
+    setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
     setUploading(false);
   };
 
@@ -249,9 +238,6 @@ const Onboarding = () => {
         display_name: displayName.trim(),
         category: category.trim() || null,
         account_type: accountType,
-        organization_legal_name: accountType === "business" ? organizationLegalName.trim() || null : null,
-        organization_industry: accountType === "business" ? organizationIndustry.trim() || null : null,
-        organization_country: accountType === "business" ? organizationCountry.trim() || null : null,
         avatar_url: avatarUrl || null,
         website: normalizedWebsite,
         social_links: nextSocialLinks,
@@ -285,16 +271,17 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <nav className="border-b border-border h-16 flex items-center px-4">
-        <div className="container mx-auto max-w-2xl">
-          <img src={logo} alt="Verifiedly" className="h-7" />
+        <div className="container mx-auto flex max-w-2xl items-center gap-2">
+          <img src={logoMark} alt="" className="h-7 w-7 object-contain" />
+          <span className="font-display text-sm font-bold">Verifiedly</span>
         </div>
       </nav>
 
       <main className="container mx-auto max-w-2xl flex-1 px-4 py-8">
         <div className="mb-8">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Create. Verify. Share.</p>
-          <h1 className="mt-2 text-3xl font-display font-bold">Build your official profile</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Start with the essentials. Social links, work, education, and credentials can be added after your profile is created.</p>
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Your official profile, everywhere.</p>
+          <h1 className="mt-2 text-3xl font-display font-bold">Finish your profile</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Start with the essentials. Work, education, credentials, accomplishments and social links can be added afterward.</p>
         </div>
 
         <div className="space-y-6">
@@ -315,7 +302,7 @@ const Onboarding = () => {
             >
               <Building2 className="mb-3 h-5 w-5" />
               <p className="font-semibold">Organization</p>
-              <p className="mt-1 text-xs text-muted-foreground">A page for a business, club, team, nonprofit, or group.</p>
+              <p className="mt-1 text-xs text-muted-foreground">A business, club, team, nonprofit or group.</p>
             </button>
           </div>
 
@@ -330,14 +317,14 @@ const Onboarding = () => {
               </span>
             </button>
             <div>
-              <p className="text-sm font-medium">Profile photo or logo</p>
+              <p className="text-sm font-medium">{accountType === "business" ? "Organization logo" : "Profile photo"}</p>
               <p className="text-xs text-muted-foreground">{uploading ? "Uploading…" : "Optional · image up to 2 MB"}</p>
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
           </div>
 
           <div>
-            <Label htmlFor="username">Handle *</Label>
+            <Label htmlFor="username">Verifiedly handle *</Label>
             <div className="relative mt-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">verifiedly.app/</span>
               <Input
@@ -364,7 +351,14 @@ const Onboarding = () => {
             </div>
             <div>
               <Label htmlFor="category">{accountType === "business" ? "Organization type" : "Professional label"}</Label>
-              <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1" placeholder={accountType === "business" ? "Football club, academy, business, nonprofit…" : "Footballer, student, founder, photographer…"} maxLength={60} />
+              <Input
+                id="category"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                className="mt-1"
+                placeholder={accountType === "business" ? "Football club, academy, business…" : "Footballer, student, founder…"}
+                maxLength={60}
+              />
             </div>
             <div>
               <Label htmlFor="location">Location</Label>
@@ -378,36 +372,10 @@ const Onboarding = () => {
             )}
           </div>
 
-          {accountType === "business" && (
-            <Card className="p-4">
-              <div className="flex items-start gap-3">
-                <Building2 className="mt-0.5 h-4 w-4 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">Organization record</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">These optional details prepare the profile for a separate business-registration check. Registration numbers and supporting documents will be collected by an approved verification provider, not in onboarding.</p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Label htmlFor="organization-legal-name">Legal organization name</Label>
-                  <Input id="organization-legal-name" value={organizationLegalName} onChange={(event) => setOrganizationLegalName(event.target.value)} className="mt-1" placeholder="Registered legal name" maxLength={160} />
-                </div>
-                <div>
-                  <Label htmlFor="organization-industry">Industry</Label>
-                  <Input id="organization-industry" value={organizationIndustry} onChange={(event) => setOrganizationIndustry(event.target.value)} className="mt-1" placeholder="Sports, media, technology…" maxLength={100} />
-                </div>
-                <div>
-                  <Label htmlFor="organization-country">Registered country</Label>
-                  <Input id="organization-country" value={organizationCountry} onChange={(event) => setOrganizationCountry(event.target.value)} className="mt-1" placeholder="Country" maxLength={100} />
-                </div>
-              </div>
-            </Card>
-          )}
-
           <Card className="border-dashed p-4">
             <div className="flex gap-3 text-sm leading-relaxed text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-              <p>Your profile starts unverified. Identity verification is a separate optional $9.99 service for adults 18+, and an organization account-holder check does not verify the organization itself.</p>
+              <p>Your profile starts without an identity check. Eligible adults with active Verifiedly Pro can complete Stripe Identity verification, and the check appears only after a successful result.</p>
             </div>
           </Card>
         </div>
@@ -415,7 +383,7 @@ const Onboarding = () => {
 
       <footer className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur">
         <div className="container mx-auto flex max-w-2xl justify-end px-4 py-4">
-          <Button type="button" onClick={finish} disabled={!canCreate} className="gap-2">
+          <Button type="button" onClick={() => void finish()} disabled={!canCreate} className="gap-2">
             {saving ? "Creating…" : accountType === "business" ? "Create organization profile" : "Create profile"} <Check className="h-4 w-4" />
           </Button>
         </div>
