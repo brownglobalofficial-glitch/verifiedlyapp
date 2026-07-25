@@ -1,5 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.2'
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+
+const corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 // Sends a Tap Card status email to the order owner via send-transactional-email.
 // verify_jwt = true (Supabase gateway checks caller session). We additionally
