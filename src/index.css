@@ -64,13 +64,43 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
-    overflow-x: hidden;
+  }
+
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  input,
+  textarea,
+  select,
+  button,
+  a {
+    max-width: 100%;
+  }
+
+  p,
+  li,
+  dd,
+  pre {
+    overflow-wrap: anywhere;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
+    overflow-wrap: anywhere;
   }
 }
 
