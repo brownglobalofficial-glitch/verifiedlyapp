@@ -2,16 +2,16 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 const Terms = () => (
-  <div className="min-h-screen bg-background px-4 py-12">
+  <div className="min-h-screen overflow-x-hidden bg-background px-4 py-12">
     <Helmet>
       <title>Terms of Service — Verifiedly</title>
-      <meta name="description" content="Terms for Verifiedly official profiles, Pro, identity verification, Tap Cards, and connected-app sign-in." />
+      <meta name="description" content="Terms for Verifiedly official profiles, Pro, identity verification, Tap Card pre-orders, and connected-app sign-in." />
       <link rel="canonical" href="https://verifiedly.app/terms" />
     </Helmet>
-    <div className="prose prose-sm mx-auto max-w-3xl dark:prose-invert">
+    <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
       <Link to="/" className="mb-6 inline-block text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground"><em>Last updated: July 24, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 25, 2026</em></p>
 
       <h2>1. Acceptance</h2>
       <p>Verifiedly is operated by <strong>BrownGlobal Holdings LLC</strong> ("Verifiedly," "we," "us," or "our"). By accessing or using Verifiedly, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the service.</p>
@@ -37,17 +37,19 @@ const Terms = () => (
       <p>Paying for Pro does not buy or guarantee a verification check. The check appears only after Stripe Identity reports a successful result. A check means only that the account holder completed the supported identity-document and selfie process. It is not a background check and does not verify safety, honesty, employment, education, licenses, credentials, awards, organization registration, authority, financial standing, or every profile claim.</p>
       <p>Access to new or retry verification sessions may require active Pro. A previously completed verification may remain visible after Pro ends, but we may review, remove, expire, or require renewal of the check if account information changes, fraud is suspected, the account is transferred, the provider result changes, or another reasonable security concern arises.</p>
 
-      <h2>7. Verifiedly Tap</h2>
+      <h2>7. Verifiedly Tap paid pre-orders</h2>
       <p>Verifiedly Tap is a personalized, non-payment PVC NFC profile-sharing card. The card may include the approved name, professional title, handle, QR code, NFC link, serial number, and Verifiedly branding. It is not a debit card, credit card, stored-value card, government ID, or standalone proof of identity. The live Verifiedly profile is the source of current profile and verification status.</p>
-      <p>Current Tap Card pricing is shown before checkout, including the regular price and any active-Pro member price. Shipping charges, taxes, geographic availability, production estimates, and delivery estimates are shown in the ordering flow where applicable.</p>
-      <p>You must review and approve the card preview and shipping details before payment. After payment, BrownGlobal may manually review the order and submit the approved information to a third-party manufacturer or fulfillment provider. Only information reasonably necessary to print, encode, fulfill, and ship the card is shared with that provider.</p>
+      <p>During a pre-order period, the price shown at checkout is charged immediately through Stripe. A paid pre-order reserves manual review and fulfillment of the approved personalized card; it does not mean the card has already entered production or shipped.</p>
+      <p>You must review and approve the card preview and shipping details before payment. After Stripe confirms payment, BrownGlobal records the pre-order, reviews the approved information, and may manually submit it to a third-party manufacturer or fulfillment provider. Only information reasonably necessary to print, encode, fulfill, and ship the card is shared with that provider.</p>
+      <p>Pre-orders may be submitted to the manufacturer individually or in batches. Production and delivery timing can vary based on the manufacturer, card proofing, NFC encoding, inventory, shipping carrier, address corrections, and order volume. Any estimate displayed or communicated is an estimate rather than a guaranteed delivery date. Do not pre-order if you require delivery by a specific date.</p>
+      <p>Current pricing, geographic availability, shipping charges, taxes, material details, and available production information are shown before checkout where applicable. Refund, cancellation, defect, and replacement rules are described in the <Link to="/refunds">Refund Policy</Link>.</p>
       <p>A Tap Card can be disabled or marked lost through supported account controls. Disabling the card stops the Verifiedly redirect but cannot physically retrieve the card or erase information already printed on it.</p>
 
       <h2>8. Continue with Verifiedly</h2>
       <p>Approved websites and apps may let users sign in with Verifiedly. A connected app receives only the information covered by the permissions shown in the consent screen. You can revoke a connected app where account controls are available. Connected apps operate under their own terms and privacy practices.</p>
 
       <h2>9. Payments, renewal, taxes, and refunds</h2>
-      <p>Stripe processes payments and stores payment methods under Stripe's terms. Verifiedly does not store complete payment-card details. Prices may exclude taxes or shipping charges required for the order. Refund eligibility is described in our <Link to="/refunds">Refund Policy</Link>.</p>
+      <p>Stripe processes payments and stores payment methods under Stripe's terms. Verifiedly does not store complete payment-card details. Tap Card pre-orders are one-time payments, while Pro is a recurring subscription. Prices may exclude taxes or shipping charges required for the order. Refund eligibility is described in our <Link to="/refunds">Refund Policy</Link>.</p>
 
       <h2>10. Service providers and availability</h2>
       <p>Verifiedly relies on third-party services, including Supabase for hosting, authentication, database, and storage; Stripe for payments and identity checks; and card manufacturers or shipping providers for Tap Card fulfillment. Their availability, geographic coverage, production schedules, and rules may affect the service. We may modify, suspend, or discontinue a feature where reasonably necessary.</p>
