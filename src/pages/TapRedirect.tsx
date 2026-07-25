@@ -72,7 +72,7 @@ const TapRedirect = () => {
           <>
             <CreditCard className="mx-auto mt-8 h-7 w-7" />
             <h1 className="mt-5 font-display text-2xl font-bold">This Tap Card is inactive</h1>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">The owner has disabled this card or marked it as {status.replaceAll("_", " ")}.</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">The owner has disabled this card or marked it as {status.replace(/_/g, " ")}.</p>
           </>
         )}
         <p className="mt-8 text-[11px] text-muted-foreground">Verifiedly Tap Cards are non-payment profile-sharing accessories.</p>

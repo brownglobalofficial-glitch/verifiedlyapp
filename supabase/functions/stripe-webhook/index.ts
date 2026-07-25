@@ -234,6 +234,51 @@ serve(async (req) => {
           }, { onConflict: "user_id" });
           log("Verifiedly Identity payment confirmed", { userId: metadata.user_id });
         }
+      } else if (type === "verifiedly_tap_card") {
+        // Fallback: if the dedicated tap-card-webhook endpoint isn't configured
+        // (or misses an event), record the Tap Card order here. The underlying
+        // RPC is idempotent on stripe_checkout_session_id, so double-processing
+        // is safe.
+        if (session.payment_status === "paid" && metadata.user_id) {
+          const paymentIntentId = typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null;
+          const customerId = typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id ?? null;
+          const { error: tapErr } = await supabase.rpc("record_verifiedly_tap_card_order", {
+            p_user_id: metadata.user_id,
+            p_material: "pvc",
+            p_order_source: metadata.order_source || "retail",
+            p_amount_cents: session.amount_total ?? 0,
+            p_currency: session.currency ?? "usd",
+            p_checkout_session_id: session.id,
+            p_payment_intent_id: paymentIntentId,
+            p_shipping_name: metadata.shipping_name || "",
+            p_shipping_address: {
+              line1: metadata.shipping_line1 || "",
+              line2: metadata.shipping_line2 || "",
+              city: metadata.shipping_city || "",
+              state: metadata.shipping_state || "",
+              postal_code: metadata.shipping_postal_code || "",
+              country: metadata.shipping_country || "US",
+            },
+            p_printed_name: metadata.printed_name || "",
+            p_printed_title: metadata.printed_title || "",
+            p_printed_handle: metadata.printed_handle || "",
+            p_template_version: metadata.template_version || "verifiedly-pvc-v2",
+            p_preview_approved_at: metadata.preview_approved_at || new Date().toISOString(),
+          });
+          if (tapErr) {
+            log("Tap Card order record failed in main webhook", { err: tapErr.message });
+          } else if (customerId) {
+            await supabase.from("verifiedly_billing").upsert({
+              user_id: metadata.user_id,
+              stripe_customer_id: customerId,
+            }, { onConflict: "user_id" });
+            log("Tap Card order recorded from main webhook", { userId: metadata.user_id });
+          }
+        }
       } else if (type === "verifiedly_documents") {
         if (metadata.user_id && typeof session.subscription === "string") {
           const subscription = await stripe.subscriptions.retrieve(session.subscription);
