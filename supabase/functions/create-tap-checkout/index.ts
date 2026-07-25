@@ -57,13 +57,15 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
 
-    // Test keys may exercise the complete checkout flow before launch. A live
-    // key still requires the explicit production launch flag.
+    // Test keys can exercise the full flow before launch. Live payments require
+    // an explicit adult-controlled preorder or order launch flag.
     const isStripeTestMode = /^(sk|rk)_test_/.test(stripeKey);
-    if (Deno.env.get("TAP_CARD_ORDERS_ENABLED") !== "true" && !isStripeTestMode) {
+    const livePreordersEnabled = Deno.env.get("TAP_CARD_PREORDERS_ENABLED") === "true"
+      || Deno.env.get("TAP_CARD_ORDERS_ENABLED") === "true";
+    if (!livePreordersEnabled && !isStripeTestMode) {
       return json({
-        error: "Live Tap Card ordering is not open yet. Complete the PVC sample and fulfillment test, then enable TAP_CARD_ORDERS_ENABLED.",
-        code: "tap_orders_not_open",
+        error: "Live Tap Card pre-orders are not enabled. Set TAP_CARD_PREORDERS_ENABLED=true only after the Stripe webhook, refund terms, supplier workflow, and authorized-adult approval are ready.",
+        code: "tap_preorders_not_open",
       }, 503);
     }
 
@@ -86,7 +88,7 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     if (body?.preview_approved !== true) {
-      return json({ error: "Please approve the Tap Card preview before ordering." }, 400);
+      return json({ error: "Please approve the Tap Card preview before pre-ordering." }, 400);
     }
 
     const printedName = trimField(body.printed_name, 2, 40, "Printed name");
@@ -113,13 +115,16 @@ serve(async (req) => {
         .maybeSingle(),
     ]);
 
-    if (!profile?.username) return json({ error: "Complete your Verifiedly profile before ordering a card." }, 409);
+    if (!profile?.username) return json({ error: "Complete your Verifiedly profile before pre-ordering a card." }, 409);
 
+    // Never trust a browser-supplied handle. The card always points to the
+    // authenticated account's Verifiedly profile.
     const printedHandle = String(profile.username).trim().toLowerCase();
     const isPro = profile.is_pro === true
       || billing?.pro_status === "active"
       || billing?.pro_status === "trialing";
     const amountCents = isPro ? 1999 : 2999;
+    const orderSource = isPro ? "preorder_pro" : "preorder_retail";
     const previewApprovedAt = new Date().toISOString();
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const origin = safeOrigin(req.headers.get("origin"));
@@ -133,6 +138,9 @@ serve(async (req) => {
       client_reference_id: user.id,
       mode: "payment",
       locale: "auto",
+      // Card-only preorders settle immediately, so a paid webhook can safely
+      // create the manual fulfillment order without waiting on delayed methods.
+      payment_method_types: ["card"],
       billing_address_collection: "auto",
       line_items: [{
         quantity: 1,
@@ -140,8 +148,8 @@ serve(async (req) => {
           currency: "usd",
           unit_amount: amountCents,
           product_data: {
-            name: "Verifiedly Tap Card",
-            description: "Personalized non-payment PVC NFC card linked to a Verifiedly profile",
+            name: "Verifiedly Tap Card Pre-order",
+            description: "Personalized non-payment PVC NFC profile card; charged now and manually fulfilled after review",
           },
         },
       }],
@@ -149,8 +157,9 @@ serve(async (req) => {
       cancel_url: `${origin}/dashboard/tap-card?checkout=cancelled`,
       metadata: {
         type: "verifiedly_tap_card",
+        sale_type: "preorder",
         user_id: user.id,
-        order_source: isPro ? "pro_member" : "retail",
+        order_source: orderSource,
         printed_name: printedName,
         printed_title: printedTitle,
         printed_handle: printedHandle,
@@ -165,24 +174,31 @@ serve(async (req) => {
         shipping_country: "US",
       },
       payment_intent_data: {
-        description: `Verifiedly Tap Card for @${printedHandle}`,
+        description: `Verifiedly Tap Card pre-order for @${printedHandle}`,
+        receipt_email: user.email,
         metadata: {
           type: "verifiedly_tap_card",
+          sale_type: "preorder",
           user_id: user.id,
           printed_handle: printedHandle,
-          order_source: isPro ? "pro_member" : "retail",
+          order_source: orderSource,
         },
       },
       custom_text: {
         submit: {
-          message: "Personalized non-payment NFC profile card. Review the final total and shipping details before paying.",
+          message: "Paid personalized pre-order. You are charged now. BrownGlobal reviews the approved design and manually submits it to the manufacturer. Production and delivery timing can vary; see the posted refund policy.",
         },
       },
     });
 
-    return json({ url: session.url, amount_cents: amountCents, pro_price: isPro });
+    return json({
+      url: session.url,
+      amount_cents: amountCents,
+      pro_price: isPro,
+      preorder: true,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not start Tap Card checkout.";
+    const message = error instanceof Error ? error.message : "Could not start Tap Card pre-order checkout.";
     console.error("[CREATE-TAP-CHECKOUT]", message);
     return json({ error: message }, 500);
   }
