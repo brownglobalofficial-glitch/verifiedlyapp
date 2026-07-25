@@ -61,7 +61,7 @@ const statusLabel = (status: string) =>
           : status === "delivered" ? "Delivered"
             : status === "manual_review" ? "Under review"
               : status === "canceled" || status === "refunded" ? "Canceled"
-                : status.replaceAll("_", " ");
+                : status.replace(/_/g, " ");
 
 const cleanPrintLine = (value: string, maximum: number) => value
   .replace(/[\u0000-\u001F\u007F]/g, " ")

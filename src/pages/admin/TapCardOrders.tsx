@@ -163,7 +163,7 @@ const TapCardOrders = () => {
         p_admin_notes: order.admin_notes || null,
       });
       if (error) throw error;
-      toast({ title: "Order updated", description: `${order.printed_name || "Tap Card"} is now ${order.status.replaceAll("_", " ")}.` });
+      toast({ title: "Order updated", description: `${order.printed_name || "Tap Card"} is now ${order.status.replace(/_/g, " ")}.` });
       await load();
     } catch (error) {
       toast({ title: "Order not updated", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
@@ -215,7 +215,7 @@ const TapCardOrders = () => {
                         <p className="mt-1 text-sm text-muted-foreground">{order.printed_title || "Missing title"} · @{order.printed_handle || order.profile?.username}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold capitalize">{order.status.replaceAll("_", " ")}</p>
+                        <p className="text-sm font-semibold capitalize">{order.status.replace(/_/g, " ")}</p>
                         <p className="mt-1 text-xs text-muted-foreground">${(order.amount_cents / 100).toFixed(2)} {order.currency.toUpperCase()}</p>
                       </div>
                     </div>
@@ -261,7 +261,7 @@ const TapCardOrders = () => {
                         onChange={(event) => updateLocal(order.id, { status: event.target.value as OrderStatus })}
                         className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       >
-                        {ORDER_STATUSES.map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                        {ORDER_STATUSES.map((status) => <option key={status} value={status}>{status.replace(/_/g, " ")}</option>)}
                       </select>
                     </div>
                     <Input value={order.fulfillment_provider || ""} onChange={(event) => updateLocal(order.id, { fulfillment_provider: event.target.value })} placeholder="Supplier, e.g. Printags" />
