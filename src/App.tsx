@@ -33,6 +33,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Developers = lazy(() => import("./pages/Developers"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 const queryClient = new QueryClient();
 
@@ -168,6 +169,7 @@ const App = () => (
             ))}
             <Route path="/comparison/verifiedly-vs-linktree" element={<Navigate to="/" replace />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/:username" element={<CreatorProfile />} />
             <Route path="/:username/membership" element={<LegacyProfileRedirect />} />
             <Route path="/:username/p/:productId" element={<LegacyProfileRedirect />} />
