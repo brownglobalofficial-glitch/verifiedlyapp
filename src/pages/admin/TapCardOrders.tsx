@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Copy, ExternalLink, PackageCheck, RefreshCw } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Mail, PackageCheck, RefreshCw, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -79,6 +79,9 @@ const TapCardOrders = () => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [filter, setFilter] = useState<"open" | "all">("open");
+  const [importing, setImporting] = useState(false);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,6 +175,103 @@ const TapCardOrders = () => {
     }
   };
 
+  const sendStatusEmail = async (order: EditableOrder) => {
+    setSendingEmailId(order.id);
+    try {
+      const { error } = await supabase.functions.invoke("notify-tap-order-status", {
+        body: { order_id: order.id, stage: order.status },
+      });
+      if (error) throw error;
+      toast({ title: "Email sent", description: `${order.status.replace(/_/g, " ")} update sent to the customer.` });
+    } catch (error) {
+      toast({
+        title: "Email not sent",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  const parseCsv = (text: string): Record<string, string>[] => {
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    if (!lines.length) return [];
+    const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
+    return lines.slice(1).map((line) => {
+      // simple CSV: support quoted values without embedded commas
+      const cells: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQuotes = !inQuotes; continue; }
+        if (ch === "," && !inQuotes) { cells.push(current); current = ""; continue; }
+        current += ch;
+      }
+      cells.push(current);
+      const row: Record<string, string> = {};
+      header.forEach((key, idx) => { row[key] = (cells[idx] || "").trim(); });
+      return row;
+    });
+  };
+
+  const handleCsvUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (!rows.length) {
+        toast({ title: "Empty CSV", description: "No rows found. Expected headers: order_id, tracking_number, tracking_url, fulfillment_order_id, fulfillment_provider, status.", variant: "destructive" });
+        return;
+      }
+
+      let updated = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+      const byId = new Map(orders.map((o) => [o.id, o]));
+      const bySerial = new Map<string, EditableOrder>();
+      orders.forEach((o) => { if (o.card?.card_serial) bySerial.set(o.card.card_serial, o); });
+
+      for (const row of rows) {
+        const key = row.order_id || row.card_serial || "";
+        const match = byId.get(key) || bySerial.get(key);
+        if (!match) { skipped++; continue; }
+        const nextStatus = (row.status || match.status) as OrderStatus;
+        const { error } = await (supabase as any).rpc("admin_update_verifiedly_tap_card_order", {
+          p_order_id: match.id,
+          p_status: nextStatus,
+          p_fulfillment_provider: row.fulfillment_provider || match.fulfillment_provider || null,
+          p_fulfillment_order_id: row.fulfillment_order_id || match.fulfillment_order_id || null,
+          p_tracking_number: row.tracking_number || match.tracking_number || null,
+          p_tracking_url: row.tracking_url || match.tracking_url || null,
+          p_admin_notes: match.admin_notes || null,
+        });
+        if (error) { errors.push(`${key}: ${error.message}`); continue; }
+        updated++;
+      }
+
+      toast({
+        title: "CSV import complete",
+        description: `${updated} updated · ${skipped} skipped${errors.length ? ` · ${errors.length} errors` : ""}`,
+        variant: errors.length ? "destructive" : "default",
+      });
+      if (errors.length) console.error("[TapCardOrders CSV]", errors);
+      await load();
+    } catch (error) {
+      toast({
+        title: "CSV import failed",
+        description: error instanceof Error ? error.message : "Check file format and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Loading manual Tap Card orders…</div>;
 
   return (
@@ -185,7 +285,13 @@ const TapCardOrders = () => {
               <p className="text-xs text-muted-foreground">Paid PVC orders awaiting BrownGlobal fulfillment</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
+          <div className="flex items-center gap-2">
+            <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvUpload} />
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={importing}>
+              <Upload className="mr-2 h-4 w-4" />{importing ? "Importing…" : "Import CSV"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
+          </div>
         </div>
       </header>
 
@@ -271,6 +377,14 @@ const TapCardOrders = () => {
                     <Textarea value={order.admin_notes || ""} onChange={(event) => updateLocal(order.id, { admin_notes: event.target.value })} placeholder="Internal fulfillment notes" rows={3} />
                     <Button className="w-full" onClick={() => void save(order)} disabled={savingId !== null}>
                       {savingId === order.id ? "Saving…" : <><PackageCheck className="mr-2 h-4 w-4" />Save fulfillment update</>}
+                    </Button>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => void sendStatusEmail(order)}
+                      disabled={sendingEmailId !== null}
+                    >
+                      {sendingEmailId === order.id ? "Sending…" : <><Mail className="mr-2 h-4 w-4" />Email customer this status</>}
                     </Button>
                   </div>
                 </div>
