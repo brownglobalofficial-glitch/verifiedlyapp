@@ -46,6 +46,9 @@ export const InviteEmail = ({
           If you weren't expecting this invitation, you can safely ignore this
           email.
         </Text>
+        <Text style={footer}>
+          © 2026 BrownGlobal Holdings LLC · Verifiedly
+        </Text>
       </Container>
     </Body>
   </Html>
