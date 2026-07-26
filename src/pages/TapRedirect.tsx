@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { CreditCard, Loader2, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import verifiedlyMark from "@/assets/verifiedly-v-mark.png";
@@ -54,6 +55,17 @@ const TapRedirect = () => {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-5 py-12">
+      <Helmet>
+        <title>Verifiedly Tap Card · Opening profile</title>
+        <meta name="description" content="Tap Card redirect — opens the linked Verifiedly identity profile in a moment." />
+        <meta name="robots" content="noindex, follow" />
+        <link rel="canonical" href="https://verifiedly.app/tap" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Verifiedly Tap Card" />
+        <meta property="og:description" content="Personalized NFC card that opens a verified Verifiedly profile." />
+        <meta property="og:url" content="https://verifiedly.app/tap" />
+        <meta name="twitter:card" content="summary" />
+      </Helmet>
       <div className="w-full max-w-md text-center">
         <img src={verifiedlyMark} alt="Verifiedly" className="mx-auto h-14 w-14 object-contain" />
         {state === "loading" ? (
