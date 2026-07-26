@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Copy, ExternalLink, Mail, PackageCheck, RefreshCw, Upload } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Copy, ExternalLink, Mail, PackageCheck, RefreshCw, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -82,6 +82,15 @@ const TapCardOrders = () => {
   const [importing, setImporting] = useState(false);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  type CsvReviewRow = {
+    line: number;
+    key: string;
+    matched: EditableOrder | null;
+    row: Record<string, string>;
+    issues: string[];
+  };
+  const [csvReview, setCsvReview] = useState<CsvReviewRow[] | null>(null);
+  const [applyingCsv, setApplyingCsv] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -226,39 +235,34 @@ const TapCardOrders = () => {
         toast({ title: "Empty CSV", description: "No rows found. Expected headers: order_id, tracking_number, tracking_url, fulfillment_order_id, fulfillment_provider, status.", variant: "destructive" });
         return;
       }
-
-      let updated = 0;
-      let skipped = 0;
-      const errors: string[] = [];
       const byId = new Map(orders.map((order) => [order.id, order]));
       const bySerial = new Map<string, EditableOrder>();
       orders.forEach((order) => { if (order.card?.card_serial) bySerial.set(order.card.card_serial, order); });
 
-      for (const row of rows) {
-        const key = row.order_id || row.card_serial || "";
-        const match = byId.get(key) || bySerial.get(key);
-        if (!match) { skipped++; continue; }
-        const nextStatus = (row.status || match.status) as OrderStatus;
-        const { error } = await (supabase as any).rpc("admin_update_verifiedly_tap_card_order", {
-          p_order_id: match.id,
-          p_status: nextStatus,
-          p_fulfillment_provider: row.fulfillment_provider || match.fulfillment_provider || null,
-          p_fulfillment_order_id: row.fulfillment_order_id || match.fulfillment_order_id || null,
-          p_tracking_number: row.tracking_number || match.tracking_number || null,
-          p_tracking_url: row.tracking_url || match.tracking_url || null,
-          p_admin_notes: match.admin_notes || null,
-        });
-        if (error) { errors.push(`${key}: ${error.message}`); continue; }
-        updated++;
-      }
+      const review: CsvReviewRow[] = rows.map((row, idx) => {
+        const issues: string[] = [];
+        const key = (row.order_id || row.card_serial || "").trim();
+        if (!key) issues.push("Missing order_id (or card_serial) — cannot match a pre-order.");
+        const matched = key ? (byId.get(key) || bySerial.get(key) || null) : null;
+        if (key && !matched) issues.push(`No pre-order found for "${key}".`);
 
-      toast({
-        title: "CSV import complete",
-        description: `${updated} updated · ${skipped} skipped${errors.length ? ` · ${errors.length} errors` : ""}`,
-        variant: errors.length ? "destructive" : "default",
+        const status = (row.status || "").trim().toLowerCase();
+        if (status && !ORDER_STATUSES.includes(status as OrderStatus)) {
+          issues.push(`Invalid status "${row.status}". Allowed: ${ORDER_STATUSES.join(", ")}.`);
+        }
+
+        const trackingNumber = (row.tracking_number || "").trim();
+        const trackingUrl = (row.tracking_url || "").trim();
+        if (trackingNumber && trackingNumber.length < 4) issues.push("Tracking number looks too short.");
+        if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) issues.push("Tracking URL must start with http(s)://");
+        if ((status === "shipped" || status === "delivered") && !trackingNumber && !matched?.tracking_number) {
+          issues.push(`"${status}" rows should include a tracking_number.`);
+        }
+
+        return { line: idx + 2, key, matched, row, issues };
       });
-      if (errors.length) console.error("[TapCardOrders CSV]", errors);
-      await load();
+
+      setCsvReview(review);
     } catch (error) {
       toast({
         title: "CSV import failed",
@@ -271,10 +275,94 @@ const TapCardOrders = () => {
     }
   };
 
+  const applyCsvReview = async () => {
+    if (!csvReview) return;
+    const valid = csvReview.filter((r) => r.issues.length === 0 && r.matched);
+    if (!valid.length) {
+      toast({ title: "Nothing to apply", description: "All rows have validation issues.", variant: "destructive" });
+      return;
+    }
+    setApplyingCsv(true);
+    let updated = 0;
+    const errors: string[] = [];
+    for (const r of valid) {
+      const match = r.matched!;
+      const nextStatus = ((r.row.status || match.status).trim().toLowerCase() || match.status) as OrderStatus;
+      const { error } = await (supabase as any).rpc("admin_update_verifiedly_tap_card_order", {
+        p_order_id: match.id,
+        p_status: nextStatus,
+        p_fulfillment_provider: r.row.fulfillment_provider || match.fulfillment_provider || null,
+        p_fulfillment_order_id: r.row.fulfillment_order_id || match.fulfillment_order_id || null,
+        p_tracking_number: r.row.tracking_number || match.tracking_number || null,
+        p_tracking_url: r.row.tracking_url || match.tracking_url || null,
+        p_admin_notes: match.admin_notes || null,
+      });
+      if (error) errors.push(`Line ${r.line}: ${error.message}`);
+      else updated++;
+    }
+    setApplyingCsv(false);
+    setCsvReview(null);
+    toast({
+      title: "CSV import complete",
+      description: `${updated} updated${errors.length ? ` · ${errors.length} errors` : ""}`,
+      variant: errors.length ? "destructive" : "default",
+    });
+    if (errors.length) console.error("[TapCardOrders CSV]", errors);
+    await load();
+  };
+
   if (loading) return <div className="min-h-screen bg-background p-6 text-sm text-muted-foreground sm:p-8">Loading manual Tap Card pre-orders…</div>;
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-background">
+      {csvReview && (() => {
+        const invalid = csvReview.filter((r) => r.issues.length > 0);
+        const valid = csvReview.length - invalid.length;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+            <div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl bg-background shadow-xl">
+              <div className="flex items-center justify-between border-b p-4">
+                <div>
+                  <h2 className="font-display text-lg font-bold">CSV import review</h2>
+                  <p className="text-xs text-muted-foreground">{valid} valid · {invalid.length} with issues · {csvReview.length} total</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setCsvReview(null)} aria-label="Close"><X className="h-4 w-4" /></Button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 text-sm">
+                <div className="space-y-2">
+                  {csvReview.map((r) => (
+                    <div key={r.line} className={`rounded-lg border p-3 ${r.issues.length ? "border-destructive/40 bg-destructive/5" : "border-emerald-500/30 bg-emerald-500/5"}`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium">Line {r.line} · <span className="font-mono text-xs">{r.key || "(no order_id)"}</span></p>
+                        {r.issues.length === 0 ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><Check className="h-3 w-3" /> Ready</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-destructive"><AlertTriangle className="h-3 w-3" /> {r.issues.length} issue{r.issues.length > 1 ? "s" : ""}</span>
+                        )}
+                      </div>
+                      {r.matched && (
+                        <p className="mt-1 text-xs text-muted-foreground">{r.matched.printed_name || "(no name)"} · currently <span className="capitalize">{r.matched.status.replace(/_/g, " ")}</span></p>
+                      )}
+                      {r.issues.length > 0 && (
+                        <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-destructive">
+                          {r.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t p-4">
+                <Button variant="outline" size="sm" onClick={() => setCsvReview(null)} disabled={applyingCsv}>Cancel</Button>
+                <Button size="sm" onClick={() => void applyCsvReview()} disabled={applyingCsv || valid === 0}>
+                  {applyingCsv ? "Applying…" : `Apply ${valid} valid row${valid === 1 ? "" : "s"}`}
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">

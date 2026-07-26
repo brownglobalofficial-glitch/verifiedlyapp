@@ -54,6 +54,9 @@ export const EmailChangeEmail = ({
           If you didn't request this change, please secure your account
           immediately.
         </Text>
+        <Text style={footer}>
+          © 2026 BrownGlobal Holdings LLC · Verifiedly
+        </Text>
       </Container>
     </Body>
   </Html>

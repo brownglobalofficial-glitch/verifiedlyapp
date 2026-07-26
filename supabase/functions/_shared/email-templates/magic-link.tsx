@@ -38,6 +38,9 @@ export const MagicLinkEmail = ({
         <Text style={footer}>
           If you didn't request this link, you can safely ignore this email.
         </Text>
+        <Text style={footer}>
+          © 2026 BrownGlobal Holdings LLC · Verifiedly
+        </Text>
       </Container>
     </Body>
   </Html>
