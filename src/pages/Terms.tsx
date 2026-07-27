@@ -11,7 +11,7 @@ const Terms = () => (
     <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
       <Link to="/" className="mb-6 inline-block text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground"><em>Last updated: July 25, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 27, 2026</em></p>
 
       <h2>1. Acceptance</h2>
       <p>Verifiedly is operated by <strong>BrownGlobal Holdings LLC</strong> ("Verifiedly," "we," "us," or "our"). By accessing or using Verifiedly, you agree to these Terms and our Privacy Policy. If you do not agree, do not use the service.</p>
@@ -40,8 +40,9 @@ const Terms = () => (
       <h2>7. Verifiedly Tap paid pre-orders</h2>
       <p>Verifiedly Tap is a personalized, non-payment PVC NFC profile-sharing card. The card may include the approved name, professional title, handle, QR code, NFC link, serial number, and Verifiedly branding. It is not a debit card, credit card, stored-value card, government ID, or standalone proof of identity. The live Verifiedly profile is the source of current profile and verification status.</p>
       <p>During a pre-order period, the price shown at checkout is charged immediately through Stripe. A paid pre-order reserves manual review and fulfillment of the approved personalized card; it does not mean the card has already entered production or shipped.</p>
-      <p>You must review and approve the card preview and shipping details before payment. After Stripe confirms payment, BrownGlobal records the pre-order, reviews the approved information, and may manually submit it to a third-party manufacturer or fulfillment provider. Only information reasonably necessary to print, encode, fulfill, and ship the card is shared with that provider.</p>
+      <p>You must review and approve the card preview, estimated shipping window, and shipping details before payment. After Stripe confirms payment, Verifiedly records the pre-order, reviews the approved information, and may manually submit it to a third-party manufacturer or fulfillment provider. Only information reasonably necessary to print, encode, fulfill, and ship the card is shared with that provider.</p>
       <p>Pre-orders may be submitted to the manufacturer individually or in batches. Production and delivery timing can vary based on the manufacturer, card proofing, NFC encoding, inventory, shipping carrier, address corrections, and order volume. Any estimate displayed or communicated is an estimate rather than a guaranteed delivery date. Do not pre-order if you require delivery by a specific date.</p>
+      <p>If we cannot ship within the estimated window shown before payment, we may provide a revised shipping date and ask you to accept the delay, or cancel the pre-order and provide an appropriate refund. We will provide delay, cancellation, and refund options where required by applicable law.</p>
       <p>Current pricing, geographic availability, shipping charges, taxes, material details, and available production information are shown before checkout where applicable. Refund, cancellation, defect, and replacement rules are described in the <Link to="/refunds">Refund Policy</Link>.</p>
       <p>A Tap Card can be disabled or marked lost through supported account controls. Disabling the card stops the Verifiedly redirect but cannot physically retrieve the card or erase information already printed on it.</p>
 
@@ -81,7 +82,7 @@ const Terms = () => (
       <p>We may update these Terms. If a change is material, we will provide reasonable notice, such as by email or an in-product message. Continued use after the effective date means you accept the updated Terms where permitted by law.</p>
 
       <h2>17. Contact</h2>
-      <p><strong>BrownGlobal Holdings LLC</strong><br />Email: <strong>support@verifiedly.app</strong></p>
+      <p><strong>BrownGlobal Holdings LLC</strong><br />Operating brand: <strong>Verifiedly</strong><br />Email: <strong>support@verifiedly.app</strong></p>
     </div>
   </div>
 );
