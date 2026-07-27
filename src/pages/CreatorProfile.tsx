@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SocialIcon from "@/components/SocialIcon";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import logoMark from "@/assets/verifiedly-v-mark.png";
+import { getProfileTheme } from "@/lib/profile-appearance";
 import {
   hasVisibleSectionData,
   profileSectionKindsForAccountType,
@@ -180,6 +181,8 @@ const CreatorProfile = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
   }, [socialValues]);
   const location = String(socialValues.location || "").trim() || null;
+  const bannerUrl = safeExternalUrl(String(socialValues.banner_url || "").trim());
+  const theme = getProfileTheme(socialValues.profile_theme);
 
   if (loading) {
     return (
@@ -205,7 +208,7 @@ const CreatorProfile = () => {
   const website = isOrganization ? safeExternalUrl(profile.website) : null;
   const description = profile.category ? `${displayName} · ${profile.category}` : `Official Verifiedly profile for ${displayName}.`;
   const profileUrl = `https://verifiedly.app/${profile.username}`;
-  const shareImage = profile.avatar_url || new URL(logoMark, window.location.origin).href;
+  const shareImage = profile.avatar_url || bannerUrl || new URL(logoMark, window.location.origin).href;
   const isOwner = viewerUserId === profile.id;
   const hasContact = Boolean(location || publicEmail || website || (isOrganization && (profile.organization_industry || profile.organization_country)));
   const activeKinds = profileSectionKindsForAccountType(profile.account_type);
@@ -224,7 +227,7 @@ const CreatorProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-950">
+    <div className={`min-h-screen text-neutral-950 ${theme.page}`}>
       <Helmet>
         <title>{displayName} (@{profile.username}) · Verifiedly</title>
         <meta name="description" content={description.slice(0, 160)} />
@@ -251,31 +254,38 @@ const CreatorProfile = () => {
 
       <main className="mx-auto max-w-4xl px-3 py-4 sm:px-4 sm:py-6">
         <Card className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <section className="border-b border-neutral-200 bg-neutral-100/80 px-4 py-5 text-center sm:px-6">
-            <Avatar className="mx-auto h-20 w-20 border-2 border-neutral-200 bg-white shadow-sm sm:h-24 sm:w-24">
-              {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
-              <AvatarFallback className="font-display text-2xl font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-            </Avatar>
-            <div className="mt-3 flex items-center justify-center gap-1.5">
-              <h1 className="break-words text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
-              {profile.id_verified && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button type="button" className="inline-flex rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950" aria-label="Learn what Identity Verified means">
-                      <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label="Identity verified" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="center" className="w-[min(340px,calc(100vw-24px))] p-4 text-left">
-                    <p className="text-sm font-semibold">Identity Verified</p>
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Stripe Identity successfully verified the identity of the adult account holder. This does not independently verify employment, education, certifications, licenses, awards, organization authority or other profile claims.</p>
-                  </PopoverContent>
-                </Popover>
-              )}
+          <section className="border-b border-neutral-200">
+            <div className={`relative h-28 overflow-hidden sm:h-40 ${theme.hero}`}>
+              {bannerUrl && <img src={bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
             </div>
-            {profile.category && <p className="mt-1 text-sm font-medium">{profile.category}</p>}
-            <p className="mt-0.5 text-xs text-neutral-500">@{profile.username}</p>
-            {location && <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-neutral-500"><MapPin className="h-3.5 w-3.5" />{location}</p>}
-            {!!socials.length && <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white transition hover:-translate-y-0.5" aria-label={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
+
+            <div className="relative -mt-11 px-4 pb-5 text-center sm:-mt-14 sm:px-6 sm:pb-6">
+              <Avatar className={`mx-auto h-20 w-20 border-4 bg-white shadow-md sm:h-28 sm:w-28 ${theme.avatarRing}`}>
+                {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
+                <AvatarFallback className="font-display text-2xl font-bold sm:text-3xl">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+              </Avatar>
+              <div className="mt-3 flex items-center justify-center gap-1.5">
+                <h1 className="break-words text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+                {profile.id_verified && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="inline-flex rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950" aria-label="Learn what Identity Verified means">
+                        <VerifiedBadge className="h-5 w-5 shrink-0 sm:h-6 sm:w-6" label="Identity verified" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="center" className="w-[min(340px,calc(100vw-24px))] p-4 text-left">
+                      <p className="text-sm font-semibold">Identity Verified</p>
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Stripe Identity successfully verified the identity of the adult account holder. This does not independently verify employment, education, certifications, licenses, awards, organization authority or other profile claims.</p>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+              {profile.category && <p className="mt-1 text-sm font-medium">{profile.category}</p>}
+              <p className="mt-0.5 text-xs text-neutral-500">@{profile.username}</p>
+              {location && <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-neutral-500"><MapPin className="h-3.5 w-3.5" />{location}</p>}
+              {!!socials.length && <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 ${theme.socialButton}`} aria-label={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
+            </div>
           </section>
 
           <div className="grid md:grid-cols-[minmax(190px,0.75fr)_minmax(0,2fr)]">

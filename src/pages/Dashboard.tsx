@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Camera, Check, Copy, ExternalLink, Share2, SlidersHorizontal } from "lucide-react";
+import {
+  Camera,
+  Check,
+  Copy,
+  ExternalLink,
+  ImagePlus,
+  Palette,
+  Share2,
+  SlidersHorizontal,
+  Trash2,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import ProfileSectionsEditor from "@/components/profile/ProfileSectionsEditor";
@@ -14,6 +24,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  getProfileTheme,
+  normalizeProfileTheme,
+  PROFILE_THEME_OPTIONS,
+  type ProfileTheme,
+} from "@/lib/profile-appearance";
 import {
   emptySectionData,
   hasVisibleSectionData,
@@ -32,6 +48,8 @@ interface ProfileForm {
   organizationLegalName: string;
   organizationIndustry: string;
   organizationCountry: string;
+  bannerUrl: string;
+  profileTheme: ProfileTheme;
   socialLinks: Record<string, string>;
 }
 
@@ -58,7 +76,13 @@ const SOCIAL_FIELDS = [
   ["twitter", "X", "Handle or profile URL"],
 ] as const;
 
-const ALLOWED_SOCIAL_KEYS = new Set(["location", "email", ...SOCIAL_FIELDS.map(([key]) => key)]);
+const ALLOWED_SOCIAL_KEYS = new Set([
+  "location",
+  "email",
+  "banner_url",
+  "profile_theme",
+  ...SOCIAL_FIELDS.map(([key]) => key),
+]);
 const emptySocialLinks = Object.fromEntries([["location", ""], ["email", ""], ...SOCIAL_FIELDS.map(([key]) => [key, ""])]);
 const emptyForm: ProfileForm = {
   accountType: "creator",
@@ -68,6 +92,8 @@ const emptyForm: ProfileForm = {
   organizationLegalName: "",
   organizationIndustry: "",
   organizationCountry: "",
+  bannerUrl: "",
+  profileTheme: "classic",
   socialLinks: emptySocialLinks,
 };
 const inlineInputClass = "h-9 rounded-none border-0 border-b border-border/70 bg-transparent px-0 text-sm shadow-none placeholder:text-muted-foreground/50 focus-visible:border-foreground focus-visible:ring-0";
@@ -84,15 +110,18 @@ const draftSection = (userId: string, kind: ProfileSectionKind, position: number
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const bannerFileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<DashboardProfile | null>(null);
   const [form, setForm] = useState<ProfileForm>(emptyForm);
   const [sections, setSections] = useState<ProfileSection[]>([]);
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [profileLinkCopied, setProfileLinkCopied] = useState(false);
 
   const activeKinds = useMemo(() => profileSectionKindsForAccountType(form.accountType), [form.accountType]);
+  const selectedTheme = useMemo(() => getProfileTheme(form.profileTheme), [form.profileTheme]);
 
   useEffect(() => {
     const load = async () => {
@@ -141,6 +170,8 @@ const Dashboard = () => {
         organizationLegalName: currentProfile.organization_legal_name || "",
         organizationIndustry: currentProfile.organization_industry || "",
         organizationCountry: currentProfile.organization_country || "",
+        bannerUrl: String(socials.banner_url || ""),
+        profileTheme: normalizeProfileTheme(socials.profile_theme),
         socialLinks: {
           ...emptySocialLinks,
           ...Object.fromEntries(Object.entries(socials).filter(([key]) => ALLOWED_SOCIAL_KEYS.has(key))),
@@ -210,6 +241,38 @@ const Dashboard = () => {
     }
   };
 
+  const uploadBanner = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !profile) return;
+    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type)) {
+      toast({ title: "Choose a JPG, PNG or WebP image", variant: "destructive" });
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast({ title: "Banner is too large", description: "Use an image smaller than 4 MB.", variant: "destructive" });
+      return;
+    }
+
+    setUploadingBanner(true);
+    const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const path = `${profile.id}/banner.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+      cacheControl: "3600",
+    });
+    setUploadingBanner(false);
+    if (uploadError) {
+      toast({ title: "Banner not uploaded", description: uploadError.message, variant: "destructive" });
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    setForm((current) => ({ ...current, bannerUrl: `${publicUrl}?v=${Date.now()}` }));
+    toast({ title: "Banner ready", description: "Review the preview, then save your profile." });
+  };
+
   const save = async () => {
     if (!profile) return;
     if (!form.displayName.trim()) {
@@ -230,10 +293,15 @@ const Dashboard = () => {
 
     setSaving(true);
     try {
+      const appearanceAndSocials = {
+        ...form.socialLinks,
+        banner_url: form.bannerUrl.trim(),
+        profile_theme: form.profileTheme,
+      };
       const cleanSocials = Object.fromEntries(
-        Object.entries(form.socialLinks)
-          .filter(([key, value]) => ALLOWED_SOCIAL_KEYS.has(key) && value.trim().length > 0)
-          .map(([key, value]) => [key, value.trim()]),
+        Object.entries(appearanceAndSocials)
+          .filter(([key, value]) => ALLOWED_SOCIAL_KEYS.has(key) && String(value).trim().length > 0)
+          .map(([key, value]) => [key, String(value).trim()]),
       );
 
       const { error: profileError } = await supabase.from("profiles").update({
@@ -306,73 +374,112 @@ const Dashboard = () => {
   return (
     <DashboardShell title="Edit profile" hidePreview>
       <div className="mx-auto max-w-6xl px-3 py-3 sm:px-5 sm:py-5">
-        <div className="sticky top-14 z-20 -mx-3 mb-3 flex items-center justify-between gap-2 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-5 sm:px-5">
+        <div className="sticky top-14 z-30 -mx-3 mb-3 grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:-mx-5 sm:px-5">
           <div className="flex min-w-0 items-center gap-1">
             <p className="min-w-0 truncate text-xs text-muted-foreground">verifiedly.app/{profile?.username}</p>
             <Tooltip open={profileLinkCopied ? true : undefined}>
               <TooltipTrigger asChild>
-                <Button type="button" onClick={() => void copyProfileLink()} variant="ghost" size="sm" className="h-7 shrink-0 gap-1 rounded-full px-2 text-[11px]" aria-label="Copy profile link">
+                <Button type="button" onClick={() => void copyProfileLink()} variant="ghost" size="sm" className="h-7 w-7 shrink-0 rounded-full p-0 sm:w-auto sm:gap-1 sm:px-2" aria-label="Copy profile link">
                   {profileLinkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  <span className="hidden md:inline">{profileLinkCopied ? "Copied!" : "Copy link"}</span>
+                  <span className="hidden lg:inline">{profileLinkCopied ? "Copied!" : "Copy link"}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="text-xs"><p>{profileLinkCopied ? "Copied!" : "Copy link"}</p></TooltipContent>
             </Tooltip>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button type="button" onClick={() => void shareProfile()} variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs"><Share2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Share</span></Button>
-            <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full px-3 text-xs"><Link to={`/${profile?.username}`} target="_blank">Preview <ExternalLink className="h-3.5 w-3.5" /></Link></Button>
-            <Button onClick={() => void save()} disabled={saving} size="sm" className="h-8 rounded-full px-5 text-xs">{saving ? "Saving…" : "Save"}</Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button type="button" onClick={() => void shareProfile()} variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 sm:w-auto sm:gap-1.5 sm:px-3" aria-label="Share profile"><Share2 className="h-3.5 w-3.5" /><span className="hidden lg:inline">Share</span></Button>
+            <Button asChild variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 sm:w-auto sm:gap-1.5 sm:px-3"><Link to={`/${profile?.username}`} target="_blank" aria-label="Preview profile"><span className="hidden lg:inline">Preview</span><ExternalLink className="h-3.5 w-3.5" /></Link></Button>
+            <Button onClick={() => void save()} disabled={saving} size="sm" className="h-8 rounded-full px-3 text-xs sm:px-5">{saving ? "Saving…" : "Save"}</Button>
           </div>
         </div>
 
         <Card className="overflow-visible rounded-3xl border-border/80 shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/25 px-4 py-2.5 sm:px-6">
-            <div>
-              <p className="text-[11px] font-semibold">{profileTypeLabel}</p>
-              <p className="text-[10px] text-muted-foreground">Profile type controls which structured sections are available.</p>
+          <div className="sticky top-[6.75rem] z-20 flex min-h-16 items-center justify-between gap-3 rounded-t-3xl border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur sm:px-6">
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-semibold">{profileTypeLabel}</p>
+              <p className="mt-0.5 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">Profile type controls which structured sections are available.</p>
             </div>
-            <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 rounded-full text-xs"><Link to="/dashboard/settings"><SlidersHorizontal className="h-3.5 w-3.5" /> Change type</Link></Button>
+            <Button asChild variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 rounded-full px-2.5 text-xs sm:px-3"><Link to="/dashboard/settings"><SlidersHorizontal className="h-3.5 w-3.5" /><span className="hidden sm:inline">Change type</span><span className="sm:hidden">Type</span></Link></Button>
           </div>
 
-          <section className="border-b border-border/70 px-4 py-5 text-center sm:px-6 sm:py-6">
-            <div className="relative mx-auto w-fit">
-              <Avatar className="h-20 w-20 bg-muted sm:h-24 sm:w-24">
-                {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />}
-                <AvatarFallback className="font-display text-2xl font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-              </Avatar>
-              <Button asChild variant="secondary" size="icon" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border border-background shadow-sm">
-                <Link to="/dashboard/settings" aria-label="Change profile photo"><Camera className="h-3.5 w-3.5" /></Link>
-              </Button>
+          <section className="border-b border-border/70">
+            <div className={`relative h-28 overflow-hidden sm:h-36 ${selectedTheme.hero}`}>
+              {form.bannerUrl && <img src={form.bannerUrl} alt="Profile banner preview" className="absolute inset-0 h-full w-full object-cover" />}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/20" />
+              <div className="absolute right-2 top-2 flex max-w-[calc(100%-16px)] flex-wrap justify-end gap-1.5 sm:right-3 sm:top-3">
+                <Button type="button" variant="secondary" size="sm" onClick={() => bannerFileInputRef.current?.click()} disabled={uploadingBanner} className="h-8 gap-1.5 rounded-full bg-white/90 px-3 text-[11px] text-neutral-950 shadow-sm hover:bg-white">
+                  <ImagePlus className="h-3.5 w-3.5" />{uploadingBanner ? "Uploading…" : form.bannerUrl ? "Replace banner" : "Add banner"}
+                </Button>
+                {form.bannerUrl && (
+                  <Button type="button" variant="secondary" size="icon" onClick={() => setForm({ ...form, bannerUrl: "" })} className="h-8 w-8 rounded-full bg-white/90 text-neutral-950 shadow-sm hover:bg-white" aria-label="Remove banner"><Trash2 className="h-3.5 w-3.5" /></Button>
+                )}
+              </div>
+              <input ref={bannerFileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadBanner} className="hidden" />
             </div>
-            <div className="relative mx-auto mt-3 max-w-sm px-7">
-              <Input
-                value={form.displayName}
-                onChange={(event) => setForm({ ...form, displayName: event.target.value })}
-                placeholder={form.accountType === "business" ? "Organization name" : "Your name"}
-                maxLength={80}
-                aria-label={form.accountType === "business" ? "Organization name" : "Name"}
-                className="h-9 w-full border-0 bg-transparent p-0 text-center font-display text-2xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0"
-              />
-              {profile?.id_verified && <VerifiedBadge className="absolute right-1 top-1/2 h-5 w-5 -translate-y-1/2" label="Identity verified" />}
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">@{profile?.username}</p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" aria-label="Social profiles">
-              {SOCIAL_FIELDS.map(([key, label, placeholder]) => {
-                const hasValue = !!form.socialLinks[key]?.trim();
-                return (
-                  <Popover key={key}>
-                    <PopoverTrigger asChild>
-                      <button type="button" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${hasValue ? "border-foreground/20 bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-muted-foreground hover:text-foreground"}`} aria-label={`Edit ${label}`} title={label}>
-                        <SocialIcon platform={key} className="h-3.5 w-3.5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="center" className="w-[min(300px,calc(100vw-24px))] p-3">
-                      <label><span className="text-xs font-semibold">{label}</span><Input value={form.socialLinks[key] || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, [key]: event.target.value } })} placeholder={placeholder} maxLength={500} className="mt-2 h-9" /></label>
-                    </PopoverContent>
-                  </Popover>
-                );
-              })}
+
+            <div className="relative px-4 pb-5 text-center sm:px-6 sm:pb-6">
+              <div className="relative mx-auto -mt-10 w-fit sm:-mt-12">
+                <Avatar className={`h-20 w-20 border-4 bg-muted shadow-sm sm:h-24 sm:w-24 ${selectedTheme.avatarRing}`}>
+                  {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="" className="object-cover" />}
+                  <AvatarFallback className="font-display text-2xl font-bold">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <Button asChild variant="secondary" size="icon" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border border-background shadow-sm">
+                  <Link to="/dashboard/settings" aria-label="Change profile photo"><Camera className="h-3.5 w-3.5" /></Link>
+                </Button>
+              </div>
+              <div className="relative mx-auto mt-3 max-w-sm px-7">
+                <Input
+                  value={form.displayName}
+                  onChange={(event) => setForm({ ...form, displayName: event.target.value })}
+                  placeholder={form.accountType === "business" ? "Organization name" : "Your name"}
+                  maxLength={80}
+                  aria-label={form.accountType === "business" ? "Organization name" : "Name"}
+                  className="h-9 w-full border-0 bg-transparent p-0 text-center font-display text-2xl font-bold tracking-tight shadow-none placeholder:text-muted-foreground/45 focus-visible:ring-0"
+                />
+                {profile?.id_verified && <VerifiedBadge className="absolute right-1 top-1/2 h-5 w-5 -translate-y-1/2" label="Identity verified" />}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">@{profile?.username}</p>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" aria-label="Social profiles">
+                {SOCIAL_FIELDS.map(([key, label, placeholder]) => {
+                  const hasValue = !!form.socialLinks[key]?.trim();
+                  return (
+                    <Popover key={key}>
+                      <PopoverTrigger asChild>
+                        <button type="button" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${hasValue ? "border-foreground/20 bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-muted-foreground hover:text-foreground"}`} aria-label={`Edit ${label}`} title={label}>
+                          <SocialIcon platform={key} className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="center" className="w-[min(300px,calc(100vw-24px))] p-3">
+                        <label><span className="text-xs font-semibold">{label}</span><Input value={form.socialLinks[key] || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, [key]: event.target.value } })} placeholder={placeholder} maxLength={500} className="mt-2 h-9" /></label>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                })}
+              </div>
+
+              <div className="mx-auto mt-4 flex max-w-lg flex-col items-center gap-2">
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><Palette className="h-3.5 w-3.5" />Profile theme</div>
+                <div className="flex flex-wrap items-center justify-center gap-2" aria-label="Profile theme choices">
+                  {PROFILE_THEME_OPTIONS.map((option) => (
+                    <Tooltip key={option.value}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, profileTheme: option.value })}
+                          className={`h-8 w-8 rounded-full border-2 p-0.5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 ${form.profileTheme === option.value ? "scale-110 border-foreground" : "border-background shadow-sm hover:scale-105"}`}
+                          aria-label={`Use ${option.label} theme`}
+                          aria-pressed={form.profileTheme === option.value}
+                        >
+                          <span className={`block h-full w-full rounded-full ${option.swatch}`} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="text-xs"><p>{option.label}</p></TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+                <p className="text-[10px] leading-relaxed text-muted-foreground">Banner images are optional. Curated themes keep every profile readable and recognizably Verifiedly.</p>
+              </div>
             </div>
           </section>
 
