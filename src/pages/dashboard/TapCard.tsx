@@ -53,6 +53,10 @@ type CardForm = {
 
 const tapPreordersEnabled = import.meta.env.VITE_TAP_CARD_PREORDERS_ENABLED === "true"
   || import.meta.env.VITE_TAP_CARD_ORDERS_ENABLED === "true";
+const estimatedShipWindow = String(import.meta.env.VITE_TAP_CARD_ESTIMATED_SHIP_WINDOW || "").trim();
+const statementLabel = String(import.meta.env.VITE_STRIPE_CUSTOMER_STATEMENT_LABEL || "").trim();
+const tapPreordersReady = tapPreordersEnabled && estimatedShipWindow.length > 0;
+
 const priceLabel = (tier: Tier) => tier === "pro" ? "$19.99" : "$29.99";
 const isPreorderSource = (source?: string | null) => Boolean(source?.startsWith("preorder_"));
 const statusLabel = (order: Order) =>
@@ -181,7 +185,7 @@ const TapCard = () => {
       if (error || data?.error) throw new Error(await functionErrorMessage(error, data, "The pre-order is still syncing."));
       toast({
         title: "Tap Card pre-order confirmed",
-        description: "Your paid pre-order is now in the BrownGlobal manual fulfillment queue.",
+        description: "Your paid pre-order is now in the Verifiedly manual fulfillment queue.",
       });
       await load();
     } catch (error) {
@@ -223,7 +227,7 @@ const TapCard = () => {
     && form.city.trim().length >= 1
     && form.state.trim().length >= 2
     && form.postal_code.trim().length >= 2;
-  const canSubmit = tapPreordersEnabled && printDetailsValid && shippingValid && previewApproved && termsApproved && !submitting;
+  const canSubmit = tapPreordersReady && printDetailsValid && shippingValid && previewApproved && termsApproved && !submitting;
   const earlyAccessMailto = `mailto:support@verifiedly.app?subject=${encodeURIComponent("Verifiedly Tap early access")}&body=${encodeURIComponent(`Please add @${previewHandle} to the Verifiedly Tap early-access list.\n\nPreview name: ${previewName}\nPreview title: ${previewTitle}`)}`;
 
   const updatePrintField = (field: "printed_name" | "printed_title", value: string) => {
@@ -233,8 +237,13 @@ const TapCard = () => {
   };
 
   const submit = async () => {
-    if (!tapPreordersEnabled) {
-      toast({ title: "Tap Card pre-orders are not open yet", description: "Join early access while the payment and fulfillment launch is completed." });
+    if (!tapPreordersReady) {
+      toast({
+        title: "Tap Card pre-orders are not ready yet",
+        description: tapPreordersEnabled
+          ? "Verifiedly is confirming the manufacturer-supported shipping estimate before collecting payment."
+          : "Join early access while the payment and fulfillment launch is completed.",
+      });
       return;
     }
     if (!printDetailsValid) {
@@ -284,6 +293,12 @@ const TapCard = () => {
     return <DashboardShell title="Verifiedly Tap"><div className="p-6 text-sm text-muted-foreground sm:p-8">Loading your Tap Card…</div></DashboardShell>;
   }
 
+  const launchStateLabel = tapPreordersReady
+    ? "Paid pre-orders open"
+    : tapPreordersEnabled
+      ? "Shipping estimate pending"
+      : "Early-access preview";
+
   return (
     <DashboardShell title="Verifiedly Tap">
       <div className="mx-auto w-full max-w-6xl space-y-6 overflow-x-hidden px-3 py-5 sm:space-y-7 sm:px-4 sm:py-9">
@@ -297,21 +312,21 @@ const TapCard = () => {
           </div>
           <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs font-medium shadow-sm">
             <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-            <span className="break-words">{tapPreordersEnabled ? "Paid pre-orders open" : "Early-access preview"}</span>
+            <span className="break-words">{launchStateLabel}</span>
           </div>
         </header>
 
-        {tapPreordersEnabled ? (
+        {tapPreordersReady ? (
           <Card className="rounded-3xl border-foreground bg-foreground p-5 text-background sm:p-6">
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-background/60">Verifiedly Tap founding pre-order</p>
                 <h2 className="mt-2 break-words font-display text-xl font-bold">Reserve your personalized Tap Card</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-relaxed text-background/75">
-                  You are charged securely at checkout. BrownGlobal reviews each paid pre-order, then manually submits the approved card to the manufacturer. Production and tracking updates appear in your account and may also be emailed.
+                  You are charged securely at checkout. Verifiedly reviews each paid pre-order, then manually submits the approved card to a third-party manufacturer. A paid pre-order is not a shipped order.
                 </p>
               </div>
-              <span className="w-fit shrink-0 rounded-full bg-background/10 px-3 py-1.5 text-xs font-semibold">Charged now · fulfilled later</span>
+              <span className="w-fit max-w-full shrink-0 rounded-full bg-background/10 px-3 py-1.5 text-xs font-semibold break-words">Charged now · fulfilled later</span>
             </div>
           </Card>
         ) : (
@@ -319,10 +334,18 @@ const TapCard = () => {
             <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-background/60">Verifiedly Tap early access</p>
-                <h2 className="mt-2 break-words font-display text-xl font-bold">Preview your card before paid pre-orders open</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-background/75">No payment is collected while early access is active.</p>
+                <h2 className="mt-2 break-words font-display text-xl font-bold">
+                  {tapPreordersEnabled ? "Shipping estimate is being confirmed" : "Preview your card before paid pre-orders open"}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-background/75">
+                  {tapPreordersEnabled
+                    ? "Verifiedly will not collect payment until a manufacturer-supported shipping estimate is configured and shown before checkout."
+                    : "No payment is collected while early access is active."}
+                </p>
               </div>
-              <Button asChild variant="secondary" className="w-full gap-2 whitespace-normal sm:w-auto"><a href={earlyAccessMailto}><Mail className="h-4 w-4 shrink-0" />Join early access</a></Button>
+              <Button asChild variant="secondary" className="w-full gap-2 whitespace-normal sm:w-auto">
+                <a href={earlyAccessMailto}><Mail className="h-4 w-4 shrink-0" />Join early access</a>
+              </Button>
             </div>
           </Card>
         )}
@@ -384,7 +407,7 @@ const TapCard = () => {
           </div>
         </section>
 
-        <div className={`grid min-w-0 gap-6 ${tapPreordersEnabled ? "lg:grid-cols-[1.15fr_0.85fr]" : "lg:grid-cols-1"}`}>
+        <div className={`grid min-w-0 gap-6 ${tapPreordersReady ? "lg:grid-cols-[1.15fr_0.85fr]" : "lg:grid-cols-1"}`}>
           <div className="min-w-0 space-y-6">
             <Card className="min-w-0 rounded-3xl border-foreground/10 p-4 sm:p-7">
               <div className="flex min-w-0 items-start gap-3">
@@ -426,7 +449,7 @@ const TapCard = () => {
               </div>
             </Card>
 
-            {tapPreordersEnabled && (
+            {tapPreordersReady && (
               <Card className="min-w-0 rounded-3xl border-foreground/10 p-4 sm:p-7">
                 <div className="flex min-w-0 items-start gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">2</span>
@@ -454,9 +477,9 @@ const TapCard = () => {
           <div className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
             <Card className="min-w-0 rounded-3xl border-foreground/10 p-4 shadow-sm sm:p-7">
               <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">{tapPreordersEnabled ? "3" : "2"}</span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">{tapPreordersReady ? "3" : "2"}</span>
                 <div className="min-w-0">
-                  <h2 className="break-words font-display text-xl font-bold">{tapPreordersEnabled ? "Review and pre-order" : "Early-access pricing"}</h2>
+                  <h2 className="break-words font-display text-xl font-bold">{tapPreordersReady ? "Review and pre-order" : "Early-access pricing"}</h2>
                   <p className="mt-1 break-words text-xs text-muted-foreground">Your price is calculated from your Verifiedly account.</p>
                 </div>
               </div>
@@ -473,15 +496,20 @@ const TapCard = () => {
               <div className="mt-5 space-y-3 text-xs text-muted-foreground">
                 <div className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><span>Unique NFC and QR profile link</span></div>
                 <div className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><span>Locked Verifiedly front-and-back design</span></div>
-                <div className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><span>Manual BrownGlobal quality review and supplier submission</span></div>
+                <div className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><span>Manual Verifiedly quality review and third-party supplier submission</span></div>
               </div>
 
-              {tapPreordersEnabled ? (
+              {tapPreordersReady ? (
                 <>
-                  <div className="mt-5 flex min-w-0 items-start gap-3 rounded-2xl bg-muted/50 p-4">
+                  <div className="mt-5 min-w-0 rounded-2xl border bg-muted/35 p-4 text-xs leading-relaxed text-muted-foreground">
+                    <p className="break-words font-semibold text-foreground">Estimated shipping: {estimatedShipWindow}</p>
+                    <p className="mt-2 break-words">This is an estimate, not a guaranteed delivery date. Delay, cancellation and refund options follow the posted Terms and Refund Policy.</p>
+                    {statementLabel && <p className="mt-2 break-words">Your card statement should show <strong className="text-foreground">{statementLabel}</strong>.</p>}
+                  </div>
+                  <div className="mt-4 flex min-w-0 items-start gap-3 rounded-2xl bg-muted/50 p-4">
                     <Checkbox id="card-terms" checked={termsApproved} onCheckedChange={(value) => setTermsApproved(value === true)} className="mt-0.5 shrink-0" />
                     <Label htmlFor="card-terms" className="min-w-0 cursor-pointer break-words text-xs font-normal leading-relaxed text-muted-foreground">
-                      I understand this is a paid personalized pre-order. I will be charged now, and BrownGlobal will manually submit the approved card to a third-party manufacturer after review. Production and delivery timing can vary. Cancellations, defects and replacements follow the posted policy.
+                      I understand this is a paid personalized pre-order. I will be charged now, and Verifiedly will manually submit the approved card to a third-party manufacturer after review. A paid pre-order is not a shipped order. Production and delivery timing can vary. Cancellations, defects, delays and replacements follow the posted policy.
                     </Label>
                   </div>
                   <Button className="mt-5 min-h-12 w-full whitespace-normal rounded-xl px-3 py-3 text-center leading-snug" onClick={() => void submit()} disabled={!canSubmit}>
@@ -489,14 +517,21 @@ const TapCard = () => {
                   </Button>
                 </>
               ) : (
-                <Button asChild className="mt-5 min-h-12 w-full whitespace-normal rounded-xl px-3 py-3" disabled={!printDetailsValid}><a href={printDetailsValid ? earlyAccessMailto : undefined}><Mail className="mr-2 h-4 w-4 shrink-0" />Join Tap early access</a></Button>
+                <Button asChild className="mt-5 min-h-12 w-full whitespace-normal rounded-xl px-3 py-3">
+                  <a href={earlyAccessMailto}><Mail className="mr-2 h-4 w-4 shrink-0" />Join Tap early access</a>
+                </Button>
               )}
 
               {tier === "retail" && (
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full whitespace-normal rounded-xl px-3 py-2 text-center leading-snug"><Link to="/dashboard/pro">Get Pro · Tap Card $19.99</Link></Button>
               )}
-              {tier === "retail" && <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">Verifiedly Pro is $4.99 monthly or $49.99 yearly and includes identity-verification eligibility for supported adults.</p>}
-              <p className="mt-3 break-words text-center text-[10px] leading-relaxed text-muted-foreground">{tapPreordersEnabled ? "Stripe charges the pre-order now. The order is recorded only after Stripe confirms payment, then BrownGlobal fulfills it manually." : "No payment is collected while early access is active."}</p>
+              {tier === "retail" && <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">Verifiedly Pro is $4.99 monthly or $49.99 yearly and provides identity-verification access for eligible adults.</p>}
+              <p className="mt-3 break-words text-center text-[10px] leading-relaxed text-muted-foreground">
+                {tapPreordersReady
+                  ? "Stripe charges the pre-order now. The order is recorded only after Stripe confirms payment, then Verifiedly handles manual fulfillment."
+                  : "No payment is collected until the shipping estimate and live preorder requirements are ready."}
+              </p>
+              <p className="mt-2 break-words text-center text-[10px] leading-relaxed text-muted-foreground">Verifiedly is operated by BrownGlobal Holdings LLC.</p>
             </Card>
           </div>
         </div>
