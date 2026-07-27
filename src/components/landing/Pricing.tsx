@@ -21,8 +21,8 @@ const plans = [
     price: "$4.99",
     cadence: "per month",
     icon: Sparkles,
-    description: "Advanced profile tools with identity-verification eligibility for supported adults.",
-    features: ["Stripe Identity verification included", "Verification check after successful approval", "Profile and sharing analytics", "Tap Card pre-order price: $19.99"],
+    description: "Advanced profile tools with optional identity-verification access for eligible adults.",
+    features: ["Access to Stripe Identity for eligible adults", "Verification check after a successful result", "Profile and sharing analytics", "Tap Card pre-order price: $19.99"],
     cta: "Start Verifiedly Pro",
     note: "Or $49.99 per year",
     href: "/signup?returnTo=%2Fdashboard%2Fpro",
@@ -36,7 +36,7 @@ const plans = [
     description: "A personalized, non-payment PVC NFC card that opens your Verifiedly profile.",
     features: ["Locked Verifiedly front-and-back design", "Your name, professional title and handle", "Unique NFC and QR profile link", "$19.99 with active Verifiedly Pro"],
     cta: "Pre-order Tap Card",
-    note: "Charged now · manually fulfilled · initial U.S. availability",
+    note: "Charged now · manufacturer-confirmed shipping estimate shown before live payment · initial U.S. availability",
     href: "/dashboard/tap-card",
     featured: false,
   },
@@ -48,7 +48,7 @@ const Pricing = () => (
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple pricing</p>
         <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Create for free. Upgrade when you need more trust and sharing tools.</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">There is no separate $9.99 identity fee. Eligible adults with active Pro may complete Stripe Identity verification, and the verification check appears only after a successful result.</p>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">There is no separate $9.99 identity fee. Eligible adults with active Pro may access Stripe Identity, and the verification check appears only after a successful result.</p>
       </div>
 
       <div className="mt-10 grid min-w-0 gap-4 md:grid-cols-3">
@@ -76,6 +76,8 @@ const Pricing = () => (
         <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
         <p>Pro does not sell a badge. It provides access to the verification flow and other subscription features. The verification check is granted only after Stripe Identity successfully verifies the eligible adult account holder.</p>
       </div>
+
+      <p className="mt-5 text-center text-xs text-muted-foreground">Verifiedly is operated by BrownGlobal Holdings LLC.</p>
     </div>
   </section>
 );
