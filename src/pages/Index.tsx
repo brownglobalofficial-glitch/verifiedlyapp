@@ -61,16 +61,24 @@ const Index = () => {
           </Link>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[310px]">
-          Free official profile · Pro $4.99/month or $49.99/year · Adult identity verification included with eligible Pro accounts
+        <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[320px]">
+          Free official profile · Pro $4.99/month or $49.99/year · Identity-verification access for eligible adults with active Pro
+        </p>
+        <p className="mt-2 text-center text-[10px] text-muted-foreground leading-relaxed max-w-[320px]">
+          A verification check appears only after successful Stripe Identity verification.
         </p>
 
-        <footer className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-          <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-          <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
-          <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
+        <footer className="mt-8 flex flex-col items-center gap-4 text-center">
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+            <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
+            <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
+          </div>
+          <p className="max-w-[320px] text-[10px] leading-relaxed text-muted-foreground">
+            Verifiedly is operated by BrownGlobal Holdings LLC.
+          </p>
         </footer>
       </main>
     </div>

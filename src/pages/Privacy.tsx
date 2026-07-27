@@ -11,7 +11,7 @@ const Privacy = () => (
     <div className="prose prose-sm mx-auto max-w-3xl dark:prose-invert">
       <Link to="/" className="mb-6 inline-block text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
       <h1>Privacy Policy</h1>
-      <p className="text-muted-foreground"><em>Last updated: July 24, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 27, 2026</em></p>
       <p>This policy explains how <strong>BrownGlobal Holdings LLC</strong>, operating Verifiedly, collects, uses, shares, and protects information.</p>
 
       <h2>1. Information we collect</h2>
@@ -41,7 +41,7 @@ const Privacy = () => (
 
       <h3>Tap Card order information</h3>
       <ul>
-        <li>Approved printed name, title, handle, template version, preview-approval time, card serial, NFC link, QR link, and order status</li>
+        <li>Approved printed name, title, handle, template version, preview-approval time, card serial, NFC link, QR link, estimated shipping window, and order status</li>
         <li>Shipping name and address, supplier reference, tracking information, and support notes related to fulfillment</li>
         <li>Card state, such as active, disabled, lost, or replaced, and aggregate tap counts</li>
       </ul>
@@ -97,7 +97,7 @@ const Privacy = () => (
       <p>We may update this policy. We will provide reasonable notice of material changes and update the date above.</p>
 
       <h2>10. Contact</h2>
-      <p><strong>BrownGlobal Holdings LLC</strong><br />Email: <strong>support@verifiedly.app</strong></p>
+      <p><strong>BrownGlobal Holdings LLC</strong><br />Operating brand: <strong>Verifiedly</strong><br />Email: <strong>support@verifiedly.app</strong></p>
     </div>
   </div>
 );

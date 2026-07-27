@@ -57,6 +57,9 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
 
+    const estimatedShipWindow = (Deno.env.get("TAP_CARD_ESTIMATED_SHIP_WINDOW") ?? "").trim();
+    const statementLabel = (Deno.env.get("STRIPE_CUSTOMER_STATEMENT_LABEL") ?? "").trim();
+
     // Test keys can exercise the full flow before launch. Live payments require
     // an explicit adult-controlled preorder or order launch flag.
     const isStripeTestMode = /^(sk|rk)_test_/.test(stripeKey);
@@ -66,6 +69,12 @@ serve(async (req) => {
       return json({
         error: "Live Tap Card pre-orders are not enabled. Set TAP_CARD_PREORDERS_ENABLED=true only after the Stripe webhook, refund terms, supplier workflow, and authorized-adult approval are ready.",
         code: "tap_preorders_not_open",
+      }, 503);
+    }
+    if (livePreordersEnabled && !isStripeTestMode && !estimatedShipWindow) {
+      return json({
+        error: "Live Tap Card pre-orders require a manufacturer-confirmed shipping estimate. Set TAP_CARD_ESTIMATED_SHIP_WINDOW before accepting payment.",
+        code: "tap_shipping_estimate_required",
       }, 503);
     }
 
@@ -126,12 +135,17 @@ serve(async (req) => {
     const amountCents = isPro ? 1999 : 2999;
     const orderSource = isPro ? "preorder_pro" : "preorder_retail";
     const previewApprovedAt = new Date().toISOString();
+    const shippingWindowForCheckout = estimatedShipWindow || "Test mode only — live estimate not configured";
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const origin = safeOrigin(req.headers.get("origin"));
 
     const customerFields = billing?.stripe_customer_id
       ? { customer: billing.stripe_customer_id }
       : { customer_email: user.email, customer_creation: "always" as const };
+
+    const descriptorNotice = statementLabel
+      ? ` Your card statement should show ${statementLabel}.`
+      : "";
 
     const session = await stripe.checkout.sessions.create({
       ...customerFields,
@@ -149,7 +163,7 @@ serve(async (req) => {
           unit_amount: amountCents,
           product_data: {
             name: "Verifiedly Tap Card Pre-order",
-            description: "Personalized non-payment PVC NFC profile card; charged now and manually fulfilled after review",
+            description: `Personalized non-payment PVC NFC profile card; charged now and manually fulfilled after review. Estimated shipping: ${shippingWindowForCheckout}`,
           },
         },
       }],
@@ -165,6 +179,7 @@ serve(async (req) => {
         printed_handle: printedHandle,
         template_version: "verifiedly-pvc-white-v1",
         preview_approved_at: previewApprovedAt,
+        estimated_ship_window: shippingWindowForCheckout.slice(0, 500),
         shipping_name: shippingName,
         shipping_line1: line1,
         shipping_line2: line2,
@@ -182,11 +197,12 @@ serve(async (req) => {
           user_id: user.id,
           printed_handle: printedHandle,
           order_source: orderSource,
+          estimated_ship_window: shippingWindowForCheckout.slice(0, 500),
         },
       },
       custom_text: {
         submit: {
-          message: "Paid personalized pre-order. You are charged now. BrownGlobal reviews the approved design and manually submits it to the manufacturer. Production and delivery timing can vary; see the posted refund policy.",
+          message: `Paid personalized pre-order. You are charged now. Verifiedly reviews the approved design and manually submits it to the manufacturer. Estimated shipping: ${shippingWindowForCheckout}. Timing is not guaranteed; delay and refund options follow the posted policy. Verifiedly is operated by BrownGlobal Holdings LLC.${descriptorNotice}`,
         },
       },
     });
@@ -196,6 +212,8 @@ serve(async (req) => {
       amount_cents: amountCents,
       pro_price: isPro,
       preorder: true,
+      estimated_ship_window: shippingWindowForCheckout,
+      statement_label: statementLabel || null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not start Tap Card pre-order checkout.";
