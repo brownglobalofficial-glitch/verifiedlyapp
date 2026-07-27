@@ -9,13 +9,13 @@ const features = [
   },
   {
     icon: BriefcaseBusiness,
-    title: "Structured Credentials",
-    description: "Present work, education, credentials, licenses, awards and accomplishments in a consistent format.",
+    title: "Structured Profile Details",
+    description: "Present experience, education, certifications, licenses, awards and official links in a consistent format. Unless clearly marked otherwise, profile details are provided by the profile owner.",
   },
   {
     icon: BadgeCheck,
     title: "Identity Verification",
-    description: "Eligible adults with active Pro can complete Stripe Identity. The check appears only after a successful result.",
+    description: "Eligible adults with active Pro can access Stripe Identity. The check appears only after a successful result.",
   },
   {
     icon: KeyRound,
@@ -30,7 +30,7 @@ const features = [
   {
     icon: CreditCard,
     title: "Verifiedly Tap",
-    description: "Order a personalized, non-payment PVC NFC card that opens your live Verifiedly profile.",
+    description: "Pre-order a personalized, non-payment PVC NFC card that opens your live Verifiedly profile.",
   },
 ];
 
