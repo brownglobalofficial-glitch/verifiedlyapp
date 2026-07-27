@@ -131,4 +131,12 @@
     transform: translateY(-4px);
     box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
   }
+
+  /* The profile-type row belongs in normal document flow. Keeping it sticky
+     caused it to cover the banner and its image controls on laptops and phones. */
+  [class~="sticky"][class*="top-[6.75rem]"] {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+  }
 }
