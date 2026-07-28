@@ -374,7 +374,7 @@ const Dashboard = () => {
   return (
     <DashboardShell title="Edit profile" hidePreview>
       <div className="mx-auto max-w-6xl px-3 py-3 sm:px-5 sm:py-5">
-        <div className="sticky top-14 z-30 -mx-3 mb-3 grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:-mx-5 sm:px-5">
+        <div className="-mx-3 mb-3 grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/95 px-3 py-2 sm:-mx-5 sm:px-5">
           <div className="flex min-w-0 items-center gap-1">
             <p className="min-w-0 truncate text-xs text-muted-foreground">verifiedly.app/{profile?.username}</p>
             <Tooltip open={profileLinkCopied ? true : undefined}>
@@ -395,7 +395,7 @@ const Dashboard = () => {
         </div>
 
         <Card className="overflow-visible rounded-3xl border-border/80 shadow-sm">
-          <div className="sticky top-[6.75rem] z-20 flex min-h-16 items-center justify-between gap-3 rounded-t-3xl border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur sm:px-6">
+          <div className="flex min-h-16 items-center justify-between gap-3 rounded-t-3xl border-b border-border/70 bg-background/95 px-4 py-3 sm:px-6">
             <div className="min-w-0">
               <p className="truncate text-[11px] font-semibold">{profileTypeLabel}</p>
               <p className="mt-0.5 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">Profile type controls which structured sections are available.</p>
