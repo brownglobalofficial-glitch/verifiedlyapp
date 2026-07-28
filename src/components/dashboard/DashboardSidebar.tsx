@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, Settings, LogOut, ExternalLink, CreditCard, Sparkles } from "lucide-react";
+import { User, ShieldCheck, Settings, LogOut, ExternalLink, CreditCard, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -18,7 +18,7 @@ import logoMark from "@/assets/verifiedly-v-mark.png";
 
 const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
-  { title: "Verifiedly Pro", url: "/dashboard/pro", icon: Sparkles },
+  { title: "Verifiedly Pro", url: "/dashboard/pro", icon: Crown },
   { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Tap card", url: "/dashboard/tap-card", icon: CreditCard },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
