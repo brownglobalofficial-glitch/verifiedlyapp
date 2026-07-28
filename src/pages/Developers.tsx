@@ -1,252 +1,154 @@
-import { Link } from "react-router-dom";
+import { ArrowLeft, Copy, ShieldCheck } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+
 import logo from "@/assets/verifiedly-logo.webp";
-
-const COMPONENT_SNIPPET = `// src/components/SignInWithVerifiedly.tsx
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
-type Props = {
-  clientId: string;
-  redirectUri: string;
-  scope?: string;       // "openid profile identity credentials"
-  state: string;        // REQUIRED — CSRF token, store and verify on callback
-  codeChallenge?: string;       // PKCE S256 challenge (public clients)
-  codeChallengeMethod?: "S256"; // always S256 when PKCE is used
-};
+const ISSUER = "https://pwahrywcgtgfaaghkpoo.supabase.co/auth/v1";
 
-export function SignInWithVerifiedly({
-  clientId, redirectUri, state,
-  scope = "openid profile identity credentials",
-  codeChallenge, codeChallengeMethod,
-}: Props) {
-  const url = new URL("https://verifiedly.app/oauth/authorize");
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", scope);
-  url.searchParams.set("state", state);
-  if (codeChallenge) {
-    url.searchParams.set("code_challenge", codeChallenge);
-    url.searchParams.set("code_challenge_method", codeChallengeMethod ?? "S256");
-  }
+const ENDPOINTS_SNIPPET = `issuer                 = ${ISSUER}
+authorization_endpoint = ${ISSUER}/oauth/authorize
+token_endpoint         = ${ISSUER}/oauth/token
+userinfo_endpoint      = ${ISSUER}/oauth/userinfo
+jwks_uri               = ${ISSUER}/.well-known/jwks.json
+oidc_discovery         = ${ISSUER}/.well-known/openid-configuration
+scopes                  = openid email profile phone
+flow                    = authorization_code + PKCE`;
 
-  return (
-    <Button asChild variant="outline">
-      <a href={url.toString()}>Sign in with Verifiedly</a>
-    </Button>
-  );
-}`;
-
-const EXCHANGE_SNIPPET = `// Confidential web apps run this exchange server-side. Public browser/mobile
-// apps use PKCE and send code_verifier instead of ever receiving a client_secret.
-const tokenRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-token", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    grant_type: "authorization_code",
-    code,
-    client_id: process.env.VERIFIEDLY_CLIENT_ID,
-    client_secret: process.env.VERIFIEDLY_CLIENT_SECRET, // confidential clients
-    // code_verifier: pkceVerifier, // public clients: use this instead
-    redirect_uri: process.env.VERIFIEDLY_REDIRECT_URI,
-  }),
+const KAIETEUR_SNIPPET = `// The Kaieteur Supabase project has a custom OIDC provider named custom:verifiedly.
+// Supabase handles state, PKCE, code exchange, token validation, and the local session.
+const { error } = await supabase.auth.signInWithOAuth({
+  provider: "custom:verifiedly",
+  options: {
+    redirectTo: window.location.origin + "/account",
+    scopes: "openid email profile",
+  },
 });
-const { access_token } = await tokenRes.json();
 
-const userRes = await fetch("https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-userinfo", {
-  headers: { Authorization: \`Bearer \${access_token}\` },
-});
-const user = await userRes.json();
-// => {
-//   sub, username?, display_name?, avatar_url?,
-//   verified?, id_verified?, verified_at?, verification_kind?,
-//   verified_credentials?: [{ type, title, issuer, provider, verified_at, expires_at }],
-//   email? // only when separately requested and approved
-// }`;
+if (error) throw error;`;
 
-const ENV_SNIPPET = `# Development (.env.local) — CLIENT SIDE ONLY
-VITE_VERIFIEDLY_CLIENT_ID=your_client_id
-VITE_VERIFIEDLY_REDIRECT_URI=http://localhost:8080/auth/callback
+const GENERIC_SNIPPET = `// Standards-compliant apps should use OIDC discovery rather than hard-coding endpoints.
+const issuer = "${ISSUER}";
+const discoveryUrl = issuer + "/.well-known/openid-configuration";
 
-# Production / server env (edge function / server route)
-# NEVER expose client_secret through a VITE_* variable or browser bundle.
-VERIFIEDLY_CLIENT_ID=your_client_id
-VERIFIEDLY_CLIENT_SECRET=paste_rotated_secret_here
-VERIFIEDLY_REDIRECT_URI=https://your-app.example.com/auth/callback`;
-
-const BUTTON_SNIPPET = `// Start the OAuth flow. state is REQUIRED and MUST be verified on the callback.
-const authorize = () => {
-  const state = crypto.randomUUID();
-  sessionStorage.setItem("verifiedly_oauth_state", state);
-
-  const url = new URL("https://verifiedly.app/oauth/authorize");
-  url.searchParams.set("client_id", import.meta.env.VITE_VERIFIEDLY_CLIENT_ID);
-  url.searchParams.set("redirect_uri", import.meta.env.VITE_VERIFIEDLY_REDIRECT_URI);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", "openid profile identity credentials");
-  url.searchParams.set("state", state);
-  window.location.href = url.toString();
-};
-
-// On the callback route — validate state BEFORE exchanging the code.
-const params = new URLSearchParams(window.location.search);
-const expected = sessionStorage.getItem("verifiedly_oauth_state");
-if (!expected || params.get("state") !== expected) {
-  throw new Error("Invalid OAuth state — possible CSRF");
-}
-sessionStorage.removeItem("verifiedly_oauth_state");`;
-
-const ENDPOINTS_SNIPPET = `# Verifiedly OAuth 2.0 endpoints
-authorization_endpoint = https://verifiedly.app/oauth/authorize
-token_endpoint         = https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-token
-userinfo_endpoint      = https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-userinfo
-response_types         = code
-grant_types            = authorization_code
-code_challenge_methods = S256
-scopes                 = openid profile identity credentials email
-token_lifetime         = 30 days`;
+// Register an exact redirect URI for the client, then use Authorization Code + PKCE.
+// Request only the information your app needs, usually: openid email profile.`;
 
 const Developers = () => {
   const { toast } = useToast();
-  const copy = (s: string) => {
-    navigator.clipboard.writeText(s);
+  const copy = async (value: string) => {
+    await navigator.clipboard.writeText(value);
     toast({ title: "Copied" });
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Sign in with Verifiedly — Developer Docs (Beta)</title>
-        <meta name="description" content="Add 'Sign in with Verifiedly' to your app. OAuth 2.0 with PKCE, identity verification status, and consented profile fields." />
+        <title>Sign in with Verifiedly — OAuth 2.1 and OpenID Connect</title>
+        <meta
+          name="description"
+          content="Use Verifiedly as an OAuth 2.1 and OpenID Connect identity provider with Authorization Code, PKCE, standard scopes, discovery, and JWKS."
+        />
         <link rel="canonical" href="https://verifiedly.app/developers" />
         <meta property="og:title" content="Sign in with Verifiedly — Developer Docs" />
         <meta property="og:url" content="https://verifiedly.app/developers" />
       </Helmet>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur h-14 flex items-center px-4">
+      <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background/80 px-4 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Verifiedly Logo" className="h-6" /></Link>
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Home</Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Verifiedly" className="h-6" /></Link>
+          <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3 w-3" /> Home</Link>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-10 max-w-3xl">
-        <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-4">Developers · Beta</span>
-        <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight mb-3">Sign in with Verifiedly</h1>
-        <p className="text-base text-muted-foreground mb-8">
-          Let people sign in to your app with their Verifiedly account. Approved scopes can return a stable
-          user ID, public profile fields, and the narrow result of an identity check. The developer program
-          is currently in beta; first-party BrownGlobal integrations are the initial supported clients.
+      <main className="container mx-auto max-w-3xl px-4 py-10">
+        <span className="mb-4 inline-block rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">Developers · Beta</span>
+        <h1 className="text-4xl font-display font-bold tracking-tight md:text-5xl">Sign in with Verifiedly</h1>
+        <p className="mt-3 text-base leading-7 text-muted-foreground">
+          Verifiedly uses its Supabase Auth project as a native OAuth 2.1 and OpenID Connect identity provider. Partner applications receive a stable account ID and only the standard fields the user approves.
         </p>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">1. Request a client</h2>
-          <p className="text-sm text-muted-foreground mb-3">
-            Email <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a> with your
-            app name, homepage URL, app type, and exact redirect URIs. Confidential server apps receive a <code className="text-xs bg-muted px-1 py-0.5 rounded">client_id</code> and one-time <code className="text-xs bg-muted px-1 py-0.5 rounded">client_secret</code>. Browser and mobile apps receive a public client ID and must use PKCE (S256).
+        <Card className="mt-8 border-accent/30 bg-secondary/40 p-6">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <h2 className="font-display font-semibold">Privacy boundary</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Sign-in does not share private documents, uploaded evidence, payment information, raw identity files, or a trust score. Kaieteur House requests only <code className="rounded bg-muted px-1 py-0.5 text-xs">openid email profile</code>.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="mt-6 p-6">
+          <h2 className="font-display font-semibold">1. Register the application</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            During the beta, BrownGlobal registers approved clients in Verifiedly’s OAuth Apps settings. Provide the application name, homepage, environment, client type, and every exact redirect URI. Client secrets are shown once and must remain server-side.
           </p>
-          <p className="text-xs text-muted-foreground">Approved first-party partners are pre-provisioned by the Verifiedly team.</p>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Endpoints & discovery</h2>
-          <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{ENDPOINTS_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(ENDPOINTS_SNIPPET)}><Copy className="w-3 h-3" /></Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            All endpoints accept CORS from any origin. The <code>authorize</code> URL is a browser redirect;
-            <code>token</code> and <code>userinfo</code> are direct HTTPS calls.
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            Kaieteur House and Kaieteur Reader share one Supabase Auth project, so they use one confidential Verifiedly client and the Kaieteur Supabase callback URL.
           </p>
         </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">2. Drop in the button</h2>
-          <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{COMPONENT_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(COMPONENT_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+        <Card className="mt-6 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display font-semibold">2. Use OIDC discovery</h2>
+            <Button size="sm" variant="ghost" onClick={() => void copy(ENDPOINTS_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
           </div>
+          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{ENDPOINTS_SNIPPET}</code></pre>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            OpenID Connect ID tokens require Verifiedly’s Supabase project to use an asymmetric JWT signing key so clients can validate tokens through JWKS.
+          </p>
         </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">3. Exchange the code server-side</h2>
-          <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{EXCHANGE_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(EXCHANGE_SNIPPET)}><Copy className="w-3 h-3" /></Button>
-          </div>
-        </Card>
-
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Scopes</h2>
-          <ul className="text-sm space-y-2">
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">openid</code> — sub (stable user id)</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">profile</code> — username, display_name, avatar_url</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">identity</code> — verified, id_verified, verified_at, verification_kind</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">credentials</code> — public, independently verified degree/license claims only</li>
-            <li><code className="text-xs bg-muted px-1 py-0.5 rounded">email</code> — email address (request only if needed)</li>
+        <Card className="mt-6 p-6">
+          <h2 className="font-display font-semibold">Standard scopes</h2>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">openid</code> — stable subject identifier and an ID token</li>
+            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">email</code> — email address and confirmation status</li>
+            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">profile</code> — basic account profile claims such as name and picture</li>
+            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">phone</code> — phone claims only when genuinely required</li>
           </ul>
-          <p className="text-xs text-muted-foreground mt-3">
-            Verifiedly does not expose a "trust score", subscription tier, or endorsement signal via OAuth.
-            Identity claims confirm identity only — not honesty, safety, or quality. Credential claims never include uploaded files, raw reports, or provider order IDs.
+          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+            Custom scopes such as identity documents or credentials are not part of Verifiedly sign-in. Separate, explicit APIs and agreements would be required for any future data-sharing product.
           </p>
         </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Security requirements</h2>
-          <ul className="text-sm space-y-2 list-disc list-inside">
-            <li><strong>state</strong> is required on every authorize request and must be verified on the callback (CSRF).</li>
-            <li>Public clients (SPA / mobile) must use <strong>Authorization Code + PKCE (S256)</strong> and no <code>client_secret</code>.</li>
-            <li>Confidential clients exchange the code from a server; the <code>client_secret</code> must never appear in a <code>VITE_*</code> variable or browser bundle.</li>
-            <li>Authorization codes are single-use and are consumed atomically at token exchange.</li>
-          </ul>
-        </Card>
-
-        <div className="mt-12 mb-6">
-          <span className="inline-block px-3 py-1 rounded-full border border-border text-xs font-medium text-muted-foreground mb-3">Environment</span>
-          <h2 className="text-2xl md:text-3xl font-display font-bold tracking-tight mb-2">Configure your app</h2>
-          <p className="text-sm text-muted-foreground">Once your client is approved, wire up env vars and trigger the flow.</p>
-        </div>
-
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Environment variables</h2>
-          <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{ENV_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(ENV_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+        <Card className="mt-6 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display font-semibold">3. Kaieteur implementation</h2>
+            <Button size="sm" variant="ghost" onClick={() => void copy(KAIETEUR_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Never commit <code>client_secret</code> or expose it through a <code>VITE_*</code> variable. In production keep it server-side and perform the token exchange from an edge function or backend route.
+          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{KAIETEUR_SNIPPET}</code></pre>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            The Verifiedly client ID and secret are configured privately in the Kaieteur Supabase custom OIDC provider. They are never included in the website bundle.
           </p>
         </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Trigger the flow</h2>
-          <div className="relative">
-            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{BUTTON_SNIPPET}</code></pre>
-            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(BUTTON_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+        <Card className="mt-6 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display font-semibold">4. Other standards-compliant apps</h2>
+            <Button size="sm" variant="ghost" onClick={() => void copy(GENERIC_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
           </div>
+          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{GENERIC_SNIPPET}</code></pre>
         </Card>
 
-        <Card className="p-6 mb-6">
-          <h2 className="font-display font-semibold mb-3">Handle the callback</h2>
-          <p className="text-sm text-muted-foreground">
-            Your partner-app callback must compare <code className="text-xs bg-muted px-1 py-0.5 rounded">state</code> before doing anything else.
-            Confidential apps then send the code to their own server for exchange; public clients send the saved PKCE verifier.
-            After exchange, call <code className="text-xs bg-muted px-1 py-0.5 rounded">/oauth-userinfo</code> and enforce the scopes your app requires.
-            The <Link to="/auth/callback" className="underline">Verifiedly reference callback</Link> intentionally contains no client secret.
+        <Card className="mt-6 p-6">
+          <h2 className="font-display font-semibold">Consent screen</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Verifiedly’s authorization page reads the secure <code className="rounded bg-muted px-1 py-0.5 text-xs">authorization_id</code>, confirms the user is signed in, displays the requesting app and scopes, and calls Supabase’s native approve or deny methods. Supabase then returns the authorization result to the exact registered redirect URI.
           </p>
         </Card>
 
-        <Card className="p-4 bg-secondary">
-          <p className="text-xs text-muted-foreground">
-            Verifiedly is operated by BrownGlobal Holdings LLC. Tokens expire after 30 days.
-            Rotate <code>client_secret</code> from the admin panel or by emailing <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a>.
+        <Card className="mt-6 bg-secondary p-4">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Verifiedly is operated by BrownGlobal Holdings LLC. The OAuth developer program is limited to approved first-party integrations during beta. Contact <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a> for client registration.
           </p>
         </Card>
-      </div>
+      </main>
     </div>
   );
 };
