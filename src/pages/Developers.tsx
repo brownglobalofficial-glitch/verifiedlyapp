@@ -100,6 +100,16 @@ if (!expected || params.get("state") !== expected) {
 }
 sessionStorage.removeItem("verifiedly_oauth_state");`;
 
+const ENDPOINTS_SNIPPET = `# Verifiedly OAuth 2.0 endpoints
+authorization_endpoint = https://verifiedly.app/oauth/authorize
+token_endpoint         = https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-token
+userinfo_endpoint      = https://pwahrywcgtgfaaghkpoo.supabase.co/functions/v1/oauth-userinfo
+response_types         = code
+grant_types            = authorization_code
+code_challenge_methods = S256
+scopes                 = openid profile identity credentials email
+token_lifetime         = 30 days`;
+
 const Developers = () => {
   const { toast } = useToast();
   const copy = (s: string) => {
@@ -140,6 +150,18 @@ const Developers = () => {
             app name, homepage URL, app type, and exact redirect URIs. Confidential server apps receive a <code className="text-xs bg-muted px-1 py-0.5 rounded">client_id</code> and one-time <code className="text-xs bg-muted px-1 py-0.5 rounded">client_secret</code>. Browser and mobile apps receive a public client ID and must use PKCE (S256).
           </p>
           <p className="text-xs text-muted-foreground">Approved first-party partners are pre-provisioned by the Verifiedly team.</p>
+        </Card>
+
+        <Card className="p-6 mb-6">
+          <h2 className="font-display font-semibold mb-3">Endpoints & discovery</h2>
+          <div className="relative">
+            <pre className="text-xs bg-muted p-4 rounded-md overflow-x-auto"><code>{ENDPOINTS_SNIPPET}</code></pre>
+            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copy(ENDPOINTS_SNIPPET)}><Copy className="w-3 h-3" /></Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            All endpoints accept CORS from any origin. The <code>authorize</code> URL is a browser redirect;
+            <code>token</code> and <code>userinfo</code> are direct HTTPS calls.
+          </p>
         </Card>
 
         <Card className="p-6 mb-6">
@@ -220,8 +242,8 @@ const Developers = () => {
 
         <Card className="p-4 bg-secondary">
           <p className="text-xs text-muted-foreground">
-            Endpoints — <code>POST /oauth-token</code>, <code>GET /oauth-userinfo</code>, browser flow at <code>/oauth/authorize</code>.
-            Tokens expire after 30 days. Rotate <code>client_secret</code> from the admin panel anytime.
+            Verifiedly is operated by BrownGlobal Holdings LLC. Tokens expire after 30 days.
+            Rotate <code>client_secret</code> from the admin panel or by emailing <a className="underline" href="mailto:support@verifiedly.app">support@verifiedly.app</a>.
           </p>
         </Card>
       </div>
