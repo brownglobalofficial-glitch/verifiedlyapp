@@ -180,6 +180,8 @@ const Billing = () => {
   const hasCurrentlyDue = (payouts?.currently_due?.length || 0) > 0;
   const paymentIssue = info.status === "past_due" || info.status === "unpaid" || info.status === "incomplete";
   const isPaid = tier === "pro" || tier === "elite";
+  const isMonthlyPro = tier === "pro" && !info.subscription_id?.startsWith("annual") && (info.product_id ? !/(annual|year)/i.test(info.product_id) : true);
+  const showAnnualNudge = isMonthlyPro && !info.cancel_at_period_end;
 
   return (
     <div className="min-h-screen bg-background">
@@ -239,6 +241,23 @@ const Billing = () => {
               <Button size="sm" onClick={() => manage("resume")} disabled={manageLoading === "resume"}>
                 {manageLoading === "resume" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Keep my plan"}
               </Button>
+            </div>
+          )}
+
+          {showAnnualNudge && (
+            <div className="mt-4 rounded-lg border border-border bg-secondary/40 p-4 flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex gap-3 min-w-0">
+                <Crown className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Switch to Pro Annual and save</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Annual is $49.99/yr — about 2 months free — and includes a free Verifiedly Tap card.
+                  </p>
+                </div>
+              </div>
+              <Link to="/dashboard/upgrade">
+                <Button size="sm" variant="outline">See annual</Button>
+              </Link>
             </div>
           )}
 
