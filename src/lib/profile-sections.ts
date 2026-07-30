@@ -34,70 +34,70 @@ export interface SectionDefinition {
   fields: SectionField[];
 }
 
+// Retired section definitions remain for data compatibility. The current
+// editor and public profile expose only Work and Education.
 export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefinition> = {
   about: {
     label: "About",
     singular: "About",
-    description: "A longer introduction.",
+    description: "Retired profile section.",
     fields: [
-      { key: "text", label: "About", placeholder: "Share what you do and what matters to you.", type: "textarea" },
+      { key: "text", label: "About", placeholder: "", type: "textarea" },
     ],
   },
   work: {
-    label: "Experience",
-    singular: "Experience",
-    description: "Work, athletics, leadership, internships, volunteering and other meaningful roles.",
+    label: "Work",
+    singular: "Work entry",
+    description: "Your current and previous professional, athletic, leadership or volunteer roles.",
     fields: [
-      { key: "role", label: "Role or title", placeholder: "Founder, footballer, student leader…" },
-      { key: "organization", label: "Organization", placeholder: "Team, school, company or organization" },
-      { key: "start", label: "Start", placeholder: "2024", optional: true },
-      { key: "end", label: "End", placeholder: "Present", optional: true },
-      { key: "url", label: "Official source", placeholder: "https://…", type: "url", optional: true },
+      { key: "role", label: "Job title or role", placeholder: "Founder, footballer, student leader…" },
+      { key: "organization", label: "Organization", placeholder: "Company, club, team, school or organization" },
+      { key: "start", label: "Start date", placeholder: "2024", optional: true },
+      { key: "end", label: "End date or Present", placeholder: "Present", optional: true },
     ],
   },
   education: {
     label: "Education",
     singular: "Education entry",
-    description: "Schools, degrees, programs, courses and formal training.",
+    description: "Schools, degree programs, courses and formal training.",
     fields: [
-      { key: "school", label: "School or program", placeholder: "School or program name" },
-      { key: "program", label: "Area of study", placeholder: "Degree, program or subject", optional: true },
-      { key: "start", label: "Start", placeholder: "2022", optional: true },
-      { key: "end", label: "End", placeholder: "2026", optional: true },
-      { key: "url", label: "Official source", placeholder: "https://…", type: "url", optional: true },
+      { key: "school", label: "School", placeholder: "School or institution" },
+      { key: "program", label: "Program or field", placeholder: "Degree, program or field", optional: true },
+      { key: "start", label: "Start date", placeholder: "2022", optional: true },
+      { key: "end", label: "End date or Present", placeholder: "2026", optional: true },
     ],
   },
   credential: {
     label: "Certifications & licenses",
     singular: "Certification or license",
-    description: "Optional professional certifications, licenses and formal qualifications.",
+    description: "Retired profile section.",
     fields: [
-      { key: "name", label: "Certification or license", placeholder: "Certification or license name" },
-      { key: "issuer", label: "Issuing organization", placeholder: "Issuer" },
-      { key: "issued", label: "Issued", placeholder: "2025", optional: true },
-      { key: "expires", label: "Expires", placeholder: "Optional", optional: true },
-      { key: "credential_id", label: "Credential ID", placeholder: "Optional", optional: true },
-      { key: "url", label: "Official verification link", placeholder: "https://…", type: "url", optional: true },
+      { key: "name", label: "Certification or license", placeholder: "" },
+      { key: "issuer", label: "Issuing organization", placeholder: "" },
+      { key: "issued", label: "Issued", placeholder: "", optional: true },
+      { key: "expires", label: "Expires", placeholder: "", optional: true },
+      { key: "credential_id", label: "Credential ID", placeholder: "", optional: true },
+      { key: "url", label: "Official verification link", placeholder: "", type: "url", optional: true },
     ],
   },
   accomplishment: {
     label: "Awards & achievements",
     singular: "Award or achievement",
-    description: "Optional awards, honors, milestones and notable achievements.",
+    description: "Retired profile section.",
     fields: [
-      { key: "title", label: "Award or achievement", placeholder: "Award, honor or milestone" },
-      { key: "issuer", label: "Presented by", placeholder: "Organization or event", optional: true },
-      { key: "date", label: "Date", placeholder: "2026", optional: true },
-      { key: "url", label: "Supporting source", placeholder: "https://…", type: "url", optional: true },
+      { key: "title", label: "Award or achievement", placeholder: "" },
+      { key: "issuer", label: "Presented by", placeholder: "", optional: true },
+      { key: "date", label: "Date", placeholder: "", optional: true },
+      { key: "url", label: "Supporting source", placeholder: "", type: "url", optional: true },
     ],
   },
   project: {
     label: "Official links",
     singular: "Official link",
-    description: "A small set of official websites, portfolios, media pages or other important links.",
+    description: "Retired profile section.",
     fields: [
-      { key: "name", label: "Link title", placeholder: "Portfolio, player profile, interview…" },
-      { key: "url", label: "URL", placeholder: "https://…", type: "url" },
+      { key: "name", label: "Link title", placeholder: "" },
+      { key: "url", label: "URL", placeholder: "", type: "url" },
     ],
   },
 };
@@ -105,27 +105,17 @@ export const PROFILE_SECTION_DEFINITIONS: Record<ProfileSectionKind, SectionDefi
 export const PERSON_PROFILE_SECTION_KINDS: ProfileSectionKind[] = [
   "work",
   "education",
-  "credential",
-  "accomplishment",
-  "project",
 ];
 
-export const ORGANIZATION_PROFILE_SECTION_KINDS: ProfileSectionKind[] = [
-  "credential",
-  "accomplishment",
-  "project",
-];
+// Organizations retain their core organization profile fields but do not use
+// personal Work/Education or retired credential/award/link sections.
+export const ORGANIZATION_PROFILE_SECTION_KINDS: ProfileSectionKind[] = [];
 
 export const PUBLIC_PROFILE_SECTION_KINDS: ProfileSectionKind[] = [
   "work",
   "education",
-  "credential",
-  "accomplishment",
-  "project",
 ];
 
-// Kept as a compatibility export for older imports. New editors should use
-// profileSectionKindsForAccountType so person and organization profiles stay focused.
 export const PROFILE_EDITOR_SECTION_KINDS = PERSON_PROFILE_SECTION_KINDS;
 
 export const profileSectionKindsForAccountType = (accountType?: string | null) =>
