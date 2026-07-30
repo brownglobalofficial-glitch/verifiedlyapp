@@ -20,7 +20,7 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
         <title>Verifiedly — Your Official Profile, Everywhere</title>
-        <meta name="description" content="Create one official profile and share it by link, QR, Verifiedly Tap, or supported Verifiedly sign-in." />
+        <meta name="description" content="Create one focused official profile with Work and Education, then share it by link, QR, Verifiedly Tap or supported Verifiedly sign-in." />
         <meta property="og:title" content="Verifiedly — Your Official Profile, Everywhere" />
         <meta property="og:description" content="Create. Verify. Share your official profile everywhere." />
         <meta property="og:url" content="https://verifiedly.app/" />
@@ -41,7 +41,7 @@ const Index = () => {
         <div className="text-center mb-10 max-w-[320px]">
           <p className="text-lg font-display font-semibold text-foreground">Create · Verify · Share</p>
           <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Show who you are and what you have accomplished. Share one official profile by link, QR or Verifiedly Tap.
+            Present who you are, your Work and your Education. Share one official profile by link, QR or Verifiedly Tap.
           </p>
         </div>
 
@@ -54,25 +54,26 @@ const Index = () => {
             <ArrowRight className="absolute right-6 w-4 h-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
           </Link>
           <Link
-            to="/login"
+            to="/pricing"
             className="flex items-center justify-center w-full bg-transparent border-2 border-foreground text-foreground py-4 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:bg-foreground hover:text-background"
           >
-            Sign in
+            View Membership
           </Link>
+          <Link to="/login" className="block text-center text-xs font-medium text-muted-foreground hover:text-foreground">Already have an account? Sign in</Link>
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[320px]">
-          Free official profile · Pro $4.99/month or $49.99/year · Identity-verification access for eligible adults with active Pro
+          Free official profile · Verifiedly Membership $59.99/year · one Tap Card included with the first paid term
         </p>
         <p className="mt-2 text-center text-[10px] text-muted-foreground leading-relaxed max-w-[320px]">
-          A verification check appears only after successful Stripe Identity verification.
+          Stripe Identity verification is included for eligible adult members. The Identity Verified badge appears only after successful verification.
         </p>
 
         <footer className="mt-8 flex flex-col items-center gap-4 text-center">
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+            <Link to="/pricing" className="hover:text-foreground transition-colors">Membership</Link>
             <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
             <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
           </div>
