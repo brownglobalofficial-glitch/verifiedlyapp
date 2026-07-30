@@ -4,10 +4,10 @@
 export const routeLoaders = {
   "/": () => import("@/pages/Index"),
   "/login": () => import("@/pages/Login"),
-  "/signup": () => import("@/pages/Signup"),
+  "/signup": () => import("@/pages/SignupMembership"),
   "/forgot-password": () => import("@/pages/ForgotPassword"),
   "/reset-password": () => import("@/pages/ResetPassword"),
-  "/onboarding": () => import("@/pages/Onboarding"),
+  "/onboarding": () => import("@/pages/OnboardingMembership"),
   "/terms": () => import("@/pages/Terms"),
   "/privacy": () => import("@/pages/Privacy"),
   "/dashboard": () => import("@/pages/Dashboard"),
