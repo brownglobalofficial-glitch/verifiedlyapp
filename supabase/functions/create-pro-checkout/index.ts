@@ -45,26 +45,42 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe Checkout is not configured yet.");
 
+    const isStripeTestMode = /^(sk|rk)_test_/.test(stripeKey);
+    const membershipEnabled = Deno.env.get("VERIFIEDLY_MEMBERSHIP_ENABLED") === "true";
+    const fulfillmentEnabled = Deno.env.get("TAP_CARD_FULFILLMENT_ENABLED") === "true";
+    const estimatedShipWindow = (Deno.env.get("TAP_CARD_ESTIMATED_SHIP_WINDOW") ?? "").trim();
+
+    if (!isStripeTestMode && !membershipEnabled) {
+      return json({
+        error: "Live Verifiedly Membership checkout is not enabled.",
+        code: "membership_not_enabled",
+      }, 503);
+    }
+    if (!isStripeTestMode && !fulfillmentEnabled) {
+      return json({
+        error: "Live Membership checkout requires the included Tap Card fulfillment workflow to be enabled.",
+        code: "tap_fulfillment_not_enabled",
+      }, 503);
+    }
+    if (!isStripeTestMode && !estimatedShipWindow) {
+      return json({
+        error: "Live Membership checkout requires a manufacturer-supported Tap Card shipping estimate.",
+        code: "tap_shipping_estimate_required",
+      }, 503);
+    }
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Please sign in again." }, 401);
 
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    );
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } },
     );
 
-    const { data: userData, error: userError } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
+    const { data: userData, error: userError } = await admin.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = userData.user;
     if (userError || !user?.email) return json({ error: "Please sign in again." }, 401);
-
-    const body = await req.json().catch(() => ({}));
-    const interval = body?.interval === "year" ? "year" : "month";
-    const amountCents = interval === "year" ? 4999 : 499;
 
     const [{ data: profile }, { data: billing }] = await Promise.all([
       admin.from("profiles")
@@ -78,7 +94,7 @@ serve(async (req) => {
     ]);
 
     if (profile?.is_pro || billing?.pro_status === "active" || billing?.pro_status === "trialing") {
-      return json({ already_pro: true });
+      return json({ already_member: true, already_pro: true });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -102,52 +118,64 @@ serve(async (req) => {
     }, { onConflict: "user_id" });
 
     const origin = safeOrigin(req.headers.get("origin"));
+    const shippingWindowForCheckout = estimatedShipWindow || "Test mode only — live shipping estimate not configured";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       client_reference_id: user.id,
       mode: "subscription",
       locale: "auto",
+      payment_method_types: ["card"],
       billing_address_collection: "auto",
       allow_promotion_codes: true,
       line_items: [{
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: amountCents,
-          recurring: { interval },
+          unit_amount: 5999,
+          recurring: { interval: "year" },
           product_data: {
-            name: "Verifiedly Pro",
-            description: "Advanced profile tools, adult identity-verification eligibility, analytics and Tap Card member pricing",
+            name: "Verifiedly Membership",
+            description: "Annual Membership with one first-term Verifiedly Tap Card, eligible-adult Stripe Identity access, analytics and priority support",
           },
         },
       }],
-      success_url: `${origin}/dashboard/pro?checkout=success`,
-      cancel_url: `${origin}/dashboard/pro?checkout=cancelled`,
+      success_url: `${origin}/dashboard/membership?checkout=success`,
+      cancel_url: `${origin}/dashboard/membership?checkout=cancelled`,
       metadata: {
-        type: "subscription",
-        tier: "pro",
+        type: "verifiedly_membership",
+        tier: "membership",
         user_id: user.id,
-        interval,
+        interval: "year",
+        included_tap_card: "first_term",
+        estimated_ship_window: shippingWindowForCheckout.slice(0, 500),
       },
       subscription_data: {
         metadata: {
-          type: "subscription",
-          tier: "pro",
+          type: "verifiedly_membership",
+          tier: "membership",
           user_id: user.id,
-          interval,
+          interval: "year",
+          included_tap_card: "first_term",
         },
       },
       custom_text: {
         submit: {
-          message: "Identity verification is available to eligible adults after Stripe confirms the Pro subscription.",
+          message: `You are starting an annually renewing Verifiedly Membership. $59.99 is charged today and the Membership renews annually at $59.99 until canceled. One Tap Card is included with the first paid term only; renewals do not include another card. Estimated Tap Card shipping: ${shippingWindowForCheckout}. Stripe Identity verification is available only to eligible adult members, and the Identity Verified badge appears only after successful verification. Verifiedly is operated by BrownGlobal Holdings LLC.`,
         },
       },
     });
 
-    return json({ url: session.url, amount_cents: amountCents, interval });
+    return json({
+      url: session.url,
+      amount_cents: 5999,
+      interval: "year",
+      membership: true,
+      included_tap_card: "first_term",
+      estimated_ship_window: shippingWindowForCheckout,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not start Verifiedly Pro checkout.";
-    console.error("[CREATE-PRO-CHECKOUT]", message);
+    const message = error instanceof Error ? error.message : "Could not start Verifiedly Membership checkout.";
+    console.error("[CREATE-MEMBERSHIP-CHECKOUT]", message);
     return json({ error: message }, 500);
   }
 });
