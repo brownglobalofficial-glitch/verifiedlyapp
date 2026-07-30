@@ -5,36 +5,39 @@ const Refunds = () => (
   <div className="min-h-screen overflow-x-hidden bg-background px-4 py-12">
     <Helmet>
       <title>Refund Policy — Verifiedly</title>
-      <meta name="description" content="Refund information for Verifiedly Pro and personalized Verifiedly Tap Card pre-orders." />
+      <meta name="description" content="Refund, cancellation, delay, defect, and replacement information for Verifiedly Membership and the included first-term Tap Card." />
       <link rel="canonical" href="https://verifiedly.app/refunds" />
     </Helmet>
     <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
       <Link to="/" className="mb-6 inline-block text-sm text-muted-foreground hover:text-foreground">← Back to home</Link>
       <h1>Refund Policy</h1>
-      <p className="text-muted-foreground"><em>Last updated: July 27, 2026</em></p>
+      <p className="text-muted-foreground"><em>Last updated: July 30, 2026</em></p>
 
-      <h2>1. Verifiedly Pro</h2>
-      <p>Verifiedly Pro is currently offered at $4.99 monthly or $49.99 yearly and renews automatically until canceled. You can cancel through the Stripe billing portal. Cancellation normally prevents the next renewal while access continues through the current paid period.</p>
-      <p>Subscription charges are generally non-refundable and are not prorated for unused time, except where required by applicable law or where we determine that a duplicate charge, unauthorized charge, or material Verifiedly service failure occurred.</p>
+      <h2>1. Annual Verifiedly Membership</h2>
+      <p>Verifiedly Membership is currently $59.99 per year and renews automatically until canceled. You can cancel future renewal through the Stripe billing portal. Cancellation normally prevents the next annual charge while access continues through the current paid term.</p>
+      <p>Membership charges are generally non-refundable and are not prorated for unused time, except where required by law or where we determine that a duplicate charge, unauthorized charge, or material Verifiedly service failure occurred.</p>
 
-      <h2>2. Identity-verification access through Pro</h2>
-      <p>Verifiedly does not charge a separate $9.99 identity-verification fee. Eligible adults with active Pro may access the Stripe Identity flow. A Pro payment does not guarantee successful identity verification or a verification check.</p>
-      <p>An unsuccessful, incomplete, expired, or additional-information result from Stripe Identity does not by itself make the Pro subscription refundable because Pro also includes other subscription benefits. Where a Verifiedly system error prevents access to the paid Pro service, contact us for review.</p>
+      <h2>2. Identity-verification access</h2>
+      <p>Stripe Identity verification is included for eligible adult members. The Identity Verified badge appears only after successful verification. An unsuccessful, incomplete, expired, or additional-information result does not by itself make the annual Membership refundable because Membership includes other benefits and does not guarantee a verification result.</p>
 
-      <h2>3. Personalized Verifiedly Tap Card pre-orders</h2>
-      <p>A Tap Card pre-order is charged when Stripe Checkout confirms payment. It is then placed in Verifiedly's manual review and supplier-fulfillment queue. A paid pre-order is not the same as a shipped order.</p>
-      <p>Tap Cards are personalized using the name, title, handle, QR link, NFC link, and shipping details approved before checkout. Review the preview, estimated shipping window, and address carefully before paying.</p>
-      <p>Contact us immediately to request a correction or cancellation. We may be able to cancel and refund a pre-order that has not been submitted to the manufacturer, subject to payment-processing status and applicable law. Once the order has been submitted for proofing, printing, encoding, or production, personalized card charges are generally non-refundable and changes may require a replacement purchase, except where required by law.</p>
-      <p>If Verifiedly cannot ship within the estimated window shown before payment, we may provide a revised shipping date and ask you to accept the delay, or we may cancel the pre-order and issue an appropriate refund. Where applicable law requires cancellation or a refund because you do not consent to a delay, we will follow those requirements.</p>
-      <p>If Verifiedly cannot submit or fulfill the pre-order, or if the pre-order is canceled by Verifiedly before production, we will provide an appropriate refund to the original payment method. Processing time after a refund is issued depends on Stripe, the card network, and the customer's financial institution.</p>
-      <p>If a card arrives damaged, has a manufacturing defect, or does not match the approved print information because of a Verifiedly or supplier error, contact us promptly with the order email and clear photos of the issue. We may provide a replacement or refund after review. Normal wear, customer-approved spelling or title choices, later profile changes, lost cards, and damage after delivery are not manufacturing defects.</p>
-      <p>Shipping charges, taxes, expedited services, customs charges, and address-correction costs are refundable only where required by law or where the related service was not provided because of our error. Lost or delayed shipments are reviewed using the carrier's tracking information and claims process.</p>
+      <h2>3. Included first-term Tap Card</h2>
+      <p>One personalized Tap Card is included with the first successfully paid annual Membership term only. Renewals do not include another card. The included card has no separate customer purchase price, but it is part of the Membership benefit package.</p>
+      <p>Review the printed name, title, handle, shipping address, and estimated shipping window before claiming the card. Contact us immediately to request a correction or cancellation. We may be able to change or cancel a claim that has not entered manufacturer proofing, printing, encoding, or production.</p>
+      <p>After supplier submission or production begins, customer-approved spelling, title, handle, and design choices generally cannot be changed without a new card. Replacement or additional cards are not automatically included.</p>
 
-      <h2>4. Duplicate, unauthorized, or unrecognized charges</h2>
-      <p>Contact us promptly with the email on the account and approximate charge date. Include only non-sensitive transaction details. Do not email an ID image, selfie, complete card number, password, or authentication code.</p>
+      <h2>4. Delays and inability to fulfill</h2>
+      <p>A claimed card is not a shipped card, and the displayed shipping window is an estimate. If Verifiedly cannot ship within the stated estimate, we may provide a revised date and request consent, cancel the card fulfillment, or provide another remedy required by applicable law.</p>
+      <p>If Verifiedly cannot provide a material paid Membership benefit and no reasonable replacement is available, we will review an appropriate partial or full Membership refund based on the circumstances and applicable law.</p>
 
-      <h2>5. How to request review</h2>
-      <p>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the account email, product or order name, charge date, and reason. For a Tap Card issue, include the order number and non-sensitive photos where relevant. Verifiedly is operated by BrownGlobal Holdings LLC.</p>
+      <h2>5. Defects, damage, and shipping issues</h2>
+      <p>If a card arrives damaged, has a manufacturing defect, or does not match the approved print information because of a Verifiedly or supplier error, contact us promptly with the account email, order reference, and clear non-sensitive photos. We may provide a replacement or other appropriate remedy after review.</p>
+      <p>Normal wear, later profile changes, customer-approved information, loss after delivery, and damage caused after delivery are not manufacturing defects. Carrier delays and lost shipments are reviewed using tracking information and the carrier's claims process.</p>
+
+      <h2>6. Duplicate, unauthorized, or unrecognized charges</h2>
+      <p>Contact us promptly with the account email and approximate charge date. Do not email a government ID, selfie, complete payment-card number, password, or authentication code.</p>
+
+      <h2>7. How to request review</h2>
+      <p>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the account email, charge or card-claim date, and reason. Verifiedly is operated by BrownGlobal Holdings LLC. Approved refunds return to the original payment method, and processing time depends on Stripe, the card network, and the financial institution.</p>
     </div>
   </div>
 );
