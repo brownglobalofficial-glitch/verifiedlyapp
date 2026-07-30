@@ -18,9 +18,9 @@ import logoMark from "@/assets/verifiedly-v-mark.png";
 
 const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
-  { title: "Verifiedly Pro", url: "/dashboard/pro", icon: Crown },
+  { title: "Membership", url: "/dashboard/membership", icon: Crown },
   { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
-  { title: "Tap card", url: "/dashboard/tap-card", icon: CreditCard },
+  { title: "Included Tap Card", url: "/dashboard/tap-card", icon: CreditCard },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 

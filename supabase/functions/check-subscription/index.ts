@@ -35,10 +35,13 @@ serve(async (req) => {
 
     const [{ data: profileRow }, { data: billingRow }] = await Promise.all([
       admin.from("profiles").select("comp_tier").eq("id", user.id).maybeSingle(),
-      admin.from("verifiedly_billing").select("stripe_customer_id").eq("user_id", user.id).maybeSingle(),
+      admin.from("verifiedly_billing")
+        .select("stripe_customer_id, annual_card_credit_available, annual_card_credit_granted_at")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
     const compTier = (profileRow?.comp_tier as string | null) || null;
-    const compRank = compTier === "elite" ? 2 : compTier === "pro" ? 1 : 0;
+    const compActive = compTier === "pro" || compTier === "elite";
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     let customerId = billingRow?.stripe_customer_id ?? null;
@@ -48,16 +51,25 @@ serve(async (req) => {
     }
 
     if (!customerId) {
-      const tier = compTier || "free";
-      await admin.from("profiles").update({
-        is_pro: tier === "pro" || tier === "elite",
-        is_elite: tier === "elite",
-      }).eq("id", user.id);
-      await admin.from("verifiedly_billing").upsert({
-        user_id: user.id,
-        pro_status: tier === "pro" || tier === "elite" ? "active" : "inactive",
-      }, { onConflict: "user_id" });
-      return json({ subscribed: tier !== "free", tier, comp: !!compTier });
+      await Promise.all([
+        admin.from("profiles").update({
+          is_pro: compActive,
+          is_elite: compTier === "elite",
+        }).eq("id", user.id),
+        admin.from("verifiedly_billing").upsert({
+          user_id: user.id,
+          pro_status: compActive ? "active" : "inactive",
+          pro_interval: null,
+        }, { onConflict: "user_id" }),
+      ]);
+      return json({
+        subscribed: compActive,
+        membership: compActive,
+        tier: compActive ? "membership" : "free",
+        comp: compActive,
+        interval: null,
+        annual_card_credit_available: billingRow?.annual_card_credit_available === true,
+      });
     }
 
     const subscriptions = await stripe.subscriptions.list({
@@ -71,8 +83,8 @@ serve(async (req) => {
     const legacyEliteProducts = new Set(["prod_URi8z4FUV491Gb"]);
     const rankedStatuses = ["active", "trialing", "past_due", "unpaid", "incomplete"];
 
-    let tier = "free";
     let selected: Stripe.Subscription | null = null;
+    let selectedKind: "membership" | "legacy_pro" | "legacy_elite" | null = null;
 
     for (const status of rankedStatuses) {
       for (const subscription of subscriptions.data.filter((item) => item.status === status)) {
@@ -81,9 +93,14 @@ serve(async (req) => {
         const metadataTier = subscription.metadata?.tier;
         const metadataType = subscription.metadata?.type;
 
-        if (metadataTier === "elite" || (productId && legacyEliteProducts.has(productId))) {
-          tier = "elite";
+        if (metadataType === "verifiedly_membership" || metadataTier === "membership") {
           selected = subscription;
+          selectedKind = "membership";
+          break;
+        }
+        if (metadataTier === "elite" || (productId && legacyEliteProducts.has(productId))) {
+          selected = subscription;
+          selectedKind = "legacy_elite";
           break;
         }
         if (
@@ -92,55 +109,74 @@ serve(async (req) => {
           || (metadataType === "subscription" && metadataTier === "pro")
           || (productId && legacyProProducts.has(productId))
         ) {
-          tier = "pro";
           selected = subscription;
+          selectedKind = "legacy_pro";
+          break;
         }
       }
-      if (tier === "elite" || selected) break;
+      if (selected) break;
     }
 
-    const stripeRank = tier === "elite" ? 2 : tier === "pro" ? 1 : 0;
-    if (compRank > stripeRank) tier = compTier as string;
-
-    const selectedStatus = selected?.status ?? (tier !== "free" && compTier ? "active" : "inactive");
-    const interval = selected?.items.data[0]?.price?.recurring?.interval === "year" ? "year" : selected ? "month" : null;
+    const selectedStatus = selected?.status ?? (compActive ? "active" : "inactive");
+    const selectedInterval = selected?.items.data[0]?.price?.recurring?.interval === "year"
+      ? "year"
+      : selected
+        ? "month"
+        : null;
+    const accessActive = Boolean(selected && ["active", "trialing", "past_due"].includes(selected.status)) || compActive;
+    const membershipSubscription = selectedKind === "membership" && selectedInterval === "year";
+    const eligibleForInitialCardCredit = membershipSubscription
+      && Boolean(selected && ["active", "trialing"].includes(selected.status))
+      && !billingRow?.annual_card_credit_granted_at;
     const periodEnd = selected?.current_period_end
       ? new Date(selected.current_period_end * 1000).toISOString()
       : null;
 
+    const billingUpdate: Record<string, unknown> = {
+      user_id: user.id,
+      stripe_customer_id: customerId,
+      pro_subscription_id: selected?.id ?? null,
+      pro_status: accessActive ? selectedStatus : "inactive",
+      pro_interval: selectedInterval,
+      pro_current_period_end: periodEnd,
+      pro_cancel_at_period_end: Boolean(selected?.cancel_at_period_end),
+      pro_started_at: selected?.created ? new Date(selected.created * 1000).toISOString() : null,
+    };
+    if (eligibleForInitialCardCredit) {
+      billingUpdate.annual_card_credit_available = true;
+      billingUpdate.annual_card_credit_granted_at = new Date().toISOString();
+    }
+
     await Promise.all([
       admin.from("profiles").update({
-        is_pro: tier === "pro" || tier === "elite",
-        is_elite: tier === "elite",
+        is_pro: accessActive,
+        is_elite: selectedKind === "legacy_elite" || compTier === "elite",
       }).eq("id", user.id),
-      admin.from("verifiedly_billing").upsert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        pro_subscription_id: selected?.id ?? null,
-        pro_status: tier === "pro" || tier === "elite" ? selectedStatus : "inactive",
-        pro_interval: interval,
-        pro_current_period_end: periodEnd,
-        pro_cancel_at_period_end: !!selected?.cancel_at_period_end,
-        pro_started_at: selected?.created ? new Date(selected.created * 1000).toISOString() : null,
-      }, { onConflict: "user_id" }),
+      admin.from("verifiedly_billing").upsert(billingUpdate, { onConflict: "user_id" }),
     ]);
 
     const product = selected?.items.data[0]?.price?.product;
     const productId = typeof product === "string" ? product : product?.id ?? null;
     return json({
-      subscribed: tier !== "free",
-      tier,
+      subscribed: accessActive,
+      membership: accessActive,
+      tier: accessActive ? "membership" : "free",
+      source: selectedKind,
       product_id: productId,
       subscription_end: periodEnd,
-      status: selectedStatus,
-      cancel_at_period_end: !!selected?.cancel_at_period_end,
+      status: accessActive ? selectedStatus : "inactive",
+      cancel_at_period_end: Boolean(selected?.cancel_at_period_end),
       subscription_id: selected?.id ?? null,
-      interval,
-      comp: compRank > stripeRank,
+      interval: selectedInterval,
+      comp: compActive && !selected,
+      annual_card_credit_available: eligibleForInitialCardCredit
+        ? true
+        : billingRow?.annual_card_credit_available === true,
+      annual_card_credit_granted: Boolean(billingRow?.annual_card_credit_granted_at || eligibleForInitialCardCredit),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("[CHECK-SUBSCRIPTION]", message);
+    console.error("[CHECK-MEMBERSHIP]", message);
     return json({ error: message }, 500);
   }
 });

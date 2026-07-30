@@ -13,6 +13,10 @@ project_id = "pwahrywcgtgfaaghkpoo"
     verify_jwt = false
   [functions.tap-card-webhook]
     verify_jwt = false
+  [functions.membership-webhook]
+    verify_jwt = false
+  [functions.claim-membership-tap-card]
+    verify_jwt = true
   [functions.send-transactional-email]
     verify_jwt = true
   [functions.preview-transactional-email]

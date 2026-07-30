@@ -25,8 +25,8 @@ const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const TapCardOrders = lazy(() => import("./pages/admin/TapCardOrders"));
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
-const TapCard = lazy(() => import("./pages/dashboard/TapCard"));
-const Pro = lazy(() => import("./pages/dashboard/Pro"));
+const MembershipTapCard = lazy(() => import("./pages/dashboard/MembershipTapCard"));
+const Membership = lazy(routeLoaders["/dashboard/membership"]);
 const TapRedirect = lazy(() => import("./pages/TapRedirect"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
@@ -84,7 +84,7 @@ const RouteOptimizer = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/pro"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/membership"]);
         const provider = session.user.app_metadata?.provider;
         if (
           event === "SIGNED_IN"
@@ -108,7 +108,7 @@ const RouteOptimizer = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/pro"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/membership"]);
         redirectAuthedAway(session.user.id);
       } else {
         prefetchIdle(["/login", "/signup"]);
@@ -149,11 +149,12 @@ const App = () => (
             <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
             <Route path="/dashboard/admin/tap-orders" element={<AuthGuard><TapCardOrders /></AuthGuard>} />
-            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/pro" replace />} />
-            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/pro" replace />} />
-            <Route path="/dashboard/pro" element={<AuthGuard><Pro /></AuthGuard>} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/membership" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/membership" replace />} />
+            <Route path="/dashboard/pro" element={<Navigate to="/dashboard/membership" replace />} />
+            <Route path="/dashboard/membership" element={<AuthGuard><Membership /></AuthGuard>} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
-            <Route path="/dashboard/tap-card" element={<AuthGuard><TapCard /></AuthGuard>} />
+            <Route path="/dashboard/tap-card" element={<AuthGuard><MembershipTapCard /></AuthGuard>} />
             <Route path="/dashboard/cards" element={<Navigate to="/dashboard/tap-card" replace />} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
@@ -163,7 +164,8 @@ const App = () => (
             <Route path="/t/:token" element={<TapRedirect />} />
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
             <Route path="/pro" element={<Navigate to="/pricing" replace />} />
-            <Route path="/subscription/success" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/membership" element={<Navigate to="/pricing" replace />} />
+            <Route path="/subscription/success" element={<Navigate to="/dashboard/membership" replace />} />
             {RETIRED_DASHBOARD_PATHS.map((path) => (
               <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
             ))}

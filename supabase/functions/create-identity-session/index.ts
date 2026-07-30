@@ -18,20 +18,16 @@ const allowedOrigins = () => new Set([
   "https://www.verifiedly.app",
   "https://verifiedlyapp.lovable.app",
   "https://id-preview--173dd0e3-02ca-4666-9958-5d8eb32162c8.lovable.app",
-  ...(Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  ...(Deno.env.get("VERIFIEDLY_ALLOWED_ORIGINS") ?? "").split(",").map((origin) => origin.trim()).filter(Boolean),
 ]);
 
 const safeOrigin = (value: string | null) => {
   if (!value) return "https://verifiedly.app";
   try {
     const url = new URL(value);
-    const allowed = allowedOrigins().has(url.origin)
-      || url.hostname === "localhost"
-      || url.hostname === "127.0.0.1";
-    return allowed ? url.origin : "https://verifiedly.app";
+    return allowedOrigins().has(url.origin) || url.hostname === "localhost" || url.hostname === "127.0.0.1"
+      ? url.origin
+      : "https://verifiedly.app";
   } catch {
     return "https://verifiedly.app";
   }
@@ -43,9 +39,7 @@ serve(async (req) => {
 
   try {
     if (Deno.env.get("STRIPE_IDENTITY_USE_CASE_APPROVED") !== "true") {
-      return json({
-        error: "Identity verification is not available yet. Verifiedly is completing provider approval for this use case.",
-      }, 503);
+      return json({ error: "Identity verification is not available yet. Verifiedly is completing provider approval for this use case." }, 503);
     }
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -55,40 +49,26 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "Please sign in again." }, 401);
 
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    );
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } },
     );
-
-    const { data: userData, error: userError } = await anon.auth.getUser(authHeader.replace("Bearer ", ""));
+    const { data: userData, error: userError } = await admin.auth.getUser(authHeader.replace("Bearer ", ""));
     const user = userData.user;
     if (userError || !user) return json({ error: "Please sign in again." }, 401);
 
     const [{ data: profile }, { data: billing }] = await Promise.all([
-      admin.from("profiles")
-        .select("id_verified, is_pro")
-        .eq("id", user.id)
-        .maybeSingle(),
-      admin.from("verifiedly_billing")
-        .select("pro_status, identity_attempt_count, identity_last_session_id")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      admin.from("profiles").select("id_verified, is_pro").eq("id", user.id).maybeSingle(),
+      admin.from("verifiedly_billing").select("pro_status, identity_attempt_count, identity_last_session_id").eq("user_id", user.id).maybeSingle(),
     ]);
 
     if (profile?.id_verified) return json({ status: "verified" });
-
-    const hasPro = profile?.is_pro === true
-      || billing?.pro_status === "active"
-      || billing?.pro_status === "trialing";
-    if (!hasPro) {
+    const hasMembership = profile?.is_pro === true || billing?.pro_status === "active" || billing?.pro_status === "trialing";
+    if (!hasMembership) {
       return json({
-        error: "Verifiedly Pro is required for identity verification. Pro is $4.99 monthly or $49.99 yearly.",
-        code: "pro_required",
+        error: "An active Verifiedly Membership is required for identity verification. Membership is $59.99 per year.",
+        code: "membership_required",
       }, 403);
     }
 
@@ -97,17 +77,12 @@ serve(async (req) => {
       const existing = await stripe.identity.verificationSessions.retrieve(billing.identity_last_session_id);
       if (existing.status === "verified") return json({ status: "verified" });
       if (existing.status === "processing") return json({ status: "processing" });
-      if (existing.status === "requires_input" && existing.url) {
-        return json({ status: "requires_input", url: existing.url, reused: true });
-      }
+      if (existing.status === "requires_input" && existing.url) return json({ status: "requires_input", url: existing.url, reused: true });
     }
 
     const attempts = billing?.identity_attempt_count ?? 0;
     if (attempts >= 2) {
-      return json({
-        error: "The included verification attempts have been used. Contact Verifiedly support for review.",
-        code: "attempt_limit",
-      }, 409);
+      return json({ error: "The included verification attempts have been used. Contact Verifiedly priority support for review.", code: "attempt_limit" }, 409);
     }
 
     const origin = safeOrigin(req.headers.get("origin"));
@@ -115,22 +90,23 @@ serve(async (req) => {
       verification_flow: flowId,
       return_url: `${origin}/dashboard/verification?identity=returned`,
       client_reference_id: user.id,
-      metadata: { user_id: user.id, included_with: "verifiedly_pro" },
+      metadata: { user_id: user.id, included_with: "verifiedly_membership" },
     }, {
-      idempotencyKey: `verifiedly-pro-identity-${user.id}-${attempts + 1}`,
+      idempotencyKey: `verifiedly-membership-identity-${user.id}-${attempts + 1}`,
     });
 
-    await admin.from("verifiedly_billing").upsert({
-      user_id: user.id,
-      identity_status: verification.status === "requires_input" ? "requires_input" : "processing",
-      identity_attempt_count: attempts + 1,
-      identity_last_session_id: verification.id,
-    }, { onConflict: "user_id" });
-
-    await admin.from("profiles").update({
-      stripe_identity_session_id: verification.id,
-      verification_status: verification.status === "requires_input" ? "requires_input" : "processing",
-    }).eq("id", user.id);
+    await Promise.all([
+      admin.from("verifiedly_billing").upsert({
+        user_id: user.id,
+        identity_status: verification.status === "requires_input" ? "requires_input" : "processing",
+        identity_attempt_count: attempts + 1,
+        identity_last_session_id: verification.id,
+      }, { onConflict: "user_id" }),
+      admin.from("profiles").update({
+        stripe_identity_session_id: verification.id,
+        verification_status: verification.status === "requires_input" ? "requires_input" : "processing",
+      }).eq("id", user.id),
+    ]);
 
     return json({ status: verification.status, url: verification.url });
   } catch (error) {

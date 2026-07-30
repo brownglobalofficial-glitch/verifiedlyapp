@@ -1,26 +1,21 @@
 // Centralized lazy route loaders so we can prefetch the same chunk
-// that <Suspense>/React.lazy will request later. Calling a loader
-// kicks off the dynamic import; the browser caches the module so
-// the eventual navigation renders synchronously.
+// that <Suspense>/React.lazy will request later.
 
 export const routeLoaders = {
   "/": () => import("@/pages/Index"),
   "/login": () => import("@/pages/Login"),
-  "/signup": () => import("@/pages/Signup"),
+  "/signup": () => import("@/pages/SignupMembership"),
   "/forgot-password": () => import("@/pages/ForgotPassword"),
   "/reset-password": () => import("@/pages/ResetPassword"),
-  "/onboarding": () => import("@/pages/Onboarding"),
+  "/onboarding": () => import("@/pages/OnboardingMembership"),
   "/terms": () => import("@/pages/Terms"),
   "/privacy": () => import("@/pages/Privacy"),
   "/dashboard": () => import("@/pages/Dashboard"),
   "/dashboard/settings": () => import("@/pages/ProfileSettings"),
   "/dashboard/admin": () => import("@/pages/Admin"),
-  "/dashboard/pro": () => import("@/pages/dashboard/Pro"),
+  "/dashboard/membership": () => import("@/pages/dashboard/Membership"),
   "/dashboard/verification": () => import("@/pages/dashboard/Verification"),
-  "/dashboard/tap-card": () => import("@/pages/dashboard/TapCard"),
-  "/dashboard/documents": () => import("@/pages/dashboard/Documents"),
-  "/dashboard/credentials": () => import("@/pages/dashboard/Credentials"),
-  "/dashboard/organization-verification": () => import("@/pages/dashboard/OrganizationVerification"),
+  "/dashboard/tap-card": () => import("@/pages/dashboard/MembershipTapCard"),
   "/directory": () => import("@/pages/Directory"),
   "/pricing": () => import("@/pages/Pricing"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),
@@ -36,22 +31,16 @@ export const prefetchRoute = (key: PrefetchKey) => {
   if (loader) loader().catch(() => started.delete(key));
 };
 
-// Map an arbitrary URL path to a known prefetch key.
 export const prefetchPath = (path: string) => {
   if (path in routeLoaders) {
     prefetchRoute(path as PrefetchKey);
     return;
   }
-  // Public and retired profile subroutes all use the profile chunk.
   const segs = path.split("/").filter(Boolean);
   if (segs.length === 1) prefetchRoute("/creator-profile");
-  else if (segs.length === 3 && segs[0] === "documents" && segs[1] === "shared") {
-    void import("@/pages/SharedDocument");
-  }
   else if (segs.length >= 2 && (segs[1] === "membership" || segs[1] === "p")) prefetchRoute("/creator-profile");
 };
 
-// Prefetch a curated set during browser idle time.
 export const prefetchIdle = (keys: PrefetchKey[]) => {
   const run = () => keys.forEach(prefetchRoute);
   const w = window as Window & {
