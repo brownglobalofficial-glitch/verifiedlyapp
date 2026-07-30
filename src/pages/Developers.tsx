@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 const ISSUER = "https://pwahrywcgtgfaaghkpoo.supabase.co/auth/v1";
+const STANDARD_SCOPES = "openid email profile";
 
 const ENDPOINTS_SNIPPET = `issuer                 = ${ISSUER}
 authorization_endpoint = ${ISSUER}/oauth/authorize
@@ -15,27 +16,40 @@ token_endpoint         = ${ISSUER}/oauth/token
 userinfo_endpoint      = ${ISSUER}/oauth/userinfo
 jwks_uri               = ${ISSUER}/.well-known/jwks.json
 oidc_discovery         = ${ISSUER}/.well-known/openid-configuration
-scopes                  = openid email profile phone
+scopes                  = ${STANDARD_SCOPES}
 flow                    = authorization_code + PKCE`;
 
-const KAIETEUR_SNIPPET = `// The Kaieteur Supabase project has a custom OIDC provider named custom:verifiedly.
-// Supabase handles state, PKCE, code exchange, token validation, and the local session.
+const SUPABASE_SNIPPET = `const safeReturnPath = requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
+  ? requestedPath
+  : "/";
+
 const { error } = await supabase.auth.signInWithOAuth({
-  provider: "custom:verifiedly",
+  provider: "custom:verifiedly" as never,
   options: {
-    redirectTo: window.location.origin + "/account",
-    scopes: "openid email profile",
+    redirectTo: \`${"${window.location.origin}${safeReturnPath}"}\`,
+    scopes: "${STANDARD_SCOPES}",
   },
 });
 
 if (error) throw error;`;
 
-const GENERIC_SNIPPET = `// Standards-compliant apps should use OIDC discovery rather than hard-coding endpoints.
-const issuer = "${ISSUER}";
-const discoveryUrl = issuer + "/.well-known/openid-configuration";
+const PROVIDER_SNIPPET = `Identifier: custom:verifiedly
+Name: Verifiedly
+Issuer: ${ISSUER}
+Scopes: ${STANDARD_SCOPES}
+PKCE: enabled
+Email optional: disabled
+Client ID: product-specific value
+Client secret: product-specific value stored only in Supabase Auth`;
 
-// Register an exact redirect URI for the client, then use Authorization Code + PKCE.
-// Request only the information your app needs, usually: openid email profile.`;
+const FIRST_PARTY_CLIENTS = [
+  ["GSN", "sjlrxwxewiqholmwllxv"],
+  ["GSN Clubs", "wbsbxevbxyawpqgtnvge"],
+  ["GSN Tickets", "lcgxaidibaihrhmtnyap"],
+  ["GSN Next", "bjkutqlluhsolcvdeihe"],
+  ["Kaieteur House & Reader", "clfdwcvnohxrvqxattvg"],
+  ["BrownGlobal View", "plciefqgckfkrvavjczp"],
+] as const;
 
 const Developers = () => {
   const { toast } = useToast();
@@ -50,7 +64,7 @@ const Developers = () => {
         <title>Sign in with Verifiedly — OAuth 2.1 and OpenID Connect</title>
         <meta
           name="description"
-          content="Use Verifiedly as an OAuth 2.1 and OpenID Connect identity provider with Authorization Code, PKCE, standard scopes, discovery, and JWKS."
+          content="Use Verifiedly as an OAuth 2.1 and OpenID Connect identity provider with Authorization Code, PKCE, standard scopes, discovery and JWKS."
         />
         <link rel="canonical" href="https://verifiedly.app/developers" />
         <meta property="og:title" content="Sign in with Verifiedly — Developer Docs" />
@@ -65,81 +79,83 @@ const Developers = () => {
       </header>
 
       <main className="container mx-auto max-w-3xl px-4 py-10">
-        <span className="mb-4 inline-block rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">Developers · Beta</span>
-        <h1 className="text-4xl font-display font-bold tracking-tight md:text-5xl">Sign in with Verifiedly</h1>
+        <span className="mb-4 inline-block rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground">Developers · First-party beta</span>
+        <h1 className="text-4xl font-display font-bold tracking-tight md:text-5xl">Continue with Verifiedly</h1>
         <p className="mt-3 text-base leading-7 text-muted-foreground">
-          Verifiedly uses its Supabase Auth project as a native OAuth 2.1 and OpenID Connect identity provider. Partner applications receive a stable account ID and only the standard fields the user approves.
+          Verifiedly uses its Supabase Auth project as a native OAuth 2.1 and OpenID Connect identity provider. Each connected website keeps its own users, roles, permissions and Row Level Security policies.
         </p>
 
         <Card className="mt-8 border-accent/30 bg-secondary/40 p-6">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <h2 className="font-display font-semibold">Privacy boundary</h2>
+              <h2 className="font-display font-semibold">Strict privacy boundary</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Sign-in does not share private documents, uploaded evidence, payment information, raw identity files, or a trust score. Kaieteur House requests only <code className="rounded bg-muted px-1 py-0.5 text-xs">openid email profile</code>.
+                First-party apps request only <code className="rounded bg-muted px-1 py-0.5 text-xs">{STANDARD_SCOPES}</code>. Sign-in does not share private documents, evidence, Stripe data, identity files, subscription status, trust scores, GSN rankings or local staff permissions.
               </p>
             </div>
           </div>
         </Card>
 
         <Card className="mt-6 p-6">
-          <h2 className="font-display font-semibold">1. Register the application</h2>
+          <h2 className="font-display font-semibold">1. Register one client per Auth project</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            During the beta, BrownGlobal registers approved clients in Verifiedly’s OAuth Apps settings. Provide the application name, homepage, environment, client type, and every exact redirect URI. Client secrets are shown once and must remain server-side.
+            BrownGlobal registers approved clients in Verifiedly’s OAuth Apps settings. Use a separate confidential client for every independent consumer Supabase Auth project and register the exact callback URI shown by that project.
           </p>
+          <div className="mt-4 overflow-hidden rounded-xl border">
+            {FIRST_PARTY_CLIENTS.map(([name, project], index) => (
+              <div key={name} className={`flex flex-col gap-1 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between ${index ? "border-t" : ""}`}>
+                <span className="font-medium">{name}</span>
+                <code className="break-all text-muted-foreground">https://{project}.supabase.co/auth/v1/callback</code>
+              </div>
+            ))}
+          </div>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            Kaieteur House and Kaieteur Reader share one Supabase Auth project, so they use one confidential Verifiedly client and the Kaieteur Supabase callback URL.
+            Client secrets are shown once. Keep each secret only in the matching consumer Supabase custom-provider configuration—never in GitHub, browser code or a <code>VITE_*</code> variable.
           </p>
         </Card>
 
         <Card className="mt-6 p-6">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display font-semibold">2. Use OIDC discovery</h2>
-            <Button size="sm" variant="ghost" onClick={() => void copy(ENDPOINTS_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => void copy(ENDPOINTS_SNIPPET)} aria-label="Copy endpoints"><Copy className="h-3.5 w-3.5" /></Button>
           </div>
           <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{ENDPOINTS_SNIPPET}</code></pre>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            OpenID Connect ID tokens require Verifiedly’s Supabase project to use an asymmetric JWT signing key so clients can validate tokens through JWKS.
-          </p>
-        </Card>
-
-        <Card className="mt-6 p-6">
-          <h2 className="font-display font-semibold">Standard scopes</h2>
-          <ul className="mt-4 space-y-3 text-sm">
-            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">openid</code> — stable subject identifier and an ID token</li>
-            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">email</code> — email address and confirmation status</li>
-            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">profile</code> — basic account profile claims such as name and picture</li>
-            <li><code className="rounded bg-muted px-1 py-0.5 text-xs">phone</code> — phone claims only when genuinely required</li>
-          </ul>
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            Custom scopes such as identity documents or credentials are not part of Verifiedly sign-in. Separate, explicit APIs and agreements would be required for any future data-sharing product.
+            OpenID Connect ID tokens require Verifiedly’s Supabase project to use an asymmetric JWT signing key such as RS256 or ES256.
           </p>
         </Card>
 
         <Card className="mt-6 p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display font-semibold">3. Kaieteur implementation</h2>
-            <Button size="sm" variant="ghost" onClick={() => void copy(KAIETEUR_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
+            <h2 className="font-display font-semibold">3. Configure the consumer provider</h2>
+            <Button size="sm" variant="ghost" onClick={() => void copy(PROVIDER_SNIPPET)} aria-label="Copy provider settings"><Copy className="h-3.5 w-3.5" /></Button>
           </div>
-          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{KAIETEUR_SNIPPET}</code></pre>
+          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{PROVIDER_SNIPPET}</code></pre>
+        </Card>
+
+        <Card className="mt-6 p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display font-semibold">4. Add the sign-in button</h2>
+            <Button size="sm" variant="ghost" onClick={() => void copy(SUPABASE_SNIPPET)} aria-label="Copy sign-in code"><Copy className="h-3.5 w-3.5" /></Button>
+          </div>
+          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{SUPABASE_SNIPPET}</code></pre>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            The Verifiedly client ID and secret are configured privately in the Kaieteur Supabase custom OIDC provider. They are never included in the website bundle.
+            Supabase manages state, PKCE, code exchange, nonce validation, token validation and the local consumer session. Keep the button hidden behind <code>VITE_VERIFIEDLY_OAUTH_ENABLED</code> until the provider is completely configured.
           </p>
         </Card>
 
         <Card className="mt-6 p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-display font-semibold">4. Other standards-compliant apps</h2>
-            <Button size="sm" variant="ghost" onClick={() => void copy(GENERIC_SNIPPET)}><Copy className="h-3.5 w-3.5" /></Button>
-          </div>
-          <pre className="mt-4 overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{GENERIC_SNIPPET}</code></pre>
+          <h2 className="font-display font-semibold">5. Protect local permissions</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Verifiedly authenticates the account holder; it does not authorize them as an admin, organizer, operator, scanner, club official or staff member. Every privileged route must still check the consumer website’s own role table or allowlist.
+          </p>
         </Card>
 
         <Card className="mt-6 p-6">
-          <h2 className="font-display font-semibold">Consent screen</h2>
+          <h2 className="font-display font-semibold">6. Test approval and denial</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Verifiedly’s authorization page reads the secure <code className="rounded bg-muted px-1 py-0.5 text-xs">authorization_id</code>, confirms the user is signed in, displays the requesting app and scopes, and calls Supabase’s native approve or deny methods. Supabase then returns the authorization result to the exact registered redirect URI.
+            Confirm the consent screen names the correct product, shows only the three standard scopes, returns only to an approved path, creates a session in the correct Supabase project and grants no local privileged role. Denying must create no consumer session.
           </p>
         </Card>
 
