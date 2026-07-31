@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="flex flex-col items-center gap-3 md:items-start">
             <img src={logo} alt="Verifiedly logo" className="h-6" />
             <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-              Verifiedly is operated by BrownGlobal Holdings LLC.
+              Verifiedly is owned and operated by BrownGlobal Holdings LLC.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
@@ -18,6 +18,8 @@ const Footer = () => {
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
+            <Link to="/legal" className="hover:text-foreground transition-colors">About &amp; Legal</Link>
+            <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
           </div>
           <p className="text-sm text-muted-foreground">
             © 2026 BrownGlobal Holdings LLC. All rights reserved.

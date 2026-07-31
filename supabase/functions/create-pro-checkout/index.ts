@@ -160,7 +160,7 @@ serve(async (req) => {
       },
       custom_text: {
         submit: {
-          message: `You are starting an annually renewing Verifiedly Membership. $59.99 is charged today and the Membership renews annually at $59.99 until canceled. One Tap Card is included with the first paid term only; renewals do not include another card. Estimated Tap Card shipping: ${shippingWindowForCheckout}. Stripe Identity verification is available only to eligible adult members, and the Identity Verified badge appears only after successful verification. Verifiedly is operated by BrownGlobal Holdings LLC.`,
+          message: `You are starting an annually renewing Verifiedly Membership. $59.99 is charged today and the Membership renews annually at $59.99 until canceled. One Tap Card is included with the first paid term only; renewals do not include another card. Estimated Tap Card shipping: ${shippingWindowForCheckout}. Stripe Identity verification is available only to eligible adult members, and the Identity Verified badge appears only after successful verification. Verifiedly is owned and operated by BrownGlobal Holdings LLC.`,
         },
       },
     });

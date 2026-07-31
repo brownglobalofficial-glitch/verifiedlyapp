@@ -140,12 +140,14 @@ const OnboardingMembership = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const acceptedAt = String(session.user.user_metadata?.legal_terms_accepted_at || new Date().toISOString());
-      await supabase.from("legal_acceptances").upsert({
-        user_id: userId,
-        terms_version: LEGAL_TERMS_VERSION,
-        vault_policy_version: VAULT_POLICY_VERSION,
-        source: session.user.app_metadata?.provider === "email" ? "signup" : "oauth_signup",
-      }, { onConflict: "user_id,terms_version,vault_policy_version" }).catch(() => undefined);
+      try {
+        await supabase.from("legal_acceptances").upsert({
+          user_id: userId,
+          terms_version: LEGAL_TERMS_VERSION,
+          vault_policy_version: VAULT_POLICY_VERSION,
+          source: session.user.app_metadata?.provider === "email" ? "signup" : "oauth_signup",
+        }, { onConflict: "user_id,terms_version,vault_policy_version" });
+      } catch { /* non-blocking */ }
       await supabase.auth.updateUser({ data: { account_type: accountType, legal_terms_accepted_at: acceptedAt, legal_terms_version: LEGAL_TERMS_VERSION } }).catch(() => undefined);
     }
 

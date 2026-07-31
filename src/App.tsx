@@ -32,6 +32,8 @@ const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const Developers = lazy(() => import("./pages/Developers"));
+const DeveloperTest = lazy(() => import("./pages/DeveloperTest"));
+const Legal = lazy(() => import("./pages/Legal"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
@@ -159,6 +161,9 @@ const App = () => (
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
             <Route path="/developers" element={<Developers />} />
+            <Route path="/developers/test" element={<DeveloperTest />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/about" element={<Navigate to="/legal" replace />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/t/:token" element={<TapRedirect />} />

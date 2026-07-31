@@ -806,6 +806,83 @@ export type Database = {
           },
         ]
       }
+      oauth_webhook_deliveries: {
+        Row: {
+          created_at: string
+          endpoint_id: string
+          error: string | null
+          event: string
+          id: string
+          ok: boolean
+          payload: Json
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint_id: string
+          error?: string | null
+          event: string
+          id?: string
+          ok?: boolean
+          payload: Json
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string
+          endpoint_id?: string
+          error?: string | null
+          event?: string
+          id?: string
+          ok?: boolean
+          payload?: Json
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oauth_webhook_endpoints: {
+        Row: {
+          active: boolean
+          client_id: string
+          created_at: string
+          events: string[]
+          id: string
+          last_delivery_at: string | null
+          last_status: number | null
+          signing_secret: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          client_id: string
+          created_at?: string
+          events?: string[]
+          id?: string
+          last_delivery_at?: string | null
+          last_status?: number | null
+          signing_secret: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          client_id?: string
+          created_at?: string
+          events?: string[]
+          id?: string
+          last_delivery_at?: string | null
+          last_status?: number | null
+          signing_secret?: string
+          url?: string
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           created_at: string

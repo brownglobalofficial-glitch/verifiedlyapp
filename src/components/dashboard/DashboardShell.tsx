@@ -41,6 +41,10 @@ export default function DashboardShell({ children, title, hidePreview = false }:
             </div>
           </header>
           <main className="flex-1 overflow-x-hidden">{children}</main>
+          <footer className="border-t border-border px-4 py-4 text-center text-[11px] leading-5 text-muted-foreground">
+            Verifiedly is owned and operated by BrownGlobal Holdings LLC. ·{" "}
+            <a href="/legal" className="underline hover:text-foreground">About &amp; Legal</a>
+          </footer>
         </div>
       </div>
     </SidebarProvider>

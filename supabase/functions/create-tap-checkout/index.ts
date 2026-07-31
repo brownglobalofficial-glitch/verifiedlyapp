@@ -202,7 +202,7 @@ serve(async (req) => {
       },
       custom_text: {
         submit: {
-          message: `Paid personalized pre-order. You are charged now. Verifiedly reviews the approved design and manually submits it to the manufacturer. Estimated shipping: ${shippingWindowForCheckout}. Timing is not guaranteed; delay and refund options follow the posted policy. Verifiedly is operated by BrownGlobal Holdings LLC.${descriptorNotice}`,
+          message: `Paid personalized pre-order. You are charged now. Verifiedly reviews the approved design and manually submits it to the manufacturer. Estimated shipping: ${shippingWindowForCheckout}. Timing is not guaranteed; delay and refund options follow the posted policy. Verifiedly is owned and operated by BrownGlobal Holdings LLC.${descriptorNotice}`,
         },
       },
     });
