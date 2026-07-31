@@ -40,7 +40,7 @@ export const RecoveryEmail = ({
           email. Your password will not be changed.
         </Text>
         <Text style={footer}>
-          © 2026 BrownGlobal Holdings LLC · Verifiedly
+          © 2026 BrownGlobal Holdings LLC · Verifiedly is owned and operated by BrownGlobal Holdings LLC.
         </Text>
       </Container>
     </Body>

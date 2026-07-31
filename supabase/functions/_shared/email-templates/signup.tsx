@@ -54,7 +54,7 @@ export const SignupEmail = ({
           If you didn't create an account, you can safely ignore this email.
         </Text>
         <Text style={footer}>
-          © 2026 BrownGlobal Holdings LLC · Verifiedly
+          © 2026 BrownGlobal Holdings LLC · Verifiedly is owned and operated by BrownGlobal Holdings LLC.
         </Text>
       </Container>
     </Body>
