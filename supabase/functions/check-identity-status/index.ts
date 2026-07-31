@@ -80,6 +80,22 @@ serve(async (req) => {
       verified_at: verifiedAt ?? profile?.verified_at ?? null,
     }).eq("id", user.id);
 
+    if (status !== (billing?.identity_status ?? "unverified")) {
+      try {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/oauth-events-dispatch`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-internal-key": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            event: status === "verified" ? "identity.verified" : "identity.updated",
+          }),
+        });
+      } catch { /* webhook fan-out must never block verification */ }
+    }
+
     return json({
       id_verified: status === "verified",
       verified_at: verifiedAt ?? profile?.verified_at ?? null,
