@@ -42,15 +42,6 @@ Email optional: disabled
 Client ID: product-specific value
 Client secret: product-specific value stored only in Supabase Auth`;
 
-const FIRST_PARTY_CLIENTS = [
-  ["GSN", "sjlrxwxewiqholmwllxv"],
-  ["GSN Clubs", "wbsbxevbxyawpqgtnvge"],
-  ["GSN Tickets", "lcgxaidibaihrhmtnyap"],
-  ["GSN Next", "bjkutqlluhsolcvdeihe"],
-  ["Kaieteur House & Reader", "clfdwcvnohxrvqxattvg"],
-  ["BrownGlobal View", "plciefqgckfkrvavjczp"],
-] as const;
-
 const Developers = () => {
   const { toast } = useToast();
   const copy = async (value: string) => {
@@ -102,14 +93,6 @@ const Developers = () => {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             BrownGlobal registers approved clients in Verifiedly’s OAuth Apps settings. Use a separate confidential client for every independent consumer Supabase Auth project and register the exact callback URI shown by that project.
           </p>
-          <div className="mt-4 overflow-hidden rounded-xl border">
-            {FIRST_PARTY_CLIENTS.map(([name, project], index) => (
-              <div key={name} className={`flex flex-col gap-1 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between ${index ? "border-t" : ""}`}>
-                <span className="font-medium">{name}</span>
-                <code className="break-all text-muted-foreground">https://{project}.supabase.co/auth/v1/callback</code>
-              </div>
-            ))}
-          </div>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
             Client secrets are shown once. Keep each secret only in the matching consumer Supabase custom-provider configuration—never in GitHub, browser code or a <code>VITE_*</code> variable.
           </p>
