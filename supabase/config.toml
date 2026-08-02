@@ -27,5 +27,3 @@ project_id = "pwahrywcgtgfaaghkpoo"
     verify_jwt = false
   [functions.notify-tap-order-status]
     verify_jwt = true
-  [functions.bootstrap-brownglobal-oauth]
-    verify_jwt = false
