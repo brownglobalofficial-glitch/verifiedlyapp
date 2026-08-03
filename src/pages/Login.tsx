@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,19 @@ const Login = () => {
   const isPending = searchParams.get("confirmed") === "pending";
   const pendingEmail = searchParams.get("email") || "";
   const nextPath = searchParams.get("next");
+  const safeNext = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "";
+
+  // Social sign-in returns to /login?next=... — finish the hop once the session exists.
+  useEffect(() => {
+    if (!safeNext) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) navigate(safeNext, { replace: true });
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate(safeNext, { replace: true });
+    });
+    return () => subscription.unsubscribe();
+  }, [safeNext, navigate]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -50,10 +63,7 @@ const Login = () => {
         return;
       }
 
-      const destination = nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
-        ? nextPath
-        : "/dashboard";
-      navigate(destination, { replace: true });
+      navigate(safeNext || "/dashboard", { replace: true });
     } catch (error: unknown) {
       toast({
         title: "Login failed",
@@ -66,7 +76,9 @@ const Login = () => {
 
   const handleOAuth = async (provider: "google" | "apple") => {
     const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+      redirect_uri: safeNext
+        ? `${window.location.origin}/login?next=${encodeURIComponent(safeNext)}`
+        : window.location.origin,
     });
     if (error) toast({ title: "Login failed", description: error.message, variant: "destructive" });
   };
@@ -162,7 +174,7 @@ const Login = () => {
         )}
 
         <p className="text-center text-sm text-muted-foreground">
-          New to Verifiedly? <Link to="/signup" className="text-foreground underline">Create a free profile</Link>
+          New to Verifiedly? <Link to={safeNext ? `/signup?next=${encodeURIComponent(safeNext)}` : "/signup"} className="text-foreground underline">Create a free profile</Link>
         </p>
       </div>
     </div>
