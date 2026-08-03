@@ -165,6 +165,7 @@ const App = () => (
             <Route path="/legal" element={<Legal />} />
             <Route path="/about" element={<Navigate to="/legal" replace />} />
             <Route path="/oauth/authorize" element={<OAuthAuthorize />} />
+            <Route path="/oauth/consent" element={<OAuthAuthorize />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/t/:token" element={<TapRedirect />} />
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
