@@ -25,7 +25,8 @@ const Signup = () => {
   const [displayName, setDisplayName] = useState("");
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
-  const returnTo = searchParams.get("returnTo") || "";
+  const rawReturnTo = searchParams.get("returnTo") || searchParams.get("next") || "";
+  const returnTo = rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//") ? rawReturnTo : "";
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -50,7 +51,9 @@ const Signup = () => {
 
     storePendingLegalAcceptance();
     const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: returnTo ? `${window.location.origin}${returnTo}` : window.location.origin,
+      redirect_uri: returnTo
+        ? `${window.location.origin}/login?next=${encodeURIComponent(returnTo)}`
+        : window.location.origin,
     });
     if (error) {
       window.localStorage.removeItem(LEGAL_ACCEPTANCE_STORAGE_KEY);
