@@ -26,6 +26,23 @@ type AuthorizationDetails = {
   };
 };
 
+const withTimeout = async <T,>(
+  operation: PromiseLike<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([Promise.resolve(operation), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
 const OAuthAuthorize = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -34,48 +51,68 @@ const OAuthAuthorize = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"approve" | "deny" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const openSignIn = () => {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    navigate(`/login?next=${next}`, { replace: true });
+  };
 
   useEffect(() => {
     let active = true;
 
+    setLoading(true);
+    setDetails(null);
+    setError(null);
+
     (async () => {
-      if (!authorizationId) {
-        setError("This authorization request is missing its secure authorization ID.");
-        setLoading(false);
-        return;
+      try {
+        if (!authorizationId) {
+          throw new Error("This authorization request is missing its secure authorization ID.");
+        }
+
+        const { data: sessionData, error: sessionError } = await withTimeout(
+          supabase.auth.getSession(),
+          12_000,
+          "Verifiedly could not check your sign-in session. Please try again.",
+        );
+        if (!active) return;
+
+        if (sessionError || !sessionData.session) {
+          openSignIn();
+          return;
+        }
+
+        const { data, error: detailsError } = await withTimeout(
+          supabase.auth.oauth.getAuthorizationDetails(authorizationId),
+          15_000,
+          "Verifiedly could not load this authorization request. Please try again.",
+        );
+        if (!active) return;
+
+        if (detailsError || !data) {
+          throw new Error(detailsError?.message || "This authorization request is invalid or expired.");
+        }
+
+        if (!("authorization_id" in data)) {
+          window.location.replace(data.redirect_url);
+          return;
+        }
+
+        setDetails(data as AuthorizationDetails);
+      } catch (caught) {
+        if (!active) return;
+        console.error("Verifiedly OAuth consent initialization failed", caught);
+        setError(caught instanceof Error ? caught.message : "Verifiedly could not load this authorization request.");
+      } finally {
+        if (active) setLoading(false);
       }
-
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (!active) return;
-
-      if (userError || !userData.user) {
-        const next = encodeURIComponent(window.location.pathname + window.location.search);
-        navigate(`/login?next=${next}`, { replace: true });
-        return;
-      }
-
-      const { data, error: detailsError } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
-      if (!active) return;
-
-      if (detailsError || !data) {
-        setError(detailsError?.message || "This authorization request is invalid or expired.");
-        setLoading(false);
-        return;
-      }
-
-      if (!("authorization_id" in data)) {
-        window.location.replace(data.redirect_url);
-        return;
-      }
-
-      setDetails(data as AuthorizationDetails);
-      setLoading(false);
     })();
 
     return () => {
       active = false;
     };
-  }, [authorizationId, navigate]);
+  }, [authorizationId, navigate, attempt]);
 
   const scopes = useMemo(
     () => (details?.scope || "openid email profile").split(/\s+/).filter(Boolean),
@@ -87,17 +124,35 @@ const OAuthAuthorize = () => {
     setBusy(decision);
     setError(null);
 
-    const result = decision === "approve"
-      ? await supabase.auth.oauth.approveAuthorization(authorizationId)
-      : await supabase.auth.oauth.denyAuthorization(authorizationId);
+    try {
+      const result = await withTimeout(
+        decision === "approve"
+          ? supabase.auth.oauth.approveAuthorization(authorizationId, { skipBrowserRedirect: true })
+          : supabase.auth.oauth.denyAuthorization(authorizationId, { skipBrowserRedirect: true }),
+        15_000,
+        "Verifiedly could not complete this authorization request. Please try again.",
+      );
 
-    if (result.error || !result.data?.redirect_url) {
-      setError(result.error?.message || "Verifiedly could not complete this authorization request.");
+      if (result.error || !result.data?.redirect_url) {
+        throw new Error(result.error?.message || "Verifiedly could not complete this authorization request.");
+      }
+
+      window.location.assign(result.data.redirect_url);
+    } catch (caught) {
+      console.error(`Verifiedly OAuth ${decision} failed`, caught);
+      setError(caught instanceof Error ? caught.message : "Verifiedly could not complete this authorization request.");
       setBusy(null);
-      return;
     }
+  };
 
-    window.location.assign(result.data.redirect_url);
+  const restartSignIn = async () => {
+    setBusy(null);
+    await withTimeout(
+      supabase.auth.signOut({ scope: "local" }),
+      5_000,
+      "Sign-out timed out.",
+    ).catch(() => undefined);
+    openSignIn();
   };
 
   if (loading) {
@@ -116,7 +171,15 @@ const OAuthAuthorize = () => {
           <ShieldCheck className="mx-auto h-8 w-8" />
           <p className="font-semibold">Authorization could not continue</p>
           <p className="text-sm leading-6 text-muted-foreground">{error || "Unknown application"}</p>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>Back to Verifiedly</Button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button variant="outline" onClick={() => setAttempt((value) => value + 1)}>
+              Try again
+            </Button>
+            <Button onClick={() => void restartSignIn()}>
+              Sign in again
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>Back to Verifiedly</Button>
         </Card>
       </div>
     );
