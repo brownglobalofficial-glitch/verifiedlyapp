@@ -1,11 +1,15 @@
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
+import { initializeMobileApp, isNativeApp } from "./mobile";
 import "./index.css";
+import "./mobile.css";
+
+void initializeMobileApp();
 
 // Auto-cleanup of any stale service workers / caches so users always get
 // the freshest build without manually clearing cookies/cache.
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && !isNativeApp) {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.getRegistrations?.().then((regs) => {
       regs.forEach((r) => r.unregister());
@@ -29,7 +33,7 @@ if (typeof window !== "undefined") {
       const r = await fetch(window.location.origin + "/?__cb=" + Date.now(), { cache: "no-store" });
       const fresh = await r.text();
       const initial = await initialHtmlHash;
-      // Compare the hashed asset script tag — Vite rewrites it per build.
+      // Compare the hashed asset script tag ? Vite rewrites it per build.
       const tag = (s: string) => s.match(/\/assets\/[^"']+\.js/g)?.[0] || "";
       if (initial && tag(initial) && tag(fresh) && tag(initial) !== tag(fresh)) {
         window.location.reload();
