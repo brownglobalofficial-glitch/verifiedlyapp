@@ -24,19 +24,19 @@ const plans = [
   },
   {
     name: "Verifiedly Membership",
-    price: "$59.99",
+    price: "$50",
     cadence: "per year",
     icon: CreditCard,
-    description: "One annual Membership that brings the essential verification, card and support benefits together.",
+    description: "A separate annual identity membership. It is not included in BrownGlobal Pass or BrownGlobal Workspace.",
     features: [
-      "One personalized Tap Card with the first paid term",
+      "One personalized NFC Tap Card with the first paid term, subject to shipping availability and published terms",
       "Stripe Identity verification access for eligible adults",
-      "Identity Verified badge after successful verification",
+      "Identity Verified badge only after successful verification",
       "Basic profile and Tap Card analytics as available",
       "Priority account support",
     ],
     cta: "View annual Membership",
-    note: "$59.99 today · renews annually until canceled · renewals do not include another card",
+    note: "$50 today · renews annually until canceled · renewals do not automatically include another card",
     href: "/signup?returnTo=%2Fdashboard%2Fmembership",
     featured: true,
   },
@@ -46,9 +46,9 @@ const Pricing = () => (
   <section className="overflow-x-hidden px-3 py-12 sm:px-4 sm:py-20">
     <div className="mx-auto w-full max-w-5xl">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple Membership</p>
-        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Create your profile free. Join once a year for the complete Verifiedly experience.</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">No separate identity-verification fee and no separate first-card price. One Tap Card is included with the first paid annual Membership term.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Separate Identity Membership</p>
+        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Create your profile free. Join for $50 a year when identity verification and the NFC card are useful.</h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Verifiedly remains separate from BrownGlobal Pass and Workspace because identity verification is a distinct service. The badge is never guaranteed and appears only after successful Stripe Identity verification.</p>
       </div>
 
       <div className="mx-auto mt-10 grid min-w-0 max-w-4xl gap-4 md:grid-cols-2">
@@ -73,14 +73,8 @@ const Pricing = () => (
       </div>
 
       <div className="mx-auto mt-8 grid max-w-4xl gap-3 sm:grid-cols-2">
-        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-          <p>Stripe Identity verification is included for eligible adult members. The Identity Verified badge appears only after successful verification.</p>
-        </div>
-        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground">
-          <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
-          <p>The badge confirms the supported adult identity check. It does not automatically verify work, education, organization authority or every profile claim.</p>
-        </div>
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>Stripe Identity verification is available to eligible adult members. Failed or incomplete verification does not qualify for the Identity Verified badge.</p></div>
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>The badge confirms the supported identity check. It does not verify work, education, organization authority, licensing or every profile claim.</p></div>
       </div>
 
       <p className="mt-5 text-center text-xs text-muted-foreground">Verifiedly is operated by BrownGlobal Holdings LLC.</p>
