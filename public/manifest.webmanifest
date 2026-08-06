@@ -1,0 +1,13 @@
+{
+  "name": "Verifiedly",
+  "short_name": "Verifiedly",
+  "description": "Create, verify, and share your official profile.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "icons": [
+    { "src": "/verifiedly-mark.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
