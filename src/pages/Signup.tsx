@@ -9,7 +9,6 @@ import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
-import logoMark from "@/assets/verifiedly-v-mark.png";
 import { Eye, EyeOff } from "lucide-react";
 
 const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
@@ -148,7 +147,7 @@ const Signup = () => {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2" aria-label="Verifiedly home">
-            <img src={logoMark} alt="" className="h-9 w-9 object-contain" />
+            <img src="/verifiedly-logo.png" alt="" className="h-9 w-9 object-contain" />
             <span className="font-display text-xl font-bold tracking-tight">Verifiedly</span>
           </Link>
           <h1 className="mt-7 text-2xl font-display font-bold">Create your official profile</h1>
