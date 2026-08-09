@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/verifiedly-logo.webp";
 
 const Footer = () => {
   return (
@@ -7,7 +6,7 @@ const Footer = () => {
       <div className="container mx-auto max-w-6xl">
         <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div className="flex flex-col items-center gap-3 md:items-start">
-            <img src={logo} alt="Verifiedly logo" className="h-6" />
+            <img src="/verifiedly-logo.png" alt="Verifiedly logo" className="h-6 w-6 object-contain" />
             <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
               Verifiedly is owned and operated by BrownGlobal Holdings LLC.
             </p>
