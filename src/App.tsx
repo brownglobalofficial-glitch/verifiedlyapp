@@ -61,6 +61,11 @@ const LegacyProfileRedirect = () => {
   return <Navigate to={username ? `/${username}` : "/"} replace />;
 };
 
+const getSafeAuthNextPath = () => {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+};
+
 const RouteOptimizer = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,15 +83,18 @@ const RouteOptimizer = () => {
     document.addEventListener("focusin", handler, { passive: true });
     document.addEventListener("touchstart", handler, { passive: true });
 
-    const redirectAuthedAway = async (userId: string) => {
+    const redirectAuthedAway = () => {
       if (!AUTH_PAGES.has(window.location.pathname)) return;
-      void userId;
-      navigate("/dashboard", { replace: true });
+      navigate(getSafeAuthNextPath() || "/dashboard", { replace: true });
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
         prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/membership"]);
+        if (AUTH_PAGES.has(window.location.pathname) && getSafeAuthNextPath()) {
+          redirectAuthedAway();
+          return;
+        }
         const provider = session.user.app_metadata?.provider;
         if (
           event === "SIGNED_IN"
@@ -104,14 +112,14 @@ const RouteOptimizer = () => {
             return;
           }
         }
-        redirectAuthedAway(session.user.id);
+        redirectAuthedAway();
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/tap-card", "/dashboard/membership"]);
-        redirectAuthedAway(session.user.id);
+        redirectAuthedAway();
       } else {
         prefetchIdle(["/login", "/signup"]);
       }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 
@@ -53,10 +53,10 @@ const OAuthAuthorize = () => {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
-  const openSignIn = () => {
+  const openSignIn = useCallback(() => {
     const next = encodeURIComponent(window.location.pathname + window.location.search);
-    navigate(`/login?next=${next}`, { replace: true });
-  };
+    window.location.replace(`/login?next=${next}`);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -65,27 +65,33 @@ const OAuthAuthorize = () => {
     setDetails(null);
     setError(null);
 
+    const watchdogId = window.setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+      setError("Verifiedly could not load this authorization request. Please try again or sign in again.");
+    }, 12_000);
+
     (async () => {
       try {
         if (!authorizationId) {
           throw new Error("This authorization request is missing its secure authorization ID.");
         }
 
-        const { data: sessionData, error: sessionError } = await withTimeout(
-          supabase.auth.getSession(),
-          12_000,
-          "Verifiedly could not check your sign-in session. Please try again.",
+        const { data: userData, error: userError } = await withTimeout(
+          supabase.auth.getUser(),
+          8_000,
+          "Verifiedly could not verify your sign-in session. Please try again.",
         );
         if (!active) return;
 
-        if (sessionError || !sessionData.session) {
+        if (userError || !userData.user) {
           openSignIn();
           return;
         }
 
         const { data, error: detailsError } = await withTimeout(
           supabase.auth.oauth.getAuthorizationDetails(authorizationId),
-          15_000,
+          10_000,
           "Verifiedly could not load this authorization request. Please try again.",
         );
         if (!active) return;
@@ -105,14 +111,16 @@ const OAuthAuthorize = () => {
         console.error("Verifiedly OAuth consent initialization failed", caught);
         setError(caught instanceof Error ? caught.message : "Verifiedly could not load this authorization request.");
       } finally {
+        window.clearTimeout(watchdogId);
         if (active) setLoading(false);
       }
     })();
 
     return () => {
       active = false;
+      window.clearTimeout(watchdogId);
     };
-  }, [authorizationId, navigate, attempt]);
+  }, [authorizationId, openSignIn, attempt]);
 
   const scopes = useMemo(
     () => (details?.scope || "openid email profile").split(/\s+/).filter(Boolean),
@@ -137,7 +145,7 @@ const OAuthAuthorize = () => {
         throw new Error(result.error?.message || "Verifiedly could not complete this authorization request.");
       }
 
-      window.location.assign(result.data.redirect_url);
+      window.location.replace(result.data.redirect_url);
     } catch (caught) {
       console.error(`Verifiedly OAuth ${decision} failed`, caught);
       setError(caught instanceof Error ? caught.message : "Verifiedly could not complete this authorization request.");
