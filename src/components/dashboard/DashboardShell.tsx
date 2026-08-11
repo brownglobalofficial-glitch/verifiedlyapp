@@ -13,7 +13,7 @@ export default function DashboardShell({ children, title, hidePreview = false }:
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { navigate("/login"); return; }
-      supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle()
+      supabase.from("profiles").select("username").eq("id", session.user.id as any).maybeSingle()
         .then(({ data }) => {
           if (data) setUsername((data as any).username || undefined);
         });

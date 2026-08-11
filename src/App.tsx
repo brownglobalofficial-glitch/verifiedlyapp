@@ -105,7 +105,7 @@ const RouteOptimizer = () => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed, username")
-            .eq("id", session.user.id)
+            .eq("id", session.user.id as any)
             .maybeSingle();
           if (profile && (profile as any).onboarding_completed === false) {
             navigate("/onboarding");
