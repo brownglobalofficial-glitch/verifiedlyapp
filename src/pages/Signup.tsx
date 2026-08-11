@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { LEGAL_TERMS_VERSION, VAULT_POLICY_VERSION } from "@/lib/legal";
 import { Eye, EyeOff } from "lucide-react";
+import VerifiedlyMark from "@/components/VerifiedlyMark";
 
 const LEGAL_ACCEPTANCE_STORAGE_KEY = "verifiedly:pending-legal-acceptance";
 const googleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === "true";
@@ -147,7 +148,7 @@ const Signup = () => {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2" aria-label="Verifiedly home">
-            <img src="/verifiedly-logo.png" alt="" className="h-9 w-9 object-contain" />
+            <VerifiedlyMark className="h-9 w-9" />
             <span className="font-display text-xl font-bold tracking-tight">Verifiedly</span>
           </Link>
           <h1 className="mt-7 text-2xl font-display font-bold">Create your official profile</h1>

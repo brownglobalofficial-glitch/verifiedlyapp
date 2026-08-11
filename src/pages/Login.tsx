@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
 import EmailConfirmationBanner from "@/components/EmailConfirmationBanner";
+import VerifiedlyMark from "@/components/VerifiedlyMark";
 
 const googleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === "true";
 const appleAuthEnabled = import.meta.env.VITE_ENABLE_APPLE_AUTH === "true";
@@ -87,7 +88,7 @@ const Login = () => {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2" aria-label="Verifiedly home">
-            <img src="/verifiedly-logo.png" alt="" className="h-9 w-9 object-contain" />
+            <VerifiedlyMark className="h-9 w-9" />
             <span className="font-display text-xl font-bold tracking-tight">Verifiedly</span>
           </Link>
           {!isPending && (
