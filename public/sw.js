@@ -1,4 +1,6 @@
-const CACHE = "verifiedly-shell-v1";
+// Bump this version whenever a shell asset changes so installed clients drop the
+// old cached copy instead of showing a stale icon.
+const CACHE = "verifiedly-shell-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/verifiedly-mark.png"];
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
