@@ -28,7 +28,7 @@ const PromoCodesPanel = () => {
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from("promo_codes")
+      .from("promo_codes" as any)
       .select("*")
       .order("created_at", { ascending: false });
     setCodes(data || []);
@@ -44,7 +44,7 @@ const PromoCodesPanel = () => {
     }
     setCreating(true);
     const { data: { session } } = await supabase.auth.getSession();
-    const { error } = await supabase.from("promo_codes").insert({
+    const { error } = await supabase.from("promo_codes" as any).insert({
       code: code.trim().toUpperCase(),
       tier,
       max_uses: maxUses ? parseInt(maxUses, 10) : null,
@@ -63,13 +63,13 @@ const PromoCodesPanel = () => {
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from("promo_codes").update({ is_active: !current }).eq("id", id);
+    await supabase.from("promo_codes" as any).update({ is_active: !current }).eq("id", id);
     load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Delete this promo code? This cannot be undone.")) return;
-    await supabase.from("promo_codes").delete().eq("id", id);
+    await supabase.from("promo_codes" as any).delete().eq("id", id);
     load();
   };
 

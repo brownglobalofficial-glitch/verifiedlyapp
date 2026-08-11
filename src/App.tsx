@@ -107,7 +107,7 @@ const RouteOptimizer = () => {
             .select("onboarding_completed, username")
             .eq("id", session.user.id)
             .maybeSingle();
-          if (profile && profile.onboarding_completed === false) {
+          if (profile && (profile as any).onboarding_completed === false) {
             navigate("/onboarding");
             return;
           }

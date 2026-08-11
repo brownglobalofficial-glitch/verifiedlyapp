@@ -15,7 +15,7 @@ export default function DashboardShell({ children, title, hidePreview = false }:
       if (!session) { navigate("/login"); return; }
       supabase.from("profiles").select("username").eq("id", session.user.id).maybeSingle()
         .then(({ data }) => {
-          if (data) setUsername(data.username || undefined);
+          if (data) setUsername((data as any).username || undefined);
         });
     });
   }, [navigate]);
