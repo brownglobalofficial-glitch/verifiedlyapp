@@ -41,7 +41,7 @@ const Index = () => {
         <div className="text-center mb-10 max-w-[320px]">
           <p className="text-lg font-display font-semibold text-foreground">Create · Verify · Share</p>
           <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Present who you are, your Work and your Education. Share one official profile by link, QR or Verifiedly Tap.
+            Present who you are, your work, and your education. Share one official profile by link, QR or Verifiedly Tap.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ const Index = () => {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[320px]">
-          Free official profile · Verifiedly Membership $59.99/year · one Tap Card included with the first paid term
+          Free official profile · Verifiedly Membership $50/year · one Tap Card included with the first paid term
         </p>
         <p className="mt-2 text-center text-[10px] text-muted-foreground leading-relaxed max-w-[320px]">
           Stripe Identity verification is included for eligible adult members. The Identity Verified badge appears only after successful verification.

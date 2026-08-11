@@ -29,7 +29,7 @@ const FollowButton = ({ creatorId, className }: FollowButtonProps) => {
 
   const checkFollowing = async (uid: string) => {
     const { data } = await supabase
-      .from("followers")
+      .from("followers" as any)
       .select("id")
       .eq("follower_id", uid)
       .eq("creator_id", creatorId)
@@ -50,10 +50,10 @@ const FollowButton = ({ creatorId, className }: FollowButtonProps) => {
     
     setLoading(true);
     if (isFollowing) {
-      await supabase.from("followers").delete().eq("follower_id", userId).eq("creator_id", creatorId);
+      await supabase.from("followers" as any).delete().eq("follower_id", userId).eq("creator_id", creatorId);
       setIsFollowing(false);
     } else {
-      await supabase.from("followers").insert({ follower_id: userId, creator_id: creatorId });
+      await supabase.from("followers" as any).insert({ follower_id: userId, creator_id: creatorId });
       setIsFollowing(true);
     }
     setLoading(false);

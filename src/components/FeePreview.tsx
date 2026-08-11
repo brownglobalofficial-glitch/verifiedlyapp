@@ -40,7 +40,7 @@ const FeePreview = ({ currentTier, ownerId, viewerId }: Props) => {
     let active = true;
     (async () => {
       const { data } = await supabase
-        .from("products")
+        .from("products" as any)
         .select("id, name, price")
         .eq("creator_id", ownerId)
         .eq("is_published", true)

@@ -11,7 +11,7 @@ const FeaturedCreators = () => {
 
   useEffect(() => {
     supabase
-      .from("profiles")
+      .from("profiles" as any)
       .select("*")
       .eq("is_featured", true)
       .limit(8)

@@ -41,7 +41,7 @@ export default function PayoutsChecklist({ userId, variant = "full", onStatusCha
     const { data } = await (supabase
       .from("creator_private_data" as any)
       .select("stripe_connect_account_id, stripe_charges_enabled, stripe_payouts_enabled, stripe_details_submitted, stripe_requirements_currently_due, stripe_requirements_past_due, stripe_disabled_reason")
-      .eq("id", userId)
+      .eq("id", userId as any)
       .maybeSingle() as any);
     const s: PayoutStatus = {
       has_account: !!data?.stripe_connect_account_id,

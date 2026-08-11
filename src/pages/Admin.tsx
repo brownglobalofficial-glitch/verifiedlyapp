@@ -55,8 +55,8 @@ const Admin = () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin");
+        .eq("user_id", session.user.id as any)
+        .eq("role", "admin" as any);
       if (!roles?.length) {
         toast({ title: "Access denied", variant: "destructive" });
         navigate("/dashboard");
