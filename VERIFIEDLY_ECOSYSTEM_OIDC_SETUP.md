@@ -65,6 +65,35 @@ Create a separate confidential OAuth client for each independent Supabase Auth p
 | Kaieteur House and Kaieteur Reader | `kaieteur-publishing-hub`, `kaieteur-reader` | `clfdwcvnohxrvqxattvg` | `Kaieteur House & Reader` | `https://clfdwcvnohxrvqxattvg.supabase.co/auth/v1/callback` |
 | BrownGlobal View | `freeview-hub` | `plciefqgckfkrvavjczp` | `BrownGlobal View` | `https://plciefqgckfkrvavjczp.supabase.co/auth/v1/callback` |
 
+Additional first-party clients to register as each product goes live. Replace `<project-ref>` with that product's own Supabase project ref, then use its exact read-only callback URI.
+
+| Product | Verifiedly client name | Callback URI |
+| --- | --- | --- |
+| GSN Next | `GSN Next` | `https://bjkutqlluhsolcvdeihe.supabase.co/auth/v1/callback` |
+| GSN Tickets | `GSN Tickets` | `https://lcgxaidibaihrhmtnyap.supabase.co/auth/v1/callback` |
+| BrownGlobal Reach, Studio, Academy (shared auth project) | `BrownGlobal Suite` | `https://ioumcdhslftdxlauqziz.supabase.co/auth/v1/callback` |
+| BrownGlobal Wave | `BrownGlobal Wave` | `https://<project-ref>.supabase.co/auth/v1/callback` |
+| BrownGlobal Pay | `BrownGlobal Pay` | `https://<project-ref>.supabase.co/auth/v1/callback` |
+
+BrownGlobal Pay is the shared payment surface for the ecosystem, but it is still an
+ordinary OAuth client here: it signs users in with their Verifiedly account and
+receives only `openid email profile`. Verifiedly never sends billing state,
+saved payment methods, Stripe customer or Connect account IDs, or payout data
+through sign-in. Pay resolves its own Stripe customer from the stable Verifiedly
+subject (`sub`) in its own database.
+
+### Button asset
+
+Use the official transparent V mark for every "Continue with Verifiedly" button:
+
+```text
+https://verifiedly.app/verifiedly-mark.png        (black mark, light UI)
+https://verifiedly.app/verifiedly-mark-white.png  (white mark, dark UI)
+```
+
+Both are transparent PNGs cropped to the mark, so render them at the button's
+icon size (typically 18–20px) with `object-contain` and no background box.
+
 Use confidential clients because the client secret is stored in the consumer Supabase Auth provider configuration. A secret must never be committed, placed in a `VITE_*` variable, copied into browser code, shared between products or pasted into public support messages.
 
 ## 3. Websites that intentionally do not receive a client
