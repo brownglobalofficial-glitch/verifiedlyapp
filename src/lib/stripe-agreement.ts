@@ -30,7 +30,7 @@ export async function getLatestStripeAgreement(userId: string): Promise<StripeAg
   const { data } = await (supabase
     .from("stripe_agreements" as any)
     .select("id, accepted_at, agreement_version, context")
-    .eq("user_id", userId)
+    .eq("user_id", userId as any)
     .order("accepted_at", { ascending: false })
     .limit(1)
     .maybeSingle() as any);
