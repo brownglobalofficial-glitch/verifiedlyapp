@@ -5,7 +5,7 @@ import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import verifiedlyMark from "@/assets/verifiedly-mark";
+import VerifiedlyMark from "@/components/VerifiedlyMark";
 
 const SCOPE_LABELS: Record<string, string> = {
   openid: "A stable Verifiedly account ID",
@@ -201,7 +201,7 @@ const OAuthAuthorize = () => {
       <Card className="w-full max-w-md p-6 sm:p-8">
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
-            <img src={verifiedlyMark} alt="Verifiedly" className="h-9 w-9 rounded-md object-contain" />
+            <VerifiedlyMark className="h-8 w-8" alt="Verifiedly" />
           </div>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-secondary">
