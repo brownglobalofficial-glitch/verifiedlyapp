@@ -47,25 +47,11 @@ serve(async (req) => {
 
     const isStripeTestMode = /^(sk|rk)_test_/.test(stripeKey);
     const membershipEnabled = Deno.env.get("VERIFIEDLY_MEMBERSHIP_ENABLED") === "true";
-    const fulfillmentEnabled = Deno.env.get("TAP_CARD_FULFILLMENT_ENABLED") === "true";
-    const estimatedShipWindow = (Deno.env.get("TAP_CARD_ESTIMATED_SHIP_WINDOW") ?? "").trim();
 
     if (!isStripeTestMode && !membershipEnabled) {
       return json({
         error: "Live Verifiedly Membership checkout is not enabled.",
         code: "membership_not_enabled",
-      }, 503);
-    }
-    if (!isStripeTestMode && !fulfillmentEnabled) {
-      return json({
-        error: "Live Membership checkout requires the included Tap Card fulfillment workflow to be enabled.",
-        code: "tap_fulfillment_not_enabled",
-      }, 503);
-    }
-    if (!isStripeTestMode && !estimatedShipWindow) {
-      return json({
-        error: "Live Membership checkout requires a manufacturer-supported Tap Card shipping estimate.",
-        code: "tap_shipping_estimate_required",
       }, 503);
     }
 
@@ -118,7 +104,6 @@ serve(async (req) => {
     }, { onConflict: "user_id" });
 
     const origin = safeOrigin(req.headers.get("origin"));
-    const shippingWindowForCheckout = estimatedShipWindow || "Test mode only — live shipping estimate not configured";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       client_reference_id: user.id,
@@ -131,11 +116,11 @@ serve(async (req) => {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: 5999,
+          unit_amount: 5000,
           recurring: { interval: "year" },
           product_data: {
             name: "Verifiedly Membership",
-            description: "Annual Membership with one first-term Verifiedly Tap Card, eligible-adult Stripe Identity access, analytics and priority support",
+            description: "Annual Membership with eligible-adult Stripe Identity verification access, verified badge after approval, and priority support",
           },
         },
       }],
@@ -146,8 +131,6 @@ serve(async (req) => {
         tier: "membership",
         user_id: user.id,
         interval: "year",
-        included_tap_card: "first_term",
-        estimated_ship_window: shippingWindowForCheckout.slice(0, 500),
       },
       subscription_data: {
         metadata: {
@@ -155,23 +138,20 @@ serve(async (req) => {
           tier: "membership",
           user_id: user.id,
           interval: "year",
-          included_tap_card: "first_term",
         },
       },
       custom_text: {
         submit: {
-          message: `You are starting an annually renewing Verifiedly Membership. $59.99 is charged today and the Membership renews annually at $59.99 until canceled. One Tap Card is included with the first paid term only; renewals do not include another card. Estimated Tap Card shipping: ${shippingWindowForCheckout}. Stripe Identity verification is available only to eligible adult members, and the Identity Verified badge appears only after successful verification. Verifiedly is owned and operated by BrownGlobal Holdings LLC.`,
+          message: "You are starting an annually renewing Verifiedly Membership. $50 is charged today and the Membership renews annually at $50 until you cancel. Stripe Identity verification is available only to eligible adult members, and the Identity Verified badge appears only after successful verification. Verifiedly is owned and operated by BrownGlobal Holdings LLC.",
         },
       },
     });
 
     return json({
       url: session.url,
-      amount_cents: 5999,
+      amount_cents: 5000,
       interval: "year",
       membership: true,
-      included_tap_card: "first_term",
-      estimated_ship_window: shippingWindowForCheckout,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not start Verifiedly Membership checkout.";

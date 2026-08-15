@@ -73,7 +73,7 @@ const Legal = () => (
       <Card className="mt-6 p-6">
         <h2 className="font-display font-semibold">Payments and billing</h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          All charges — Verifiedly Pro, identity verification and Verifiedly Tap orders — are processed by Stripe and
+          All charges — the annual Verifiedly Membership and identity verification — are processed by Stripe and
           billed by BrownGlobal Holdings LLC. The same wording appears at checkout, on receipts and in transactional
           email footers.
         </p>

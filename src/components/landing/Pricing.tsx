@@ -1,4 +1,4 @@
-import { BadgeCheck, Check, CreditCard, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Check, Crown, ShieldCheck, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,13 +9,13 @@ const plans = [
     price: "$0",
     cadence: "forever",
     icon: UserRound,
-    description: "Create and share a focused official profile for a person or organization.",
+    description: "Create and share one official profile for a person or organization.",
     features: [
       "Unique verifiedly.app handle",
-      "Profile picture, optional banner and themes",
-      "Professional label, location, socials and contact",
-      "Work and education",
-      "Profile link, QR sharing and supported Verifiedly sign-in",
+      "Photo, banner and profile themes",
+      "Title, location, socials and contact details",
+      "Work and education sections",
+      "Link sharing, QR, save-contact card and Verifiedly sign-in",
     ],
     cta: "Create free profile",
     note: "No payment card required",
@@ -26,17 +26,17 @@ const plans = [
     name: "Verifiedly Membership",
     price: "$50",
     cadence: "per year",
-    icon: CreditCard,
-    description: "A separate annual identity membership. It is not included in BrownGlobal Pass or BrownGlobal Workspace.",
+    icon: Crown,
+    description: "The annual identity membership for people and organizations that need a verified official profile.",
     features: [
-      "One personalized NFC Tap Card with the first paid term, subject to shipping availability and published terms",
       "Stripe Identity verification access for eligible adults",
-      "Identity Verified badge only after successful verification",
-      "Basic profile and Tap Card analytics as available",
+      "Identity Verified badge after successful verification",
+      "Organization verification for business profiles",
+      "Profile view analytics as available",
       "Priority account support",
     ],
-    cta: "View annual Membership",
-    note: "$50 today · renews annually until canceled · renewals do not automatically include another card",
+    cta: "Join Membership",
+    note: "$50 today · renews annually at $50 until canceled",
     href: "/signup?returnTo=%2Fdashboard%2Fmembership",
     featured: true,
   },
@@ -46,9 +46,9 @@ const Pricing = () => (
   <section className="overflow-x-hidden px-3 py-12 sm:px-4 sm:py-20">
     <div className="mx-auto w-full max-w-5xl">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Separate Identity Membership</p>
-        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Create your profile free. Join for $50 a year when identity verification and the NFC card are useful.</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Verifiedly remains separate from BrownGlobal Pass and Workspace because identity verification is a distinct service. The badge is never guaranteed and appears only after successful Stripe Identity verification.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple pricing</p>
+        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Free to create. $50 a year to be verified.</h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">The badge is never guaranteed. It appears only after a successful Stripe Identity check.</p>
       </div>
 
       <div className="mx-auto mt-10 grid min-w-0 max-w-4xl gap-4 md:grid-cols-2">

@@ -15,7 +15,6 @@ export const routeLoaders = {
   "/dashboard/admin": () => import("@/pages/Admin"),
   "/dashboard/membership": () => import("@/pages/dashboard/Membership"),
   "/dashboard/verification": () => import("@/pages/dashboard/Verification"),
-  "/dashboard/tap-card": () => import("@/pages/dashboard/MembershipTapCard"),
   "/directory": () => import("@/pages/Directory"),
   "/pricing": () => import("@/pages/Pricing"),
   "/creator-profile": () => import("@/pages/CreatorProfile"),

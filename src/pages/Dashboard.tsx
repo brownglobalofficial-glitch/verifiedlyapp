@@ -69,6 +69,7 @@ interface DashboardProfile {
 }
 
 const SOCIAL_FIELDS = [
+  ["linkedin", "LinkedIn", "Handle or profile URL"],
   ["instagram", "Instagram", "Handle or profile URL"],
   ["youtube", "YouTube", "Handle or channel URL"],
   ["tiktok", "TikTok", "Handle or profile URL"],
@@ -79,11 +80,13 @@ const SOCIAL_FIELDS = [
 const ALLOWED_SOCIAL_KEYS = new Set([
   "location",
   "email",
+  "phone",
+  "website",
   "banner_url",
   "profile_theme",
   ...SOCIAL_FIELDS.map(([key]) => key),
 ]);
-const emptySocialLinks = Object.fromEntries([["location", ""], ["email", ""], ...SOCIAL_FIELDS.map(([key]) => [key, ""])]);
+const emptySocialLinks = Object.fromEntries([["location", ""], ["email", ""], ["phone", ""], ["website", ""], ...SOCIAL_FIELDS.map(([key]) => [key, ""])]);
 const emptyForm: ProfileForm = {
   accountType: "creator",
   displayName: "",
@@ -497,6 +500,8 @@ const Dashboard = () => {
                 <label className="block"><span className="text-[10px] font-medium text-muted-foreground">{form.accountType === "business" ? "Organization type" : "Professional label"}</span><Input value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder={form.accountType === "business" ? "Football club, academy, business…" : "Footballer, student, founder…"} maxLength={60} className={inlineInputClass} /></label>
                 <label className="block"><span className="text-[10px] font-medium text-muted-foreground">Location</span><Input value={form.socialLinks.location || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, location: event.target.value } })} placeholder="City, country" maxLength={120} className={inlineInputClass} /></label>
                 <label className="block"><span className="text-[10px] font-medium text-muted-foreground">Public email</span><Input type="email" value={form.socialLinks.email || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, email: event.target.value } })} placeholder="name@example.com" maxLength={254} className={inlineInputClass} /></label>
+                <label className="block"><span className="text-[10px] font-medium text-muted-foreground">Public phone</span><Input type="tel" value={form.socialLinks.phone || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, phone: event.target.value } })} placeholder="+1 555 000 0000" maxLength={24} className={inlineInputClass} /></label>
+                {form.accountType !== "business" && <label className="block"><span className="text-[10px] font-medium text-muted-foreground">Website</span><Input type="url" value={form.socialLinks.website || ""} onChange={(event) => setForm({ ...form, socialLinks: { ...form.socialLinks, website: event.target.value } })} placeholder="yoursite.com" maxLength={500} className={inlineInputClass} /></label>}
                 {form.accountType === "business" && <label className="block"><span className="text-[10px] font-medium text-muted-foreground">Official website</span><Input type="url" value={form.website} onChange={(event) => setForm({ ...form, website: event.target.value })} placeholder="organization.org" maxLength={500} className={inlineInputClass} /></label>}
               </div>
               <p className="mt-4 text-[10px] leading-relaxed text-muted-foreground">Only add contact details you want shown publicly. Legal organization name is stored for your account but is not displayed on the public profile.</p>

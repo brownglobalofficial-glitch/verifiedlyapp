@@ -9,10 +9,10 @@ const Pricing = () => (
   <div className="min-h-screen bg-background">
     <Helmet>
       <title>Membership · Verifiedly</title>
-      <meta name="description" content="Create a free official profile or join Verifiedly Membership for $50 per year with one first-term NFC Tap Card and eligible-adult Stripe Identity verification access." />
+      <meta name="description" content="Create a free official profile, or join Verifiedly Membership for $50 per year for eligible-adult Stripe Identity verification and the verified badge after approval." />
       <link rel="canonical" href="https://verifiedly.app/pricing" />
       <meta property="og:title" content="Verifiedly Membership — $50 per year" />
-      <meta property="og:description" content="Free official profiles and one separate annual Verifiedly Membership with identity verification access, the verified badge after approval, and one first-term NFC Tap Card." />
+      <meta property="og:description" content="Free official profiles and one annual Verifiedly Membership with identity verification access and the verified badge after approval." />
       <meta property="og:url" content="https://verifiedly.app/pricing" />
     </Helmet>
     <nav className="border-b border-border h-16 flex items-center px-4">
