@@ -27,7 +27,7 @@ const Refunds = () => (
       <p>Contact us promptly with the account email and approximate charge date. Do not email a government ID, selfie, complete payment-card number, password, or authentication code.</p>
 
       <h2>5. How to request review</h2>
-      <p>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the account email, charge or card-claim date, and reason. Verifiedly is operated by BrownGlobal Holdings LLC. Approved refunds return to the original payment method, and processing time depends on Stripe, the card network, and the financial institution.</p>
+      <p>Email <a href="mailto:support@verifiedly.app">support@verifiedly.app</a> with the account email, charge date, and reason. Verifiedly is operated by BrownGlobal Holdings LLC. Approved refunds return to the original payment method, and processing time depends on Stripe, the card network, and the financial institution.</p>
     </div>
   </div>
 );
