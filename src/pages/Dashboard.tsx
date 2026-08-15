@@ -69,6 +69,7 @@ interface DashboardProfile {
 }
 
 const SOCIAL_FIELDS = [
+  ["linkedin", "LinkedIn", "Handle or profile URL"],
   ["instagram", "Instagram", "Handle or profile URL"],
   ["youtube", "YouTube", "Handle or channel URL"],
   ["tiktok", "TikTok", "Handle or profile URL"],
@@ -79,11 +80,13 @@ const SOCIAL_FIELDS = [
 const ALLOWED_SOCIAL_KEYS = new Set([
   "location",
   "email",
+  "phone",
+  "website",
   "banner_url",
   "profile_theme",
   ...SOCIAL_FIELDS.map(([key]) => key),
 ]);
-const emptySocialLinks = Object.fromEntries([["location", ""], ["email", ""], ...SOCIAL_FIELDS.map(([key]) => [key, ""])]);
+const emptySocialLinks = Object.fromEntries([["location", ""], ["email", ""], ["phone", ""], ["website", ""], ...SOCIAL_FIELDS.map(([key]) => [key, ""])]);
 const emptyForm: ProfileForm = {
   accountType: "creator",
   displayName: "",
