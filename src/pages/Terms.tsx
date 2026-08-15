@@ -5,7 +5,7 @@ const Terms = () => (
   <div className="min-h-screen overflow-x-hidden bg-background px-4 py-12">
     <Helmet>
       <title>Terms of Service — Verifiedly</title>
-      <meta name="description" content="Terms for Verifiedly official profiles, annual Membership, Stripe Identity verification access, the included Tap Card, and connected-app sign-in." />
+      <meta name="description" content="Terms for Verifiedly official profiles, annual Membership, Stripe Identity verification access, and connected-app sign-in." />
       <link rel="canonical" href="https://verifiedly.app/terms" />
     </Helmet>
     <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
@@ -24,9 +24,8 @@ const Terms = () => (
       <p>You must have the right to publish everything you add. You may not impersonate another person or organization or publish unlawful, deceptive, infringing, defamatory, or privacy-invasive information. Work, Education, organization authority, and other profile claims are user-provided unless Verifiedly clearly states otherwise.</p>
 
       <h2>4. Verifiedly Membership</h2>
-      <p>Verifiedly Membership is an annually renewing subscription currently offered at <strong>$59.99 per year</strong>, plus applicable taxes. The amount shown at checkout is charged when the Membership begins and renews annually until canceled.</p>
-      <p>Membership may include Stripe Identity verification access for eligible adults, one included Tap Card with the first paid Membership term, basic profile and Tap Card analytics as available, priority account support, and other clearly described benefits.</p>
-      <p>The included Tap Card is granted once with the first successfully paid annual Membership term. Renewals do not include another card. Replacement or additional cards are not included unless Verifiedly separately offers them.</p>
+      <p>Verifiedly Membership is an annually renewing subscription currently offered at <strong>$50 per year</strong>, plus applicable taxes. The amount shown at checkout is charged when the Membership begins and renews annually until canceled.</p>
+      <p>Membership may include Stripe Identity verification access for eligible adults, organization verification, basic profile analytics as available, priority account support, and other clearly described benefits.</p>
       <p>You may cancel future renewal through the Stripe billing portal. Cancellation normally takes effect at the end of the current paid term. Membership features and availability may change prospectively where permitted by law, but we will not intentionally remove a benefit already owed for a paid term without an appropriate remedy.</p>
 
       <h2>5. Identity verification</h2>
@@ -51,7 +50,7 @@ const Terms = () => (
         <li>Impersonating a person or organization or misrepresenting identity or authority</li>
         <li>Publishing information you do not have the right to use</li>
         <li>Uploading government IDs, complete card details, passwords, authentication codes, or other high-risk records into profile fields or support messages</li>
-        <li>Bypassing authentication, billing, identity, Tap Card, rate-limit, or access controls</li>
+        <li>Bypassing authentication, billing, identity, rate-limit, or access controls</li>
         <li>Scraping, disrupting, probing, overloading, or abusing the service</li>
         <li>Using Verifiedly for fraud, harassment, or unlawful activity</li>
       </ul>

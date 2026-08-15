@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, Settings, LogOut, ExternalLink, CreditCard, Crown } from "lucide-react";
+import { User, ShieldCheck, Settings, LogOut, ExternalLink, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -20,7 +20,6 @@ const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
   { title: "Membership", url: "/dashboard/membership", icon: Crown },
   { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
-  { title: "Included Tap Card", url: "/dashboard/tap-card", icon: CreditCard },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
 

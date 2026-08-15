@@ -5,7 +5,7 @@ const Refunds = () => (
   <div className="min-h-screen overflow-x-hidden bg-background px-4 py-12">
     <Helmet>
       <title>Refund Policy — Verifiedly</title>
-      <meta name="description" content="Refund, cancellation, delay, defect, and replacement information for Verifiedly Membership and the included first-term Tap Card." />
+      <meta name="description" content="Refund and cancellation information for the annual Verifiedly Membership and identity-verification access." />
       <link rel="canonical" href="https://verifiedly.app/refunds" />
     </Helmet>
     <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
@@ -14,7 +14,7 @@ const Refunds = () => (
       <p className="text-muted-foreground"><em>Last updated: July 30, 2026</em></p>
 
       <h2>1. Annual Verifiedly Membership</h2>
-      <p>Verifiedly Membership is currently $59.99 per year and renews automatically until canceled. You can cancel future renewal through the Stripe billing portal. Cancellation normally prevents the next annual charge while access continues through the current paid term.</p>
+      <p>Verifiedly Membership is currently $50 per year and renews automatically until canceled. You can cancel future renewal through the Stripe billing portal. Cancellation normally prevents the next annual charge while access continues through the current paid term.</p>
       <p>Membership charges are generally non-refundable and are not prorated for unused time, except where required by law or where we determine that a duplicate charge, unauthorized charge, or material Verifiedly service failure occurred.</p>
 
       <h2>2. Identity-verification access</h2>

@@ -123,8 +123,8 @@ const Verification = () => {
               <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><Sparkles className="h-5 w-5" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Included with Verifiedly Membership</p><h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1></div></div>
             </div>
             <div className="space-y-6 p-6 sm:p-8">
-              <div><p className="text-3xl font-display font-bold">$59.99<span className="ml-1 text-sm font-normal text-muted-foreground">/year</span></p><p className="mt-1 text-xs text-muted-foreground">One annual Membership also includes one Tap Card with the first paid term, analytics and priority support.</p></div>
-              <ul className="grid gap-3 text-sm sm:grid-cols-2">{["Stripe Identity access for eligible adults", "Badge after successful verification", "First-term Tap Card included", "Annual recurring Membership"].map((item) => <li className="flex items-center gap-2" key={item}><Check className="h-4 w-4" />{item}</li>)}</ul>
+              <div><p className="text-3xl font-display font-bold">$50<span className="ml-1 text-sm font-normal text-muted-foreground">/year</span></p><p className="mt-1 text-xs text-muted-foreground">The annual Membership includes identity verification access, analytics and priority support.</p></div>
+              <ul className="grid gap-3 text-sm sm:grid-cols-2">{["Stripe Identity access for eligible adults", "Badge after successful verification", "Organization verification", "Annual recurring Membership"].map((item) => <li className="flex items-center gap-2" key={item}><Check className="h-4 w-4" />{item}</li>)}</ul>
               <Button asChild className="h-12 w-full rounded-xl"><Link to="/dashboard/membership">View Verifiedly Membership</Link></Button>
               <p className="text-center text-xs leading-relaxed text-muted-foreground">Membership does not automatically grant the badge. Eligible adults must complete Stripe Identity successfully.</p>
             </div>

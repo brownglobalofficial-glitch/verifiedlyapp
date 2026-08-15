@@ -12,7 +12,9 @@ import {
   Link2,
   Mail,
   MapPin,
+  Phone,
   Share2,
+  UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,7 +53,7 @@ interface PublicProfile {
   organization_country: string | null;
 }
 
-const PUBLIC_SOCIAL_KEYS = new Set(["instagram", "youtube", "tiktok", "facebook", "twitter", "x"]);
+const PUBLIC_SOCIAL_KEYS = new Set(["linkedin", "instagram", "youtube", "tiktok", "facebook", "twitter", "x"]);
 const SECTION_ICONS: Partial<Record<ProfileSectionKind, typeof BriefcaseBusiness>> = {
   work: BriefcaseBusiness,
   education: GraduationCap,
@@ -99,6 +101,7 @@ const socialUrl = (platform: string, value: string) => {
     tiktok: "https://tiktok.com/@",
     twitter: "https://x.com/",
     x: "https://x.com/",
+    linkedin: "https://linkedin.com/in/",
   };
   return bases[platform] ? safeExternalUrl(`${bases[platform]}${handle}`) : null;
 };
@@ -181,6 +184,11 @@ const CreatorProfile = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
   }, [socialValues]);
   const location = String(socialValues.location || "").trim() || null;
+  const publicPhone = useMemo(() => {
+    const value = String(socialValues.phone || "").trim();
+    return /^[+0-9()\-.\s]{6,24}$/.test(value) ? value : null;
+  }, [socialValues]);
+  const publicWebsite = safeExternalUrl(String(socialValues.website || "").trim());
   const bannerUrl = safeExternalUrl(String(socialValues.banner_url || "").trim());
   const theme = getProfileTheme(socialValues.profile_theme);
 
@@ -210,7 +218,8 @@ const CreatorProfile = () => {
   const profileUrl = `https://verifiedly.app/${profile.username}`;
   const shareImage = profile.avatar_url || bannerUrl || new URL(logoMark, window.location.origin).href;
   const isOwner = viewerUserId === profile.id;
-  const hasContact = Boolean(location || publicEmail || website || (isOrganization && (profile.organization_industry || profile.organization_country)));
+  const officialWebsite = website || publicWebsite;
+  const hasContact = Boolean(location || publicEmail || publicPhone || officialWebsite || (isOrganization && (profile.organization_industry || profile.organization_country)));
   const activeKinds = profileSectionKindsForAccountType(profile.account_type);
 
   const shareProfile = async () => {
@@ -224,6 +233,31 @@ const CreatorProfile = () => {
     } catch (error: unknown) {
       if (error instanceof DOMException && error.name === "AbortError") return;
     }
+  };
+
+  // Save-contact download. Nothing private is included: only fields the member
+  // already chose to publish on the profile.
+  const saveContact = () => {
+    const escape = (value: string) => value.replace(/([,;\\])/g, "\\$1").replace(/\n/g, " ");
+    const lines = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${escape(displayName)}`,
+      profile.category ? `TITLE:${escape(profile.category)}` : null,
+      publicEmail ? `EMAIL;TYPE=INTERNET:${escape(publicEmail)}` : null,
+      publicPhone ? `TEL;TYPE=CELL:${escape(publicPhone)}` : null,
+      location ? `ADR;TYPE=WORK:;;${escape(location)};;;;` : null,
+      officialWebsite ? `URL:${escape(officialWebsite)}` : null,
+      `URL:${profileUrl}`,
+      `NOTE:${escape(`Verifiedly profile @${profile.username}`)}`,
+      "END:VCARD",
+    ].filter(Boolean).join("\r\n");
+    const url = URL.createObjectURL(new Blob([lines], { type: "text/vcard;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${profile.username}.vcf`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -255,18 +289,28 @@ const CreatorProfile = () => {
       <main className="mx-auto max-w-4xl px-3 py-4 sm:px-4 sm:py-6">
         <Card className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
           <section className="border-b border-neutral-200">
-            <div className={`relative h-28 overflow-hidden sm:h-40 ${theme.hero}`}>
+            <div className={`relative h-32 overflow-hidden sm:h-48 ${theme.hero}`}>
               {bannerUrl && <img src={bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
               <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
             </div>
 
-            <div className="relative -mt-11 px-4 pb-5 text-center sm:-mt-14 sm:px-6 sm:pb-6">
-              <Avatar className={`mx-auto h-20 w-20 border-4 bg-white shadow-md sm:h-28 sm:w-28 ${theme.avatarRing}`}>
-                {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
-                <AvatarFallback className="font-display text-2xl font-bold sm:text-3xl">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
-              </Avatar>
-              <div className="mt-3 flex items-center justify-center gap-1.5">
-                <h1 className="break-words text-center font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+            <div className="relative -mt-12 px-4 pb-5 sm:-mt-14 sm:px-6 sm:pb-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <Avatar className={`h-24 w-24 border-4 bg-white shadow-md sm:h-28 sm:w-28 ${theme.avatarRing}`}>
+                  {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
+                  <AvatarFallback className="font-display text-2xl font-bold sm:text-3xl">{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-wrap gap-2 sm:pb-1">
+                  <Button type="button" size="sm" variant="outline" onClick={saveContact} className="h-9 gap-1.5 rounded-full border-neutral-200 bg-white px-3 text-xs">
+                    <UserPlus className="h-3.5 w-3.5" />Save contact
+                  </Button>
+                  <Button type="button" size="sm" onClick={() => void shareProfile()} className="h-9 gap-1.5 rounded-full px-3 text-xs">
+                    {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}{linkCopied ? "Copied" : "Share profile"}
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5">
+                <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
                 {profile.id_verified && (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -284,7 +328,7 @@ const CreatorProfile = () => {
               {profile.category && <p className="mt-1 text-sm font-medium">{profile.category}</p>}
               <p className="mt-0.5 text-xs text-neutral-500">@{profile.username}</p>
               {location && <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-neutral-500"><MapPin className="h-3.5 w-3.5" />{location}</p>}
-              {!!socials.length && <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 ${theme.socialButton}`} aria-label={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
+              {!!socials.length && <div className="mt-3 flex flex-wrap items-center gap-1.5">{socials.map(({ platform, url }) => <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition hover:-translate-y-0.5 ${theme.socialButton}`} aria-label={platform}><SocialIcon platform={platform} className="h-3.5 w-3.5" /></a>)}</div>}
             </div>
           </section>
 
@@ -293,7 +337,8 @@ const CreatorProfile = () => {
               <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-500">Official information</h2>
               <div className="space-y-2.5 text-xs">
                 {publicEmail && <a href={`mailto:${publicEmail}`} className="flex items-start gap-2 hover:opacity-70"><Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" /><span className="break-all">{publicEmail}</span></a>}
-                {website && <a href={website} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 hover:opacity-70"><Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" /><span>Official website</span></a>}
+                {publicPhone && <a href={`tel:${publicPhone.replace(/[^+0-9]/g, "")}`} className="flex items-start gap-2 hover:opacity-70"><Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" /><span className="break-all">{publicPhone}</span></a>}
+                {officialWebsite && <a href={officialWebsite} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 hover:opacity-70"><Globe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" /><span>Official website</span></a>}
                 {location && <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" /><span>{location}</span></div>}
                 {isOrganization && profile.organization_industry && <div><p className="text-[10px] uppercase tracking-wide text-neutral-500">Industry</p><p className="mt-0.5 font-medium">{profile.organization_industry}</p></div>}
                 {isOrganization && profile.organization_country && <div><p className="text-[10px] uppercase tracking-wide text-neutral-500">Country</p><p className="mt-0.5 font-medium">{profile.organization_country}</p></div>}

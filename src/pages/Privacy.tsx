@@ -5,7 +5,7 @@ const Privacy = () => (
   <div className="min-h-screen overflow-x-hidden bg-background px-4 py-12">
     <Helmet>
       <title>Privacy Policy — Verifiedly</title>
-      <meta name="description" content="How Verifiedly handles official profiles, annual Membership, Stripe Identity results, included Tap Card fulfillment, and connected-app sign-in." />
+      <meta name="description" content="How Verifiedly handles official profiles, annual Membership, Stripe Identity results, and connected-app sign-in." />
       <link rel="canonical" href="https://verifiedly.app/privacy" />
     </Helmet>
     <div className="prose prose-sm mx-auto max-w-3xl break-words dark:prose-invert">
@@ -32,7 +32,7 @@ const Privacy = () => (
       <h3>Membership and payment information</h3>
       <ul>
         <li>Stripe customer, checkout, subscription, payment-status, annual-renewal, cancellation, and billing references</li>
-        <li>Membership status, current period end, and whether the one-time first-term Tap Card benefit is available or has been claimed</li>
+        <li>Membership status and current period end</li>
       </ul>
       <p>Stripe processes complete payment-card details. Verifiedly does not store complete payment-card numbers.</p>
 
@@ -55,9 +55,8 @@ const Privacy = () => (
         <li>Create and display official profiles</li>
         <li>Operate annual Membership billing, renewal, cancellation, and benefits</li>
         <li>Start identity checks for eligible adults and display accurate verification status</li>
-        <li>Create, fulfill, activate, disable, replace where appropriate, and support included Tap Cards</li>
-        <li>Provide approved connected-app sign-in</li>
-        <li>Measure profile and Tap Card activity, prevent fraud, enforce our Terms, and meet legal obligations</li>
+                <li>Provide approved connected-app sign-in</li>
+        <li>Measure profile activity, prevent fraud, enforce our Terms, and meet legal obligations</li>
       </ul>
 
       <h2>3. How we disclose information</h2>
@@ -72,14 +71,14 @@ const Privacy = () => (
       <p>For Tap Card fulfillment, we aim to send the provider only the information reasonably necessary to print, encode, ship, and track the card. We do not send payment-card details or Stripe Identity evidence to the card supplier.</p>
 
       <h2>4. Security</h2>
-      <p>We use safeguards including encrypted network connections, authentication, database access rules, server-side payment operations, signed webhooks, random Tap Card tokens, and access controls. No system can guarantee absolute security. Do not place government IDs, complete payment details, passwords, or authentication codes in public profile fields or support messages.</p>
+      <p>We use safeguards including encrypted network connections, authentication, database access rules, server-side payment operations, signed webhooks, and access controls. No system can guarantee absolute security. Do not place government IDs, complete payment details, passwords, or authentication codes in public profile fields or support messages.</p>
 
       <h2>5. Retention and deletion</h2>
       <p>We retain information while your account is active and as reasonably needed to provide the service, fulfill the included card, handle disputes, prevent fraud, enforce agreements, and comply with law. Billing and fulfillment records may remain for accounting, tax, chargeback, warranty, fraud-prevention, and legal purposes after account closure.</p>
       <p>Retired profile-section data may be hidden rather than immediately deleted to preserve user data and migration compatibility. Public information may remain in search caches or recipient copies outside our control.</p>
 
       <h2>6. Your choices and rights</h2>
-      <p>You can edit public information, manage Membership through the Stripe portal, disable supported Tap Cards, revoke connected-app access where available, and request account deletion. Depending on where you live, you may have rights to access, correct, delete, restrict, object, withdraw consent, or receive a portable copy. Contact <strong>support@verifiedly.app</strong>.</p>
+      <p>You can edit public information, manage Membership through the Stripe portal, revoke connected-app access where available, and request account deletion. Depending on where you live, you may have rights to access, correct, delete, restrict, object, withdraw consent, or receive a portable copy. Contact <strong>support@verifiedly.app</strong>.</p>
 
       <h2>7. Young users</h2>
       <p>Verifiedly is not intended for children under 13. Minors must have permission from a parent or legal guardian. Stripe Identity verification through Verifiedly is limited to eligible adults age 18 or older.</p>
