@@ -39,13 +39,6 @@ const Privacy = () => (
       <h3>Identity-verification information</h3>
       <p>When an eligible adult member chooses verification, Stripe collects the government ID and selfie in a Stripe-hosted flow. Verifiedly is designed to retain the provider session reference, status, result, attempt count, and verification date rather than ordinary copies of the ID or selfie.</p>
 
-      <h3>Included Tap Card information</h3>
-      <ul>
-        <li>Approved printed name, title, handle, template, card serial, QR and NFC link, preview approval, card state, and order status</li>
-        <li>Shipping name and address, estimated shipping window, supplier reference, tracking information, and fulfillment-support notes</li>
-        <li>Aggregate Tap Card activity used for basic analytics</li>
-      </ul>
-
       <h3>Connected-app information</h3>
       <p>When you use Continue with Verifiedly, we process the requesting app, permissions, consent decision, authorization records, token references, and security logs. The connected app receives only the information covered by the displayed permissions and consent.</p>
 
@@ -68,7 +61,6 @@ const Privacy = () => (
         <li><strong>For legal and safety reasons:</strong> when required by law or reasonably necessary to protect users, rights, or the service</li>
         <li><strong>During a business transaction:</strong> subject to appropriate safeguards</li>
       </ul>
-      <p>For Tap Card fulfillment, we aim to send the provider only the information reasonably necessary to print, encode, ship, and track the card. We do not send payment-card details or Stripe Identity evidence to the card supplier.</p>
 
       <h2>4. Security</h2>
       <p>We use safeguards including encrypted network connections, authentication, database access rules, server-side payment operations, signed webhooks, and access controls. No system can guarantee absolute security. Do not place government IDs, complete payment details, passwords, or authentication codes in public profile fields or support messages.</p>
