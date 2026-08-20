@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertCircle, Check, Clock3, ExternalLink, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { AlertCircle, Check, Clock3, ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,10 +11,18 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 import { useToast } from "@/hooks/use-toast";
 
 type IdentityStatus = "unverified" | "processing" | "requires_input" | "verified" | "canceled";
-type VerificationProfile = { id: string; username: string; id_verified: boolean; verified_at: string | null; is_pro: boolean | null };
-type VerificationState = { identity_status: IdentityStatus; identity_attempt_count: number; pro_status: string | null };
+type VerificationProfile = { id: string; username: string; id_verified: boolean; verified_at: string | null };
+type VerificationState = {
+  identity_status: IdentityStatus;
+  identity_attempt_count: number;
+  verification_payment_status: string | null;
+};
 
-const defaultState: VerificationState = { identity_status: "unverified", identity_attempt_count: 0, pro_status: null };
+const defaultState: VerificationState = {
+  identity_status: "unverified",
+  identity_attempt_count: 0,
+  verification_payment_status: null,
+};
 const identityEnabled = import.meta.env.VITE_STRIPE_IDENTITY_USE_CASE_APPROVED === "true";
 
 const readFunctionError = async (error: unknown, data: unknown) => {
@@ -36,10 +44,11 @@ const Verification = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<"identity" | "refresh" | null>(null);
+  const [action, setAction] = useState<"checkout" | "identity" | "refresh" | null>(null);
   const [profile, setProfile] = useState<VerificationProfile | null>(null);
   const [state, setState] = useState<VerificationState>(defaultState);
   const [eligible, setEligible] = useState(false);
+  const checkoutReturned = searchParams.get("checkout") === "success";
 
   const load = useCallback(async (checkProvider = false) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -48,10 +57,9 @@ const Verification = () => {
       return;
     }
 
-    await supabase.functions.invoke("check-subscription").catch(() => undefined);
     const [profileResult, billingResult] = await Promise.all([
-      supabase.from("profiles").select("id, username, id_verified, verified_at, is_pro").eq("id", session.user.id).maybeSingle(),
-      supabase.from("verifiedly_billing").select("identity_status, identity_attempt_count, pro_status").eq("user_id", session.user.id).maybeSingle(),
+      supabase.from("profiles").select("id, username, id_verified, verified_at").eq("id", session.user.id).maybeSingle(),
+      supabase.from("verifiedly_billing").select("identity_status, identity_attempt_count, verification_payment_status").eq("user_id", session.user.id).maybeSingle(),
     ]);
     if (profileResult.data) setProfile(profileResult.data as VerificationProfile);
     if (billingResult.data) setState({ ...defaultState, ...(billingResult.data as VerificationState) });
@@ -59,12 +67,30 @@ const Verification = () => {
     if (checkProvider) {
       const { data, error } = await supabase.functions.invoke("check-identity-status");
       if (!error && data && !data.error) {
-        setState((current) => ({ ...current, identity_status: data.identity_status ?? current.identity_status, identity_attempt_count: data.identity_attempt_count ?? current.identity_attempt_count }));
+        setState((current) => ({
+          ...current,
+          identity_status: data.identity_status ?? current.identity_status,
+          identity_attempt_count: data.identity_attempt_count ?? current.identity_attempt_count,
+        }));
         if (data.id_verified) setProfile((current) => current ? { ...current, id_verified: true, verified_at: data.verified_at ?? current.verified_at } : current);
       }
     }
     setLoading(false);
   }, [navigate]);
+
+  const startCheckout = async () => {
+    setAction("checkout");
+    try {
+      const { data, error } = await supabase.functions.invoke("create-identity-checkout", { body: {} });
+      if (error || data?.error) throw new Error(await readFunctionError(error, data));
+      if (data?.already_verified || data?.already_paid) return void await load(false);
+      if (data?.url) window.location.assign(data.url);
+    } catch (error) {
+      toast({ title: "Checkout could not start", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally {
+      setAction(null);
+    }
+  };
 
   const startIdentity = useCallback(async () => {
     setAction("identity");
@@ -82,10 +108,10 @@ const Verification = () => {
   }, [load, toast]);
 
   useEffect(() => {
-    const returned = searchParams.get("identity") === "returned";
+    const identityReturned = searchParams.get("identity") === "returned";
     void (async () => {
-      await load(returned);
-      if (returned) setSearchParams({}, { replace: true });
+      await load(identityReturned);
+      if (identityReturned) setSearchParams({}, { replace: true });
     })();
   }, [load, searchParams, setSearchParams]);
 
@@ -96,7 +122,7 @@ const Verification = () => {
   };
 
   const verified = Boolean(profile?.id_verified) || state.identity_status === "verified";
-  const hasMembership = profile?.is_pro === true || state.pro_status === "active" || state.pro_status === "trialing";
+  const paid = state.verification_payment_status === "paid";
 
   if (loading) return <DashboardShell title="Verify identity"><div className="p-8 text-sm text-muted-foreground">Loading…</div></DashboardShell>;
 
@@ -107,7 +133,7 @@ const Verification = () => {
           <Card className="rounded-3xl border-foreground/10 p-8 text-center shadow-sm sm:p-10">
             <VerifiedBadge className="mx-auto h-11 w-11" label="Verifiedly Identity Verified" />
             <h1 className="mt-5 text-2xl font-display font-bold">Identity verified</h1>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Stripe Identity successfully verified the adult account holder. The Identity Verified badge does not automatically verify Work, Education, organization authority or every profile claim.</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Stripe Identity successfully verified the account holder's identity. The badge confirms identity only; it does not verify Work, Education or every profile claim.</p>
             {profile?.verified_at && <p className="mt-4 text-xs text-muted-foreground">Verified {new Date(profile.verified_at).toLocaleDateString()}</p>}
           </Card>
         ) : state.identity_status === "processing" ? (
@@ -117,30 +143,31 @@ const Verification = () => {
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">Stripe Identity is reviewing your submission.</p>
             <Button className="mt-6 gap-2" variant="outline" onClick={refresh} disabled={action === "refresh"}><RefreshCw className={`h-4 w-4 ${action === "refresh" ? "animate-spin" : ""}`} />Check status</Button>
           </Card>
-        ) : !hasMembership ? (
+        ) : !paid ? (
           <Card className="overflow-hidden rounded-3xl border-foreground/10 shadow-sm">
             <div className="border-b bg-foreground px-6 py-7 text-background sm:px-8">
-              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><Sparkles className="h-5 w-5" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Included with Verifiedly Membership</p><h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1></div></div>
+              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><ShieldCheck className="h-5 w-5" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">One-time verification</p><h1 className="mt-1 text-2xl font-display font-bold">Get Identity Verified</h1></div></div>
             </div>
             <div className="space-y-6 p-6 sm:p-8">
-              <div><p className="text-3xl font-display font-bold">$50<span className="ml-1 text-sm font-normal text-muted-foreground">/year</span></p><p className="mt-1 text-xs text-muted-foreground">The annual Membership includes identity verification access, analytics and priority support.</p></div>
-              <ul className="grid gap-3 text-sm sm:grid-cols-2">{["Stripe Identity access for eligible adults", "Badge after successful verification", "Organization verification", "Annual recurring Membership"].map((item) => <li className="flex items-center gap-2" key={item}><Check className="h-4 w-4" />{item}</li>)}</ul>
-              <Button asChild className="h-12 w-full rounded-xl"><Link to="/dashboard/membership">View Verifiedly Membership</Link></Button>
-              <p className="text-center text-xs leading-relaxed text-muted-foreground">Membership does not automatically grant the badge. Eligible adults must complete Stripe Identity successfully.</p>
+              <div><p className="text-3xl font-display font-bold">$9.99<span className="ml-1 text-sm font-normal text-muted-foreground">one time</span></p><p className="mt-1 text-xs text-muted-foreground">Your Verifiedly profile is free. This one-time payment starts the identity-verification process.</p></div>
+              <ul className="grid gap-3 text-sm sm:grid-cols-2">{["Stripe Identity secure verification", "Identity Verified badge after approval", "Verification remains on your profile", "No Verifiedly subscription required"].map((item) => <li className="flex items-center gap-2" key={item}><Check className="h-4 w-4" />{item}</li>)}</ul>
+              {checkoutReturned && <div className="flex gap-3 rounded-2xl border p-4"><Clock3 className="mt-0.5 h-4 w-4 shrink-0" /><p className="text-sm">Your payment is being confirmed. If the button below still shows checkout, wait a moment and refresh the status.</p></div>}
+              <Button className="h-12 w-full rounded-xl" onClick={() => void startCheckout()} disabled={action !== null}>{action === "checkout" ? "Opening secure checkout…" : <>Pay $9.99 & continue <ExternalLink className="ml-2 h-4 w-4" /></>}</Button>
+              {checkoutReturned && <Button className="w-full gap-2" variant="outline" onClick={refresh} disabled={action === "refresh"}><RefreshCw className={`h-4 w-4 ${action === "refresh" ? "animate-spin" : ""}`} />Refresh payment status</Button>}
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">The payment is for the identity-verification process. The Identity Verified badge appears only after successful verification.</p>
             </div>
           </Card>
         ) : (
           <Card className="overflow-hidden rounded-3xl border-foreground/10 shadow-sm">
             <div className="border-b bg-foreground px-6 py-7 text-background sm:px-8">
-              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><ShieldCheck className="h-5 w-5" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Included with your Membership</p><h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1><p className="mt-1 text-xs opacity-70">Stripe Identity performs the ID and selfie check.</p></div></div>
+              <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10"><ShieldCheck className="h-5 w-5" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-65">Payment confirmed</p><h1 className="mt-1 text-2xl font-display font-bold">Verify your identity</h1><p className="mt-1 text-xs opacity-70">Stripe Identity performs the ID and selfie check.</p></div></div>
             </div>
             <div className="space-y-6 p-6 sm:p-8">
-              <div><p className="text-2xl font-display font-bold">No separate verification fee</p><p className="mt-1 text-xs text-muted-foreground">Available while your Verifiedly Membership is active and the supported use case is enabled.</p></div>
-              <ul className="grid gap-3 text-sm sm:grid-cols-2">{["Government-issued photo ID", "Selfie identity check", "Secure Stripe Identity flow", "Badge after successful verification"].map((item) => <li className="flex items-center gap-2" key={item}><Check className="h-4 w-4" />{item}</li>)}</ul>
+              <div><p className="text-2xl font-display font-bold">Ready for secure verification</p><p className="mt-1 text-xs text-muted-foreground">Your one-time verification payment has been recorded.</p></div>
               {state.identity_status === "requires_input" && <div className="flex gap-3 rounded-2xl bg-amber-50 p-4 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><p className="text-sm">Stripe Identity needs another image or additional information. Continue your existing verification.</p></div>}
-              <div className="flex items-start gap-3 rounded-2xl border p-4"><Checkbox id="identity-eligibility" checked={eligible} onCheckedChange={(value) => setEligible(value === true)} className="mt-0.5" /><Label htmlFor="identity-eligibility" className="cursor-pointer text-xs font-normal leading-relaxed text-muted-foreground">I am 18 or older, I am verifying my own identity, and I consent to Stripe collecting my government ID and selfie for this verification.</Label></div>
+              <div className="flex items-start gap-3 rounded-2xl border p-4"><Checkbox id="identity-eligibility" checked={eligible} onCheckedChange={(value) => setEligible(value === true)} className="mt-0.5" /><Label htmlFor="identity-eligibility" className="cursor-pointer text-xs font-normal leading-relaxed text-muted-foreground">I am eligible to verify my own identity and I consent to Stripe collecting the identity information required for this verification.</Label></div>
               <Button className="h-12 w-full rounded-xl" onClick={() => void startIdentity()} disabled={!identityEnabled || !eligible || action !== null}>{!identityEnabled ? "Verification temporarily unavailable" : action === "identity" ? "Opening secure verification…" : <>Continue to Stripe Identity <ExternalLink className="ml-2 h-4 w-4" /></>}</Button>
-              <p className="text-center text-xs leading-relaxed text-muted-foreground">Stripe handles the identity check. Verifiedly receives the result and does not ordinarily store copies of your ID or selfie.</p>
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">Stripe handles the identity check. Verifiedly receives the verification result and does not ordinarily store copies of your ID or selfie.</p>
             </div>
           </Card>
         )}
