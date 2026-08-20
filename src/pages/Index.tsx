@@ -19,10 +19,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 font-sans">
       <Helmet>
-        <title>Verifiedly — Your Official Verified Profile</title>
-        <meta name="description" content="Create one official profile with your work, education and contact details. Verify your identity and share it by link or QR." />
-        <meta property="og:title" content="Verifiedly — Your Official Verified Profile" />
-        <meta property="og:description" content="One official profile. Verified identity. Share it anywhere." />
+        <title>Verifiedly — Your Verified Identity Online</title>
+        <meta name="description" content="Create a free professional identity profile with your work, education and contact details. Verify your identity once and use Continue with Verifiedly on connected apps." />
+        <meta property="og:title" content="Verifiedly — Your Verified Identity Online" />
+        <meta property="og:description" content="One professional identity. Optional identity verification. Continue with Verifiedly across connected apps." />
         <meta property="og:url" content="https://verifiedly.app/" />
         <link rel="canonical" href="https://verifiedly.app/" />
       </Helmet>
@@ -31,17 +31,17 @@ const Index = () => {
         <div className="text-center mb-14 sm:mb-18">
           <img src={logoMark} alt="Verifiedly" className="h-12 w-12 object-contain mx-auto mb-5" />
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase text-foreground mb-3">
-            Verifiedly<span className="sr-only"> — Your Official Profile, Everywhere</span>
+            Verifiedly<span className="sr-only"> — Your Verified Identity Online</span>
           </h1>
           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-            Your official profile, everywhere.
+            Your verified identity online.
           </p>
         </div>
 
         <div className="text-center mb-10 max-w-[320px]">
-          <p className="text-lg font-display font-semibold text-foreground">Create · Verify · Share</p>
+          <p className="text-lg font-display font-semibold text-foreground">Create · Verify · Use</p>
           <p className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            One official profile for who you are, your work and your contact details.
+            One professional profile for who you are, your work, education and contact details — with optional identity verification and Continue with Verifiedly sign-in.
           </p>
         </div>
 
@@ -57,20 +57,20 @@ const Index = () => {
             to="/pricing"
             className="flex items-center justify-center w-full bg-transparent border-2 border-foreground text-foreground py-4 px-8 text-xs font-bold uppercase tracking-widest transition-all hover:bg-foreground hover:text-background"
           >
-            Pricing
+            Identity verification
           </Link>
           <Link to="/login" className="block text-center text-xs font-medium text-muted-foreground hover:text-foreground">Already have an account? Sign in</Link>
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed max-w-[320px]">
-          Free to create · Membership $50/year for identity verification
+          Free profile · Optional identity verification $9.99 one time · No Verifiedly subscription required
         </p>
 
         <footer className="mt-8 flex flex-col items-center gap-4 text-center">
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/pricing" className="hover:text-foreground transition-colors">Membership</Link>
+            <Link to="/pricing" className="hover:text-foreground transition-colors">Verification</Link>
             <Link to="/refunds" className="hover:text-foreground transition-colors">Refunds</Link>
             <Link to="/developers" className="hover:text-foreground transition-colors">Developers</Link>
           </div>
