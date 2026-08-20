@@ -1,21 +1,21 @@
-import { BadgeCheck, Check, Crown, ShieldCheck, UserRound } from "lucide-react";
+import { BadgeCheck, Check, ShieldCheck, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const plans = [
   {
-    name: "Verifiedly Free",
+    name: "Verifiedly Profile",
     price: "$0",
     cadence: "forever",
     icon: UserRound,
-    description: "Create and share one official profile for a person or organization.",
+    description: "Create and share one professional identity profile.",
     features: [
       "Unique verifiedly.app handle",
-      "Photo, banner and profile themes",
-      "Title, location, socials and contact details",
-      "Work and education sections",
-      "Link sharing, QR, save-contact card and Verifiedly sign-in",
+      "Name, photo and professional title",
+      "Work and education",
+      "Contact details, website and social links",
+      "Profile sharing, QR and Continue with Verifiedly",
     ],
     cta: "Create free profile",
     note: "No payment card required",
@@ -23,21 +23,21 @@ const plans = [
     featured: false,
   },
   {
-    name: "Verifiedly Membership",
-    price: "$50",
-    cadence: "per year",
-    icon: Crown,
-    description: "The annual identity membership for people and organizations that need a verified official profile.",
+    name: "Identity Verification",
+    price: "$9.99",
+    cadence: "one time",
+    icon: ShieldCheck,
+    description: "Verify your identity through Stripe Identity and earn the Identity Verified badge after successful verification.",
     features: [
-      "Stripe Identity verification access for eligible adults",
+      "One-time checkout — no Verifiedly subscription",
+      "Secure Stripe Identity verification",
       "Identity Verified badge after successful verification",
-      "Organization verification for business profiles",
-      "Profile view analytics as available",
-      "Priority account support",
+      "Verification status stays with your Verifiedly profile",
+      "Your work and education remain separate profile claims",
     ],
-    cta: "Join Membership",
-    note: "$50 today · renews annually at $50 until canceled",
-    href: "/signup?returnTo=%2Fdashboard%2Fmembership",
+    cta: "Get Identity Verified",
+    note: "$9.99 one time · badge is issued only after successful verification",
+    href: "/signup?returnTo=%2Fdashboard%2Fverification",
     featured: true,
   },
 ];
@@ -47,8 +47,8 @@ const Pricing = () => (
     <div className="mx-auto w-full max-w-5xl">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Simple pricing</p>
-        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Free to create. $50 a year to be verified.</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">The badge is never guaranteed. It appears only after a successful Stripe Identity check.</p>
+        <h2 className="mt-3 break-words text-3xl font-display font-bold tracking-tight sm:text-4xl">Free profile. Verify once for $9.99.</h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Verifiedly does not require a subscription to create or keep your professional identity profile.</p>
       </div>
 
       <div className="mx-auto mt-10 grid min-w-0 max-w-4xl gap-4 md:grid-cols-2">
@@ -57,7 +57,7 @@ const Pricing = () => (
             <div className="flex min-w-0 w-full flex-col">
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-foreground text-background"><plan.icon className="h-5 w-5" /></div>
-                {plan.featured && <span className="shrink-0 rounded-full bg-foreground px-3 py-1 text-[10px] font-semibold text-background">Annual Membership</span>}
+                {plan.featured && <span className="shrink-0 rounded-full bg-foreground px-3 py-1 text-[10px] font-semibold text-background">One-time</span>}
               </div>
               <h3 className="mt-5 break-words font-display text-xl font-bold">{plan.name}</h3>
               <p className="mt-3 flex flex-wrap items-baseline gap-1 break-words text-4xl font-display font-bold">{plan.price}<span className="text-sm font-normal text-muted-foreground">{plan.cadence}</span></p>
@@ -73,8 +73,8 @@ const Pricing = () => (
       </div>
 
       <div className="mx-auto mt-8 grid max-w-4xl gap-3 sm:grid-cols-2">
-        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>Stripe Identity verification is available to eligible adult members. Failed or incomplete verification does not qualify for the Identity Verified badge.</p></div>
-        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>The badge confirms the supported identity check. It does not verify work, education, organization authority, licensing or every profile claim.</p></div>
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>Stripe Identity performs the supported identity check. Verifiedly receives the result and does not ordinarily store copies of the ID or selfie used in the Stripe flow.</p></div>
+        <div className="flex min-w-0 items-start gap-3 rounded-2xl border bg-muted/25 p-4 text-xs leading-relaxed text-muted-foreground"><BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-foreground" /><p>The Identity Verified badge confirms identity only. It does not verify employment, education, organization authority, licensing or every profile claim.</p></div>
       </div>
 
       <p className="mt-5 text-center text-xs text-muted-foreground">Verifiedly is operated by BrownGlobal Holdings LLC.</p>
