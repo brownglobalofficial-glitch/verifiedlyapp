@@ -24,7 +24,6 @@ const Privacy = lazy(routeLoaders["/privacy"]);
 const Refunds = lazy(() => import("./pages/Refunds"));
 const Admin = lazy(routeLoaders["/dashboard/admin"]);
 const Verification = lazy(() => import("./pages/dashboard/Verification"));
-const Membership = lazy(routeLoaders["/dashboard/membership"]);
 const Directory = lazy(() => import("./pages/Directory"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
@@ -89,7 +88,7 @@ const RouteOptimizer = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/membership"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings"]);
         if (AUTH_PAGES.has(window.location.pathname) && getSafeAuthNextPath()) {
           redirectAuthedAway();
           return;
@@ -117,7 +116,7 @@ const RouteOptimizer = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        prefetchIdle(["/dashboard", "/dashboard/settings", "/dashboard/membership"]);
+        prefetchIdle(["/dashboard", "/dashboard/settings"]);
         redirectAuthedAway();
       } else {
         prefetchIdle(["/login", "/signup"]);
@@ -157,10 +156,10 @@ const App = () => (
             <Route path="/dashboard/settings" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
             <Route path="/dashboard/links" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/membership" replace />} />
-            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/membership" replace />} />
-            <Route path="/dashboard/pro" element={<Navigate to="/dashboard/membership" replace />} />
-            <Route path="/dashboard/membership" element={<AuthGuard><Membership /></AuthGuard>} />
+            <Route path="/dashboard/upgrade" element={<Navigate to="/dashboard/verification" replace />} />
+            <Route path="/dashboard/billing" element={<Navigate to="/dashboard/verification" replace />} />
+            <Route path="/dashboard/pro" element={<Navigate to="/dashboard/verification" replace />} />
+            <Route path="/dashboard/membership" element={<Navigate to="/dashboard/verification" replace />} />
             <Route path="/dashboard/verification" element={<AuthGuard><Verification /></AuthGuard>} />
             <Route path="/directory" element={<AuthGuard><Directory /></AuthGuard>} />
             <Route path="/admin/verification" element={<Navigate to="/dashboard/admin" replace />} />
@@ -174,7 +173,7 @@ const App = () => (
             <Route path="/verify/:username" element={<LegacyProfileRedirect />} />
             <Route path="/pro" element={<Navigate to="/pricing" replace />} />
             <Route path="/membership" element={<Navigate to="/pricing" replace />} />
-            <Route path="/subscription/success" element={<Navigate to="/dashboard/membership" replace />} />
+            <Route path="/subscription/success" element={<Navigate to="/dashboard/verification" replace />} />
             {RETIRED_DASHBOARD_PATHS.map((path) => (
               <Route key={path} path={path} element={<Navigate to="/dashboard" replace />} />
             ))}
