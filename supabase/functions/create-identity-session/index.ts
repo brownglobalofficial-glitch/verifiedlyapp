@@ -59,16 +59,15 @@ serve(async (req) => {
     if (userError || !user) return json({ error: "Please sign in again." }, 401);
 
     const [{ data: profile }, { data: billing }] = await Promise.all([
-      admin.from("profiles").select("id_verified, is_pro").eq("id", user.id).maybeSingle(),
-      admin.from("verifiedly_billing").select("pro_status, identity_attempt_count, identity_last_session_id").eq("user_id", user.id).maybeSingle(),
+      admin.from("profiles").select("id_verified").eq("id", user.id).maybeSingle(),
+      admin.from("verifiedly_billing").select("verification_payment_status, identity_attempt_count, identity_last_session_id").eq("user_id", user.id).maybeSingle(),
     ]);
 
     if (profile?.id_verified) return json({ status: "verified" });
-    const hasMembership = profile?.is_pro === true || billing?.pro_status === "active" || billing?.pro_status === "trialing";
-    if (!hasMembership) {
+    if (billing?.verification_payment_status !== "paid") {
       return json({
-        error: "An active Verifiedly Membership is required for identity verification. Membership is $59.99 per year.",
-        code: "membership_required",
+        error: "Complete the one-time $9.99 identity verification payment before starting Stripe Identity.",
+        code: "verification_payment_required",
       }, 403);
     }
 
@@ -82,7 +81,7 @@ serve(async (req) => {
 
     const attempts = billing?.identity_attempt_count ?? 0;
     if (attempts >= 2) {
-      return json({ error: "The included verification attempts have been used. Contact Verifiedly priority support for review.", code: "attempt_limit" }, 409);
+      return json({ error: "The available verification attempts have been used. Contact Verifiedly support for review.", code: "attempt_limit" }, 409);
     }
 
     const origin = safeOrigin(req.headers.get("origin"));
@@ -90,9 +89,9 @@ serve(async (req) => {
       verification_flow: flowId,
       return_url: `${origin}/dashboard/verification?identity=returned`,
       client_reference_id: user.id,
-      metadata: { user_id: user.id, included_with: "verifiedly_membership" },
+      metadata: { user_id: user.id, payment_model: "one_time_9_99" },
     }, {
-      idempotencyKey: `verifiedly-membership-identity-${user.id}-${attempts + 1}`,
+      idempotencyKey: `verifiedly-paid-identity-${user.id}-${attempts + 1}`,
     });
 
     await Promise.all([
