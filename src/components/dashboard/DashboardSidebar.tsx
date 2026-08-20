@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { User, ShieldCheck, Settings, LogOut, ExternalLink, Crown } from "lucide-react";
+import { User, ShieldCheck, Settings, LogOut, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
@@ -18,7 +18,6 @@ import logoMark from "@/assets/verifiedly-v-mark.png";
 
 const items = [
   { title: "My profile", url: "/dashboard", icon: User, end: true },
-  { title: "Membership", url: "/dashboard/membership", icon: Crown },
   { title: "Verify identity", url: "/dashboard/verification", icon: ShieldCheck },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
@@ -38,7 +37,7 @@ export default function DashboardSidebar({ username }: { username?: string }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Your official profile</SidebarGroupLabel>
+          <SidebarGroupLabel>Your identity</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
